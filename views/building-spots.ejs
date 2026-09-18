@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Study Spots in <%= buildingname %></title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <nav>
+        <a href ='/'><h2>Study Spots📚</h2></a>
+        <a href='/profile'>Your Profile</a> |
+        <% if (user.role == 'Admin'){ %>
+            <a href="/edit-buildings">Edit  Buildings</a> |
+            <a href="/add-building">Add Building</a> |
+            <a href="/studyspot-list">Edit Study Spots</a> |
+            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/admin/reports">Pending Reports</a> |
+        <% } %> 
+        <a href="/favourites">Favourites</a> |
+         <a href='/logout'>Logout</a>
+    </nav>
+    <br>
+    
+    <h2>Study Spots in <%= buildingname %></h2>
+
+
+    <% if (studySpots.length === 0) { %>
+        <p>No study spots found in this building.</p>
+    <% } else { %>
+        <% studySpots.forEach(function(spot) { %>
+            <p><strong>Name: <%= spot.name %></strong></p>
+            Building: <%= spot.buildingName %><br>
+            Floor: <%= spot.floor %><br>
+            Seats: <%= spot.seatCount %><br>
+            Power Socket: <%= spot.hasPowerSocket ? 'Yes' : 'No' %><br>
+            Noise Level: <%= spot.noiseLevel %><br>
+            <a href = '/add-review/<%= buildingname %>/<%= spot.name %>'>Add a Review</a><br>
+            <a href = '/review-list/<%= buildingname %>/ <%= spot.name %>'> View Reviews </a> <br>
+            <a href="/favourites/add?spotName=<%= spot.name %>&buildingName=<%= spot.buildingName %>&floor=<%= spot.floor %>&seatCount=<%= spot.seatCount %>&hasPowerSocket=<%= spot.hasPowerSocket %>&noiseLevel=<%= spot.noiseLevel %>">Add to Favourites</a>
+            <hr>
+        <% }); %>
+    <% } %>
+
+</body>
+</html>

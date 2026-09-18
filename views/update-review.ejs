@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Update Review</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <nav>
+        <a href ='/'><h2>Study Spots📚</h2></a>
+        <a href='/profile'>Your Profile</a> |
+        <% if (user.role == 'Admin'){ %>
+            <a href="/edit-buildings">Edit  Buildings</a> |
+            <a href="/add-building">Add Building</a> |
+            <a href="/studyspot-list">Edit Study Spots</a> |
+            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/admin/reports">Pending Reports</a> |
+        <% } %> 
+        <a href="/favourites">Favourites</a> |
+         <a href='/logout'>Logout</a>
+    </nav>
+
+      <%  if(result){ %>
+      <h3>Update Review </h3>
+
+      <form action="/update-review/<%= result._id %>" method="POST">
+        <table border="1">
+            
+            <input type="hidden" name="reviewId" value="<%= result._id %>">
+            
+            <tr>
+                <td>Title</td>
+                <td><input type="text" name="title" value="<%= result.title %>" /></td>
+            </tr>
+            
+            <tr>
+                <td>Content</td>
+                <td>
+                    <textarea name="content"><%= result.content %></textarea>
+                </td>
+            </tr>
+            
+            <tr>
+                <td>Rating</td>
+                <td>
+                    <input type="number" name="rating" value="<%= result.rating %>" min="1" max="5" />
+                </td>
+            </tr>
+            
+            <tr>
+                <td colspan="2">
+                    <button type="submit">Update Review</button>
+                </td>
+            </tr>
+
+  </table>
+</form>
+<%= msg %>
+<% } else { %>
+  <p>Review not found.</p>
+<% } %>
+
+</body>
+
+    

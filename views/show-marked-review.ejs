@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <title>Review Marked for Deletion</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <nav>
+        <a href ='/'><h2>Study Spots📚</h2></a>
+        <a href='/profile'>Your Profile</a> |
+        <% if (user.role == 'Admin'){ %>
+            <a href="/edit-buildings">Edit  Buildings</a> |
+            <a href="/add-building">Add Building</a> |
+            <a href="/studyspot-list">Edit Study Spots</a> |
+            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/admin/reports">Pending Reports</a> |
+        <% } %> 
+        <a href="/favourites">Favourites</a> |
+         <a href='/logout'>Logout</a>
+    </nav>
+    <p><strong>Review Marked for Deletion.</strong></p>
+    <%if(result && result._id){ %>
+        Title: <%= result.title %><br>
+        Content:  <%= result.content %><br>
+        Rating: <%= result.rating %><br>
+        
+    <% }else if(result===null){%>
+        <p>Review not found</p>
+    <%} %>
+    <% if (result && result._id) { %>
+    <form action="/delete-review" method="POST">
+    <p>Click the Confirm button to delete this review.</p>
+       <input type="hidden" name="id" value="<%= result._id %>">
+       <input type="hidden" name="building" value="<%= result.buildingName %>">
+       <input type="hidden" name="spotName" value="<%= result.roomId %>">
+       <button type="submit" >Confirm</button>
+    </form>
+    <% } %>
+</body>
+</html>

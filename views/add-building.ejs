@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Add a New Building</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <nav>
+        <a href ='/'><h2>Study Spots📚</h2></a>
+        <a href='/profile'>Your Profile</a> |
+        <% if (user.role == 'Admin'){ %>
+            <a href="/edit-buildings">Edit  Buildings</a> |
+            <a href="/add-building">Add Building</a> |
+            <a href="/studyspot-list">Edit Study Spots</a> |
+            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/admin/reports">Pending Reports</a> |
+        <% } %> 
+        <a href="/favourites">Favourites</a> |
+         <a href='/logout'>Logout</a>
+    </nav>
+    <br>
+    <h1>Add a New Building</h1>
+    <form action="/add-building" method="POST">
+        <table border="1">
+            <tr>
+                <th>Building Name:</th><td><input type="text" name="buildingname"></td>
+            </tr>
+            <tr>
+                <th>Number of Floors: </th><td><input type="text" name="floors"></td>
+            </tr>
+            <tr>
+                <th>Postal Code:</th><td><input type="text" name="postal"></td>
+            </tr>
+            <tr>
+                <td colspan="2"><button type="submit">Add Building</button></td>
+            </tr>
+        </table>
+     
+        
+    </form>
+<br><br>
+    <% if (msg !== "") { %>
+    <p><%= msg %></p>
+<% } %>
+    <% if(result==="fail"){%>
+        <p>Error adding Building</p>
+    <%} else if(result.buildingname){ %>
+        <p> Building has been added successfully.</p>
+        Building Name: <%= result.buildingname %><br>
+        Number of Floors:  <%= result.floors %><br>
+        Postal Code: <%= result.postal %><br>     
+    <%} %>
+    
+</body>
+</html>

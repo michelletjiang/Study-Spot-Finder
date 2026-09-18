@@ -1,0 +1,50 @@
+<html>
+    <head>
+        <title>Register - Study Spot</title>
+        <link rel="stylesheet" href="/styles.css">
+</head>
+    <body>
+        <h1>Create an Account</h1>
+
+        <form action="/register" method="POST">
+
+            <table>
+                <tr>
+                    <td>Username:</td>
+                    <td><input type="text" name="username"></td>
+                </tr>
+                <tr>
+                    <td>Email:</td>
+                    <td><input type="text" name="email"></td>
+                </tr>
+                <tr>
+                    <td>Password:</td>
+                    <td><input type="password" name="password"></td>
+                </tr>
+                <tr>
+                    <td>School:</td>
+                    <td><input type="checkbox" name="school" value="LKCSB">Lee Kong Chian School of Business</td>
+                    <td><input type="checkbox" name="school" value="SCIS">School of Computing and Information Systems</td>
+                    <td><input type="checkbox" name="school" value="SOSS">School of Social Sciences</td>
+                    <td><input type="checkbox" name="school" value="SOA">School of Accountancy</td>
+                    <td><input type="checkbox" name="school" value="SOE">School of Economics</td>
+                    <td><input type="checkbox" name="school" value="YPHSL">Yong Pung How School of Law</td>
+                    <td><input type="checkbox" name="school" value="CIS">College of Integrative Studies</td>
+                </tr>
+            </table>
+            <br>
+            <button type="submit">Register</button>
+
+            <% if (error && error.length > 0) { %>
+                <ul>
+                    <% error.forEach(err => { %>
+                        <li><%=err%></li>
+                    <% }) %>
+                </ul>
+            <% } %>
+
+        </form>
+
+        <p>Already have an account? <a href="/login">Login here</a></p>
+    </body>
+</html>

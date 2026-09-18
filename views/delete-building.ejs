@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <title>Building Marked for Deletion</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <nav>
+        <a href ='/'><h2>Study Spots📚</h2></a>
+        <a href='/profile'>Your Profile</a> |
+        <% if (user.role == 'Admin'){ %>
+            <a href="/edit-buildings">Edit  Buildings</a> |
+            <a href="/add-building">Add Building</a> |
+            <a href="/studyspot-list">Edit Study Spots</a> |
+            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/admin/reports">Pending Reports</a> |
+        <% } %> 
+        <a href="/favourites">Favourites</a> |
+         <a href='/logout'>Logout</a>
+    </nav>
+    <br>
+    <p><strong>Building Marked for Deletion.</strong></p>
+    <%if(result){ %>
+        Building Name: <%= result.buildingname %><br>
+        Number of Floors:  <%= result.floors %><br>
+        Postal Code: <%= result.postal %><br>
+        
+    <% }else if(result===null){%>
+        <p>Building not found</p>
+    <%} %>
+    <form action="/delete-building" method="POST">
+    <p>Click the Confirm button to delete this building.</p>
+       <input type="hidden" name="postal" value="<%= result.postal %>">
+       <button type="submit" >Confirm</button>
+    </form>
+</body>
+</html>

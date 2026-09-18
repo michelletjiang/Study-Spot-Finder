@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Study Spot Details</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <nav>
+        <a href ='/'><h2>Study Spots📚</h2></a>
+        <a href='/profile'>Your Profile</a> |
+        <% if (user.role == 'Admin'){ %>
+            <a href="/edit-buildings">Edit  Buildings</a> |
+            <a href="/add-building">Add Building</a> |
+            <a href="/studyspot-list">Edit Study Spots</a> |
+            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/admin/reports">Pending Reports</a> |
+        <% } %> 
+        <a href="/favourites">Favourites</a> |
+         <a href='/logout'>Logout</a>
+    </nav>
+    <% if (result) { %>
+        <h2><%= result.name %></h2>
+        Building: <%= result.buildingName %><br>
+        Floor: <%= result.floor %><br>
+        Seats: <%= result.seatCount %><br>
+        Power Socket: <%= result.hasPowerSocket ? 'Yes' : 'No' %><br>
+        Noise Level: <%= result.noiseLevel %><br>
+    <% } else { %>
+        <p>Study spot not found.</p>
+    <% } %>
+
+    <hr>
+    
+
+    <a href="/studyspot-list">Back to list</a>
+</body>
+</html>

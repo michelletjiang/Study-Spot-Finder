@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Delete Study Spot</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <nav>
+        <a href ='/'><h2>Study Spots📚</h2></a>
+        <a href='/profile'>Your Profile</a> |
+        <% if (user.role == 'Admin'){ %>
+            <a href="/edit-buildings">Edit  Buildings</a> |
+            <a href="/add-building">Add Building</a> |
+            <a href="/studyspot-list">Edit Study Spots</a> |
+            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/admin/reports">Pending Reports</a> |
+        <% } %> 
+        <a href="/favourites">Favourites</a> |
+         <a href='/logout'>Logout</a>
+    </nav>
+    <br>
+    <% if (result) { %>
+        <h3>Delete: <%= result.buildingName %>, <%= result.name %></h3>
+        Name: <%= result.name %><br>
+        Building: <%= result.buildingName %><br>
+        Floor: <%= result.floor %><br>
+        Seats: <%= result.seatCount %><br>
+
+        <form action="/delete-studyspot" method="POST">
+            <!-- hidden field to pass the id back to the POST route -->
+            <input type="hidden" name="id" value="<%= result._id %>">
+            <p>Click Confirm to delete this study spot.</p>
+            <button type="submit">Confirm</button>
+        </form>
+    <% } else { %>
+        <p>Study spot not found.</p>
+    <% } %>
+
+    
+</body>
+</html>

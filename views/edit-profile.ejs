@@ -1,0 +1,54 @@
+<html>
+    <head>
+        <title>Edit Profile</title>
+        <link rel="stylesheet" href="/styles.css">
+</head>
+    <nav>
+        <a href ='/'><h2>Study Spots📚</h2></a>
+        <a href='/profile'>Your Profile</a> |
+        <% if (user.role == 'Admin'){ %>
+            <a href="/edit-buildings">Edit  Buildings</a> |
+            <a href="/add-building">Add Building</a> |
+            <a href="/studyspot-list">Edit Study Spots</a> |
+            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/admin/reports">Pending Reports</a> |
+        <% } %> 
+        <a href="/favourites">Favourites</a> |
+         <a href='/logout'>Logout</a>
+    </nav>
+    <br>
+    <h1>Edit Profile</h1>
+
+    <form action="/edit-profile" method="POST">
+    <table>
+        <tr>
+            <td>Username:</td>
+            <td><input type="text" value="<%= user.username %>"" name="username"></td>
+        </tr>
+        <tr>
+            <td>Email:</td>
+            <td><input type="text" value="<%= user.email %>"" name="email"></td>
+        </tr>
+        <tr>
+            <td>Password:</td>
+            <td><input type="password" placeholder="Enter new password" name="password"></td>
+        </tr>
+        <tr>
+            <td>
+            <button type="submit">Update</button>
+            </td>
+        </tr>
+    </table>
+
+    <% if (error && error.length > 0) { %>
+        <ul>
+            <% error.forEach(err => { %>
+                <li><%=err%></li>
+            <% }) %>
+        </ul>
+    <% } %>
+
+    </form>
+
+    <a href="/profile">Back</a>
+</html>

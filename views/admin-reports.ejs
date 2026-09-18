@@ -1,0 +1,51 @@
+<html>
+    <head>
+    <title>Pending Reports</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+    <body>
+        <nav>
+        <a href ='/'><h2>Study Spots📚</h2></a>
+        <a href='/profile'>Your Profile</a> |
+        <% if (user.role == 'Admin'){ %>
+            <a href="/edit-buildings">Edit  Buildings</a> |
+            <a href="/add-building">Add Building</a> |
+            <a href="/studyspot-list">Edit Study Spots</a> |
+            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/admin/reports">Pending Reports</a> |
+        <% } %> 
+        <a href="/favourites">Favourites</a> |
+         <a href='/logout'>Logout</a>
+    </nav>
+    <br>
+    <% if (!reports || reports.length === 0){ %>
+        No pending reports
+    <% } else { %>
+            <table border = 1>
+                <td> Review </td>
+                <td> Review By </td>
+                <td> Report Reason </td>
+                <td> Report Description </td>
+                <td> Reported By </td>
+                <td> Status </td>
+                <td>  </td>
+                <tr>
+                    <% reports.forEach(report => { %>
+                    <tr>
+                        <td><%= report.reviewId ? report.reviewId.content : '(review deleted)' %></td>
+                        <td><%= report.reviewId ? report.reviewId.userId : '(review deleted)' %></td>
+                        <td> <%= report.reason %> </td>
+                        <td> <%= report.description %> </td>
+                        <td> <%= report.reportedBy %> </td>
+                        <form action="/admin/reports" method="POST">
+                        <td> <input type="hidden" name="reportId" value="<%= report._id %>">
+                        <input type="radio" name="action" value="approve"> Approve
+                        <input type="radio" name="action" value="decline" required> Decline</td>
+                        <td> <button type="submit">Close Ticket</button> </td> </form>
+                    </tr>
+                    <% }) %>
+                <% } %>
+                </table>
+            
+    </body>
+</html>

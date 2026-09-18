@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Find a Study Spot</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <nav>
+        <a href ='/'><h2>Study Spots📚</h2></a>
+        <a href='/profile'>Your Profile</a> |
+        <% if (user.role == 'Admin'){ %>
+            <a href="/edit-buildings">Edit  Buildings</a> |
+            <a href="/add-building">Add Building</a> |
+            <a href="/studyspot-list">Edit Study Spots</a> |
+            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/admin/reports">Pending Reports</a> |
+        <% } %> 
+        <a href="/favourites">Favourites</a> |
+         <a href='/logout'>Logout</a>
+    </nav>
+    <h2>Find a Study Spot</h2>
+    <p>Select a building to see available study spots.</p>
+
+    <% if (buildings.length === 0) { %>
+        <p>No buildings available.</p>
+    <% } else { %>
+        <% buildings.forEach(function(building) { %>
+            <p><strong>Building: <%= building.buildingname %></strong></p>
+            Floors: <%= building.floors %><br>
+            Postal Code: <%= building.postal %><br>
+            <a href="/building/<%= building.buildingname %>">View Study Spots</a>
+            <hr>
+        <% }); %>
+    <% } %>
+</body>
+</html>

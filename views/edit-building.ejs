@@ -1,0 +1,41 @@
+<html>
+<head>
+  <title>Building on Nodes.js</title> <!-- Title displayed in the browser tab -->
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<nav>
+        <a href ='/'><h2>Study Spots📚</h2></a>
+        <a href='/profile'>Your Profile</a> |
+        <% if (user.role == 'Admin'){ %>
+            <a href="/edit-buildings">Edit  Buildings</a> |
+            <a href="/add-building">Add Building</a> |
+            <a href="/studyspot-list">Edit Study Spots</a> |
+            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/admin/reports">Pending Reports</a> |
+        <% } %> 
+        <a href="/favourites">Favourites</a> |
+         <a href='/logout'>Logout</a>
+    </nav>
+    <br>
+  <!-- EJS conditional block: Check if there are any book list -->
+  <% if (buildings.length === 0) { %>
+    <p>No buildings yet.</p> <!-- Message when there is no books -->
+  <% } else { %>
+    <h2>Building List</h2>
+    <!-- EJS loop to render each book -->
+     
+    <% buildings.forEach(building => { %>
+      
+        <p><strong>Name: <%= building.buildingname %></strong></p>      <!-- Display the book title -->
+        Number of Floors: <%= building.floors %><br>             <!-- Display the isbn number -->
+        Postal Code:<%=building.postal %><br>           <!-- Display the rating -->
+        <a href="/update-building?postal=<%= building.postal %>">Edit</a> |
+      <a href="/delete-building?postal=<%= building.postal %>">Delete</a>
+      <hr>
+    <% }); %>
+    
+  <% } %>
+     
+</body>
+</html>

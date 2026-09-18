@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Add a Review</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <nav>
+        <a href ='/'><h2>Study Spots📚</h2></a>
+        <a href='/profile'>Your Profile</a> |
+        <% if (user.role == 'Admin'){ %>
+            <a href="/edit-buildings">Edit  Buildings</a> |
+            <a href="/add-building">Add Building</a> |
+            <a href="/studyspot-list">Edit Study Spots</a> |
+            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/admin/reports">Pending Reports</a> |
+        <% } %> 
+        <a href="/favourites">Favourites</a> |
+         <a href='/logout'>Logout</a>
+    </nav>
+    <br>
+    <h3>Add a Review</h3>
+    <form action="/add-review/<%= building %>/<%= spotName %>" method="POST">
+        <table border="1">
+            <tr>
+                <th>Title:</th>
+                <td><input type="text" name="title" required></td>
+            </tr>
+            
+            <tr>
+                <th>Content:</th>
+                <td><textarea name="content" required></textarea></td>
+            </tr>
+            
+            <tr>
+                <th>Rating:</th>
+                <td><input type="number" name="rating" min="1" max="5" required></td>
+            </tr>
+            
+            <tr>
+                <th>User ID:</th>
+                <td><%= user %></td>
+            </tr>
+            
+            <tr>
+                <th>Room ID:</th>
+                <td>
+                    <%= spotName %>
+                    <input type="hidden" name="spotName" value="<%= spotName %>">
+                </td>
+            </tr>
+            
+            <tr>
+                <td colspan="2">
+                    <button type="submit">Add Review</button>
+                </td>
+            </tr>
+        </table>
+    </form>
+    
+    <% if (msg) { %>
+        <p><%= msg %></p>
+    <% } %>
+     <a href="/building/<%= building %>">Back to Study Spots List</a>
+</body>
+</html>

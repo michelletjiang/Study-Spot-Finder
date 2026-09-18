@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>My Favourite Study Spots</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <nav>
+        <a href ='/'><h2>Study Spots📚</h2></a>
+        <a href='/profile'>Your Profile</a> |
+        <% if (user.role == 'Admin'){ %>
+            <a href="/edit-buildings">Edit  Buildings</a> |
+            <a href="/add-building">Add Building</a> |
+            <a href="/studyspot-list">Edit Study Spots</a> |
+            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/admin/reports">Pending Reports</a> |
+        <% } %> 
+        <a href="/favourites">Favourites</a> |
+         <a href='/logout'>Logout</a>
+    </nav>
+    <br>
+    <h1>My Favourite Study Spots</h1>
+
+    <% if (favourites.length === 0) { %>
+        <p>No favourites added yet.</p>
+    <% } else { %>
+        <% favourites.forEach(function(fav) { %>
+            <p><strong>Name: <%= fav.spotName %></strong></p>
+            Building: <%= fav.buildingName %><br>
+            Floor: <%= fav.floor %><br>
+            Seats: <%= fav.seatCount %><br>
+            Power Socket: <%= fav.hasPowerSocket ? 'Yes' : 'No' %><br>
+            Noise Level: <%= fav.noiseLevel %><br>
+            <a href="/favourites/remove?favId=<%= fav._id %>">Remove from Favourites</a>
+            <hr>
+        <% }); %>
+    <% } %>
+
+    <a href="/">Back to all buildings</a>
+</body>
+</html>

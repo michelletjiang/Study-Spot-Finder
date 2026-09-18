@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Add Study Spot</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <nav>
+        <a href ='/'><h2>Study Spots📚</h2></a>
+        <a href='/profile'>Your Profile</a> |
+        <% if (user.role == 'Admin'){ %>
+            <a href="/edit-buildings">Edit  Buildings</a> |
+            <a href="/add-building">Add Building</a> |
+            <a href="/studyspot-list">Edit Study Spots</a> |
+            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/admin/reports">Pending Reports</a> |
+        <% } %> 
+        <a href="/favourites">Favourites</a> |
+         <a href='/logout'>Logout</a>
+    </nav>
+    <br>
+    <h3>Add a New Study Spot</h3>
+    <form action="/add-studyspot" method="POST">
+        <table border="1">
+            <tr>
+                <th>Building Name:</th>
+                <td>
+        <select name="buildingName">
+            <option value="">-- Select a Building --</option>
+            <% buildings.forEach(function(building) { %>
+                <option value="<%= building.buildingname %>">
+                    <%= building.buildingname %>
+                </option>
+            <% }); %>
+        </select>
+    </td>
+            </tr>
+            <tr>
+                <th>Room Name:</th><td><input type="text" name="name"></td>
+            </tr>
+            <tr>
+                <th>Floor:</th><td><input type="text" name="floor"></td>
+            </tr>
+            <tr>
+                <th>Seat Count:</th><td><input type="number" name="seatCount"></td>
+            </tr>
+            <tr><th>Power Socket:</th>
+                <td>
+                    <select name="hasPowerSocket">
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                    </select>
+                </td>
+            </tr>
+            <tr><th>Noise Level:</th>
+                <td>
+                    <select name="noiseLevel">
+                        <option value="Quiet">Quiet</option>
+                        <option value="Moderate">Moderate</option>
+                        <option value="Loud">Loud</option>
+                    </select>
+                </td>
+            </tr>
+            <tr><td colspan="2"><button type="submit">Add Study Spot</button></td></tr>
+        </table>
+    </form>
+
+    <br><br>
+    <% if (msg !== '') { %>
+        <p><%= msg %></p>
+    <% } %>
+    <% if (result === 'fail') { %>
+        <p>Failed to add study spot.</p>
+    <% } else if (result && result.name) { %>
+        <p>Study spot added successfully.</p>
+        Building: <%= result.buildingName %><br>
+        Room Name: <%= result.name %><br>
+        Floor: <%= result.floor %><br>
+        Seats: <%= result.seatCount %><br>
+    <% } %>
+
+    <br>
+    <a href="/studyspot-list">Back to list</a>
+</body>
+</html>
