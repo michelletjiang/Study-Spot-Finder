@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 
+// This schema is the database contract for accounts. Validation here complements the
+// controller checks, while enum prevents roles outside the two supported values.
 const userSchema = new mongoose.Schema({
     username: {
         type: String,
@@ -30,6 +32,7 @@ const userSchema = new mongoose.Schema({
             message: 'You can only select up to 2 schools'
         }
     },
+    // Registration never trusts a client-supplied role; Student is also the model default.
     role:{
         type: String,
         enum: ['Student', 'Admin'],
