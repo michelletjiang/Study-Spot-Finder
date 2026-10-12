@@ -1,5 +1,11 @@
 # Week 9 auth code tour
 
+## Source provenance
+
+This checkout combines the latest published default branch (`origin/main` at `9dd57cafa50d6506dabaa577e1a7feb2cd847d2c`, “fixed current code and made it run-able”) with the still-unmerged Jackson component history. The consolidation is a non-destructive merge; the current branch keeps the upstream study-spot routes/models and the accepted auth/layout implementation. The final commit identity is recorded in the presentation handover.
+
+The upstream snapshot included a tracked `config.env`; it was deliberately not carried into this branch because it contained deployment configuration that must remain outside source control. No shared or Atlas database was contacted during this verification. Run the demo with a disposable loopback MongoDB through `DEMO_MODE=true PORT=18080 node scripts/demo.js`, or run the real server with `.env` values for `DB`, `SECRET`, and optional `PORT`.
+
 This tour follows **my assigned component** in the working Week 9 demo: registration, login, profile, Student/Admin roles, route protection, and the shared layout/navbar. It describes the implementation in this checkout, not the whole proposal. Discovery, OneMap, crowd updates, deployment, and the other team's CRUD areas are proposed or separate work.
 
 ## Request flow
