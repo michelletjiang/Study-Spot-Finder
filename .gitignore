@@ -4,4 +4,6 @@ node_modules/
 config.env
 !.env.example
 coverage/
+test-results/
+.artifacts/
 .DS_Store
