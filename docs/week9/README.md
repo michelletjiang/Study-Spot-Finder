@@ -14,17 +14,17 @@ This is Jackson's assigned working slice, not a claim of exclusive authorship. O
 
 ## Clean local rehearsal
 
-Prerequisites: Node.js 20+, npm, and MongoDB running only on `127.0.0.1`. From the repository root:
+Prerequisites: Node.js 20+ and npm. From the repository root:
 
 ```sh
 npm ci
-cp .env.example .env
-# Set DB=mongodb://127.0.0.1:27017/study_spot_demo and a local random SECRET in .env
 npm run check && npm test
-DEMO_MODE=true npm run demo
+npm run demo
 ```
 
-Open `http://localhost:8000`. Demo credentials (local demo mode only): `student.demo@local.test` / `DemoPass123!` and `admin.demo@local.test` / `DemoPass123!`. The demo script deletes and recreates only these two accounts. It never runs unless `DEMO_MODE=true`; do not use seeded credentials or a demo database in production. MongoDB's first binary/data download and initial database creation are machine-dependent. No Atlas, OneMap, AWS, public binding or remote secret is required.
+Open `http://127.0.0.1:8000`. `npm run demo` downloads or reuses the project-local `mongodb-memory-server` binary, creates a fresh loopback-only disposable database, seeds synthetic accounts, and starts Express. It never accepts `DB` from the environment, so seed deletion cannot target Atlas or another remote database. Stop with Ctrl-C; all data disappears. Demo credentials (local demo mode only): `student.demo@local.test` / `DemoPass123!` and `admin.demo@local.test` / `DemoPass123!`. Never enable demo mode or use seeded credentials in production. The first MongoDB and Playwright browser downloads are machine-dependent. No Atlas, OneMap, AWS or remote secret is required.
+
+Browser proof is runnable with `npm run test:e2e`; Playwright starts the same real Mongoose-backed demo server and stores temporary output in `test-results/`. Retained screenshots: [`student-profile-desktop.png`](evidence/student-profile-desktop.png), [`admin-workspace-desktop.png`](evidence/admin-workspace-desktop.png), and [`login-mobile.png`](evidence/login-mobile.png).
 
 ## 3-minute presentation and live demo
 
@@ -52,8 +52,13 @@ OneMap integration and location data, discovery/ranking and crowd freshness deci
 
 ## Evidence receipt
 
-- Commands: `npm ci`, `npm run check`, `npm test`, `DEMO_MODE=true npm run demo`
-- Runnable URL: `http://localhost:8000`
-- Scope: auth, profile, role protection, shared layout and local demo seed
-- Limitations: local MongoDB required; no remote services, public deployment, OneMap or AWS
-- E2E scenario list: [`e2e/auth.spec.js`](../../e2e/auth.spec.js)
+Executed on the committed delivery head:
+
+- `npm run check` - passed (Node syntax checks).
+- `npm test` - 3 passed (health, not-found, CSRF foundation tests).
+- `npm run demo` - passed clean-config startup; `/health/live` returned `{\"status\":\"ok\"}` at `http://127.0.0.1:8000`.
+- `npm run test:e2e` - **7 passed** against real Mongoose and an ephemeral loopback MongoDB, including registration/login/profile edit/reload/logout, bad login, duplicate registration, role tampering, authenticated Student denial, unauthenticated protection, Admin journey, keyboard focus and mobile overflow.
+- Screenshots: [`student-profile-desktop.png`](evidence/student-profile-desktop.png), [`admin-workspace-desktop.png`](evidence/admin-workspace-desktop.png), [`login-mobile.png`](evidence/login-mobile.png).
+- E2E source: [`e2e/auth.spec.js`](../../e2e/auth.spec.js); implementation paths: [`controllers/user-controller.js`](../../controllers/user-controller.js), [`middleware/auth-middleware.js`](../../middleware/auth-middleware.js), [`middleware/security-middleware.js`](../../middleware/security-middleware.js), [`scripts/demo.js`](../../scripts/demo.js).
+
+Runnable URL: `http://127.0.0.1:8000`. Limitations: local-only rehearsal, ephemeral data, no remote services, public deployment, OneMap or AWS. This is a Week 9 working slice, not the complete proposal or production-ready deployment.

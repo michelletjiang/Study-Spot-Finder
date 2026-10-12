@@ -1,7 +1,7 @@
 const User = require('../models/user-model');
 const AdminRequest = require('../models/admin-request-model');
 const bcrypt = require('bcrypt');
-const render = (res, view, data = {}) => res.render(view, { error: [], ...data });
+const render = (res, view, data = {}) => res.render(view, { error: [], form: {}, notice: '', ...data });
 
 exports.registerGet = (req, res) => render(res, 'register');
 exports.registerPost = async (req, res) => {
