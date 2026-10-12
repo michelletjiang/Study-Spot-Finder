@@ -13,23 +13,24 @@
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
             <a href="/studyspot-list">Edit Study Spots</a> |
-            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/add-studyspot">Add Study Spot</a> |
             <a href="/admin/reports">Pending Reports</a> |
-        <% } %> 
+        <% } %>
         <a href="/favourites">Favourites</a> |
-         <a href='/logout'>Logout</a>
+         <form action="/logout" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit">Logout</button></form>
     </nav>
     <p><strong>Review Marked for Deletion.</strong></p>
     <%if(result && result._id){ %>
         Title: <%= result.title %><br>
         Content:  <%= result.content %><br>
         Rating: <%= result.rating %><br>
-        
+
     <% }else if(result===null){%>
         <p>Review not found</p>
     <%} %>
     <% if (result && result._id) { %>
     <form action="/delete-review" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <p>Click the Confirm button to delete this review.</p>
        <input type="hidden" name="id" value="<%= result._id %>">
        <input type="hidden" name="building" value="<%= result.buildingName %>">

@@ -16,12 +16,12 @@ exports.showFavourites = async (req, res) => {
 exports.addFavourite = async (req, res) => {
     try {
         const userName       = req.session.user.username;
-        const spotName       = req.query.spotName;
-        const buildingName   = req.query.buildingName;
-        const floor          = req.query.floor;
-        const seatCount      = req.query.seatCount;
-        const hasPowerSocket = req.query.hasPowerSocket === 'true';
-        const noiseLevel     = req.query.noiseLevel;
+        const spotName       = req.body.spotName;
+        const buildingName   = req.body.buildingName;
+        const floor          = req.body.floor;
+        const seatCount      = req.body.seatCount;
+        const hasPowerSocket = req.body.hasPowerSocket === 'true';
+        const noiseLevel     = req.body.noiseLevel;
  
         // prevent duplicates for this user
         const existing = await Favourite.findByUserAndSpotAndBuilding(userName, spotName, buildingName);
@@ -41,8 +41,8 @@ exports.addFavourite = async (req, res) => {
 // DELETE - remove a favourite from the favourites page
 exports.removeFavourite = async (req, res) => {
     try {
-        const favId = req.query.favId;
-        await Favourite.removeFavourite(favId);
+        const favId = req.body.favId;
+        await Favourite.removeFavourite(favId, req.session.user.username);
         res.redirect('/favourites');
     } catch (error) {
         console.error('Error removing favourite:', error);

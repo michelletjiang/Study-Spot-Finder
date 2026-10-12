@@ -11,11 +11,11 @@
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
             <a href="/studyspot-list">Edit Study Spots</a> |
-            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/add-studyspot">Add Study Spot</a> |
             <a href="/admin/reports">Pending Reports</a> |
-        <% } %> 
+        <% } %>
         <a href="/favourites">Favourites</a> |
-         <a href='/logout'>Logout</a>
+         <form action="/logout" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit">Logout</button></form>
     </nav>
 
   <!-- EJS conditional block: Check if there are any book list -->
@@ -24,20 +24,20 @@
   <% } else { %>
     <h2>Reviews List</h2>
     <!-- EJS loop to render each book -->
-     
+
     <% reviewList.forEach(review => { %>
 
         <p><strong>Title: <%= review.title %></strong></p>      <!-- Display the book title -->
         Content: <%= review.content %><br>             <!-- Display the isbn number -->
-        Rating:<%=review.rating %><br> 
+        Rating:<%=review.rating %><br>
         <% if(user == review.userId){ %>
             <a href="/update-review/<%=review._id %>">Edit</a> |
         <% } %>
-        <a href="/delete-review?id=<%= review._id %>">Delete</a>      <!-- Display the rating -->         
+        <a href="/delete-review?id=<%= review._id %>">Delete</a>      <!-- Display the rating -->
       <hr>
     <% }); %>
-    
+
   <% } %>
-     
+
 </body>
 </html>

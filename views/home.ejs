@@ -12,11 +12,11 @@
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
             <a href="/studyspot-list">Edit Study Spots</a> |
-            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/add-studyspot">Add Study Spot</a> |
             <a href="/admin/reports">Pending Reports</a> |
-        <% } %> 
+        <% } %>
         <a href="/favourites">Favourites</a> |
-         <a href='/logout'>Logout</a>
+         <form action="/logout" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit">Logout</button></form>
     </nav>
     <h2>Find a Study Spot</h2>
     <p>Select a building to see available study spots.</p>

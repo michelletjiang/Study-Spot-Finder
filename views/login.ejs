@@ -8,6 +8,7 @@
         <h2>Login to Your Account</h2>
 
         <form action="/login" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <table>
                 <tr>
                     <td>Email:</td>

@@ -28,6 +28,6 @@ exports.addFavourite = function(newFavourite) {
 };
 
 // DELETE - remove a favourite by its _id
-exports.removeFavourite = function(favId) {
-    return Favourite.deleteOne({ _id: favId });
+exports.removeFavourite = function(favId, userName) {
+    return Favourite.deleteOne({ _id: favId, userName });
 };

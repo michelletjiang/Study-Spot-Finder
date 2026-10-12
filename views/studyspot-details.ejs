@@ -12,11 +12,11 @@
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
             <a href="/studyspot-list">Edit Study Spots</a> |
-            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/add-studyspot">Add Study Spot</a> |
             <a href="/admin/reports">Pending Reports</a> |
-        <% } %> 
+        <% } %>
         <a href="/favourites">Favourites</a> |
-         <a href='/logout'>Logout</a>
+         <form action="/logout" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit">Logout</button></form>
     </nav>
     <% if (result) { %>
         <h2><%= result.name %></h2>
@@ -30,7 +30,7 @@
     <% } %>
 
     <hr>
-    
+
 
     <a href="/studyspot-list">Back to list</a>
 </body>

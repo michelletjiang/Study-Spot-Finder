@@ -7,9 +7,9 @@ const authentication = require('../middleware/auth-middleware');
 router.get('/favourites', authentication.isLoggedIn, favouritesController.showFavourites);
 
 // CREATE - add to favourites via link
-router.get('/favourites/add', authentication.isLoggedIn, favouritesController.addFavourite);
+router.post('/favourites/add', authentication.isLoggedIn, favouritesController.addFavourite);
 
 // DELETE - remove from favourites via link
-router.get('/favourites/remove', authentication.isLoggedIn, favouritesController.removeFavourite);
+router.post('/favourites/remove', authentication.isLoggedIn, favouritesController.removeFavourite);
 
 module.exports = router;

@@ -11,11 +11,11 @@
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
             <a href="/studyspot-list">Edit Study Spots</a> |
-            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/add-studyspot">Add Study Spot</a> |
             <a href="/admin/reports">Pending Reports</a> |
-        <% } %> 
+        <% } %>
         <a href="/favourites">Favourites</a> |
-         <a href='/logout'>Logout</a>
+         <form action="/logout" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit">Logout</button></form>
     </nav>
     <br>
     <% if (!reports || reports.length === 0){ %>
@@ -38,6 +38,7 @@
                         <td> <%= report.description %> </td>
                         <td> <%= report.reportedBy %> </td>
                         <form action="/admin/reports" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                         <td> <input type="hidden" name="reportId" value="<%= report._id %>">
                         <input type="radio" name="action" value="approve"> Approve
                         <input type="radio" name="action" value="decline" required> Decline</td>
@@ -46,6 +47,6 @@
                     <% }) %>
                 <% } %>
                 </table>
-            
+
     </body>
 </html>

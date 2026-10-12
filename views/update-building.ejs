@@ -12,15 +12,16 @@
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
             <a href="/studyspot-list">Edit Study Spots</a> |
-            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/add-studyspot">Add Study Spot</a> |
             <a href="/admin/reports">Pending Reports</a> |
-        <% } %> 
+        <% } %>
         <a href="/favourites">Favourites</a> |
-         <a href='/logout'>Logout</a>
+         <form action="/logout" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit">Logout</button></form>
     </nav>
       <%  if(result.buildingname){ %>
     <h3>Update Building </h3>
     <form action="/update-building" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <table border="1">
             <tr>
                 <th> Building Name :</th><td><%= result.buildingname %></td>
@@ -36,16 +37,16 @@
                 <td colspan="2"><button type="submit">Update Building</button></td>
             </tr>
         </table>
-     
-        
+
+
     </form>
      <% } %>
 
 
 <br><br>
 
-        
-   
-    
+
+
+
 </body>
 </html>

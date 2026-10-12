@@ -12,36 +12,37 @@
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
             <a href="/studyspot-list">Edit Study Spots</a> |
-            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/add-studyspot">Add Study Spot</a> |
             <a href="/admin/reports">Pending Reports</a> |
-        <% } %> 
+        <% } %>
         <a href="/favourites">Favourites</a> |
-         <a href='/logout'>Logout</a>
+         <form action="/logout" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit">Logout</button></form>
     </nav>
     <br>
     <h3>Add a Review</h3>
     <form action="/add-review/<%= building %>/<%= spotName %>" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <table border="1">
             <tr>
                 <th>Title:</th>
                 <td><input type="text" name="title" required></td>
             </tr>
-            
+
             <tr>
                 <th>Content:</th>
                 <td><textarea name="content" required></textarea></td>
             </tr>
-            
+
             <tr>
                 <th>Rating:</th>
                 <td><input type="number" name="rating" min="1" max="5" required></td>
             </tr>
-            
+
             <tr>
                 <th>User ID:</th>
                 <td><%= user %></td>
             </tr>
-            
+
             <tr>
                 <th>Room ID:</th>
                 <td>
@@ -49,7 +50,7 @@
                     <input type="hidden" name="spotName" value="<%= spotName %>">
                 </td>
             </tr>
-            
+
             <tr>
                 <td colspan="2">
                     <button type="submit">Add Review</button>
@@ -57,7 +58,7 @@
             </tr>
         </table>
     </form>
-    
+
     <% if (msg) { %>
         <p><%= msg %></p>
     <% } %>

@@ -56,9 +56,9 @@ try {
 
 // GET route to edit report
 exports.editReport = async (req,res) => {
-  const report = await Report.findById(req.params.reportId); // finds report from the query
-  console.log(report)
-  console.log("reportId param:", req.params.reportId);
+  const report = await Report.findById(req.params.reportId);
+  if (!report) return res.status(404).render('error', { message: 'Report not found.' });
+  if (report.reportedBy !== req.session.user.username && req.session.user.role !== 'Admin') return res.status(403).render('error', { message: 'You are not allowed to edit this report.' });
   res.render('edit-report', { report, msg: '' }) // renders the edit report form with pre-filled fields
 }
 
@@ -67,7 +67,9 @@ exports.updateReport = async (req,res) => {
   const reportId = req.params.reportId 
   const editedReason = req.body.reason
   const editedDescription = req.body.description
-  const report = await Report.findById(req.params.reportId) // find report in database
+  const report = await Report.findById(req.params.reportId)
+  if (!report) return res.status(404).render('error', { message: 'Report not found.' });
+  if (report.reportedBy !== req.session.user.username && req.session.user.role !== 'Admin') return res.status(403).render('error', { message: 'You are not allowed to edit this report.' });
   if (!editedDescription || editedDescription.trim() == ""){ // makes sure description cannot be empty
       return res.render('edit-report',{report, msg: 'Description cannot be empty'})
     }

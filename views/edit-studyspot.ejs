@@ -12,16 +12,17 @@
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
             <a href="/studyspot-list">Edit Study Spots</a> |
-            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/add-studyspot">Add Study Spot</a> |
             <a href="/admin/reports">Pending Reports</a> |
-        <% } %> 
+        <% } %>
         <a href="/favourites">Favourites</a> |
-         <a href='/logout'>Logout</a>
+         <form action="/logout" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit">Logout</button></form>
     </nav>
     <br>
     <% if (result) { %>
         <h3>Edit: <%= result.buildingName %>, <%= result.name %></h3>
         <form action="/edit-studyspot" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <!-- hidden field to pass the id back to the POST route -->
             <input type="hidden" name="id" value="<%= result._id %>">
             <table border="1">

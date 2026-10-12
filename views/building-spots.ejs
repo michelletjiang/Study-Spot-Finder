@@ -12,14 +12,14 @@
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
             <a href="/studyspot-list">Edit Study Spots</a> |
-            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/add-studyspot">Add Study Spot</a> |
             <a href="/admin/reports">Pending Reports</a> |
-        <% } %> 
+        <% } %>
         <a href="/favourites">Favourites</a> |
-         <a href='/logout'>Logout</a>
+         <form action="/logout" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit">Logout</button></form>
     </nav>
     <br>
-    
+
     <h2>Study Spots in <%= buildingname %></h2>
 
 
@@ -35,7 +35,7 @@
             Noise Level: <%= spot.noiseLevel %><br>
             <a href = '/add-review/<%= buildingname %>/<%= spot.name %>'>Add a Review</a><br>
             <a href = '/review-list/<%= buildingname %>/ <%= spot.name %>'> View Reviews </a> <br>
-            <a href="/favourites/add?spotName=<%= spot.name %>&buildingName=<%= spot.buildingName %>&floor=<%= spot.floor %>&seatCount=<%= spot.seatCount %>&hasPowerSocket=<%= spot.hasPowerSocket %>&noiseLevel=<%= spot.noiseLevel %>">Add to Favourites</a>
+            <form action="/favourites/add" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="spotName" value="<%= spot.name %>"><input type="hidden" name="buildingName" value="<%= spot.buildingName %>"><input type="hidden" name="floor" value="<%= spot.floor %>"><input type="hidden" name="seatCount" value="<%= spot.seatCount %>"><input type="hidden" name="hasPowerSocket" value="<%= spot.hasPowerSocket %>"><input type="hidden" name="noiseLevel" value="<%= spot.noiseLevel %>"><button type="submit">Add to Favourites</button></form>
             <hr>
         <% }); %>
     <% } %>

@@ -60,17 +60,18 @@ exports.findByreviewId = function (reviewId) {
     return Review.findById(reviewId)
 };
 
-exports.editReview = function(reviewId, title, content, rating){ // first parameter = primary key users shld input
+exports.editReview = function(reviewId, title, content, rating, userId, isAdmin = false){  // first parameter = primary key users shld input
     return Review.findByIdAndUpdate(reviewId, // primary key. this is the query object passed to updateOne. it tells mongoDB to find a review where _id=reviewId & userId=the logged-in user
         {
-            title:title, 
-            content:content, 
+            title:title,
+            content:content,
             rating:rating
-        }
+        },
+        isAdmin ? {} : { userId }
     )
 };
 
-exports.deleteReview = function (reviewId){
-    return Review.findOneAndDelete({_id:reviewId})
+exports.deleteReview = function (reviewId, userId, isAdmin = false){
+    return Review.findOneAndDelete(isAdmin ? {_id: reviewId} : {_id: reviewId, userId});
 };
 

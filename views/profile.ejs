@@ -11,11 +11,11 @@
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
             <a href="/studyspot-list">Edit Study Spots</a> |
-            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/add-studyspot">Add Study Spot</a> |
             <a href="/admin/reports">Pending Reports</a> |
-        <% } %> 
+        <% } %>
         <a href="/favourites">Favourites</a> |
-         <a href='/logout'>Logout</a>
+         <form action="/logout" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit">Logout</button></form>
     </nav>
     <br>
 
@@ -31,6 +31,7 @@
         <p><strong>Type of account:</strong> <%= user.role %></p>
         <p><strong>Member since: </strong><%= new Date(user.createdAt).toDateString() %></p>
        <form action="/edit-profile" method="GET">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <button type="submit">Edit Profile</button>
         </form>
 

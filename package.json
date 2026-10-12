@@ -6,5 +6,14 @@
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "mongoose": "^9.3.1"
+  },
+  "devDependencies": {
+    "connect-mongo": "^5.1.0",
+    "supertest": "^7.3.1"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test"
   }
 }

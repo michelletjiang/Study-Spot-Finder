@@ -10,11 +10,11 @@
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
             <a href="/studyspot-list">Edit Study Spots</a> |
-            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/add-studyspot">Add Study Spot</a> |
             <a href="/admin/reports">Pending Reports</a> |
-        <% } %> 
+        <% } %>
         <a href="/favourites">Favourites</a> |
-         <a href='/logout'>Logout</a>
+         <form action="/logout" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit">Logout</button></form>
     </nav>
     <br>
 <h1>Report Review</h1>
@@ -22,6 +22,7 @@
 <p>Review: <%= review.content %></p>
 
 <form action="/reports/new/<%= review._id %>" method="POST">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
   <label>Reason:</label>
   <select name="reason">
     <option value="Inaccurate">Inaccurate</option>

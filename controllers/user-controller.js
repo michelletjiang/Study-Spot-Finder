@@ -87,12 +87,13 @@ exports.loginPost = async (req, res) => {
         if (!email || !password) {
             return res.render ('login', {session: req.session, error: ["Email or Password cannot be empty"]});
         }
-        const foundUser = await User.findOne({email});
-        const match = await bcrypt.compare(password, foundUser.password);   
+        const foundUser = await User.findOne({email: String(email).toLowerCase() });
+        const match = foundUser ? await bcrypt.compare(password, foundUser.password) : false;
         if (!foundUser || !match) {
             return res.render ('login', {session: req.session, error: ["Invalid email or password"]});
         }
 
+        await new Promise((resolve, reject) => req.session.regenerate((error) => error ? reject(error) : resolve()));
         req.session.user = {
             id: foundUser._id,
             username: foundUser.username,
@@ -189,9 +190,7 @@ exports.goToFavourites = (req, res) => {
 
 //NEED TO CHECK ROUTE NAMES
 exports.goToReviews = (req, res) => {
-    if (!req.session.user) {
-        return res.redirect('/login');
-    }
+    res.redirect(`/reviews/${req.session.user.id}`);
 };
 
 exports.logout = (req, res) => {
@@ -201,6 +200,7 @@ exports.logout = (req, res) => {
 }
 
 exports.deleteUser = async (req, res) => {
+    if (!req.session.user) return res.redirect('/login');
     try {
         await User.deleteOne({_id: req.session.user.id});
         req.session.destroy();

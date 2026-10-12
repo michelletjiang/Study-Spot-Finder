@@ -54,7 +54,7 @@ StudySpot Finder allows students to browse study spots organized by building, le
 
 ```
 ├── server.js                  # Main entry point, Express app setup, DB connection
-├── config.env                 # Environment variables (DB connection string, session secret)
+├── .env.example               # Documented environment template
 ├── package.json               # Dependencies
 │
 ├── controllers/               # Business logic
@@ -132,7 +132,7 @@ StudySpot Finder allows students to browse study spots organized by building, le
 
 ### Step-by-Step Setup
 
-1. **Extract the zip file** to a folder of your choice.
+1. Copy `.env.example` to `.env` and set a private MongoDB URL and random session secret. Never commit `.env` or credentials.
 
 2. **Open a terminal** and navigate to the project root folder:
    ```bash
@@ -145,11 +145,7 @@ StudySpot Finder allows students to browse study spots organized by building, le
    ```
    This will install the following packages: express, mongoose, ejs, dotenv, express-session, bcrypt.
 
-4. **Verify the `config.env` file** exists in the root folder with the following contents:
-   ```
-   DB=mongodb+srv://ilovewad:ilovewad@waddev.pebolad.mongodb.net/wad
-   SECRET=studyspotsecret
-   ```
+4. Configuration is validated at startup. Required values are `DB` and `SECRET`; see `.env.example` for the complete template.
 
 ---
 
@@ -157,8 +153,10 @@ StudySpot Finder allows students to browse study spots organized by building, le
 
 1. **Start the server:**
    ```bash
-   nodemon server.js
+   npm start
    ```
+
+   For development, use `npm run dev`. Run the isolated test suite with `npm test`.
 
 2. You should see the following output in the terminal:
    ```
@@ -168,7 +166,9 @@ StudySpot Finder allows students to browse study spots organized by building, le
 
 3. **Open your browser** and go to:
    ```
-   http://localhost:8000/index.html
+   http://localhost:8000/
+
+   Live health: `/health/live`. Readiness: `/health/ready`.
    ```
    This will redirect you to the home page (you will need to log in first).
 
@@ -189,12 +189,7 @@ StudySpot Finder allows students to browse study spots organized by building, le
 - All new accounts are created with the **Student** role by default.
 - Students can request admin access from their profile page. An existing admin must approve the request.
 
-### Default Credentials
-
-| Email                | Password   | Role    |
-|----------------------|------------|---------|
-| usertest@gmail.com   | 12345678   | Student |
-| admintest@gmail.com  | 12345678   | Admin   |
+No default credentials are shipped. Create users through `/register` or provision them through an operator-controlled database process.
 
 ---
 

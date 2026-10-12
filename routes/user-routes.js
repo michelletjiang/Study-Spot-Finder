@@ -24,8 +24,8 @@ router.post('/edit-profile', authMiddleware.isLoggedIn, userController.editProfi
 
 router.get('/reviews', authMiddleware.isLoggedIn, userController.goToReviews);
 
-router.get('/logout', userController.logout);
+router.post('/logout', authMiddleware.isLoggedIn, userController.logout);
 
-router.post('/delete', userController.deleteUser);
+router.post('/delete', authMiddleware.isLoggedIn, userController.deleteUser);
 
 module.exports = router;

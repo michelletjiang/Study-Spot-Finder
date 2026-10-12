@@ -61,7 +61,8 @@ exports.createReview = async (req,res) => {
 };
 
 //crud ex3 --> it has 2 ejs views, 3 functions (showReviewList, getReview, updateReview)
-exports.showUserReviews = async(req,res)=> { // this is edit-books
+exports.showUserReviews = async(req,res)=> {
+  if (String(req.params.userId) !== String(req.session.user.id) && req.session.user.role !== 'Admin') return res.status(403).render('error', { message: 'You are not allowed to view these reviews.' });
   try {
     const userName = req.session.user.username
     console.log(userName)
@@ -79,6 +80,8 @@ exports.getReview = async (req,res) => {
 
   try{
     let result=await Review.findByreviewId(reviewId)
+    if (!result) return res.status(404).render('error', { message: 'Review not found.' });
+    if (result.userId !== req.session.user.username && req.session.user.role !== 'Admin') return res.status(403).render('error', { message: 'You are not allowed to edit this review.' });
     res.render("update-review", {result:result || null , msg : '', building: result ? result.buildingName : null, spotName: result ? result.roomId : null})
   } catch (error){
     console.error(error);
@@ -87,7 +90,7 @@ exports.getReview = async (req,res) => {
 };
 
 exports.updateReview = async (req,res) => {
-    const reviewId= req.body.reviewId;
+    const reviewId= req.params.reviewId;
     const title= req.body.title;
     const content = req.body.content;
     const rating = req.body.rating;
@@ -95,9 +98,9 @@ exports.updateReview = async (req,res) => {
     try{
         if (!title || !content || !rating) {
         let result=await Review.findByreviewId(reviewId)
-        res.render("update-review", {result:result || null , msg : 'All fields are required.', building: result ? result.buildingName : null, spotName: result ? result.roomId : null})
-        };
-        let result = await Review.editReview(reviewId, title, content, rating)
+        return res.render("update-review", {result:result || null , msg : 'All fields are required.', building: result ? result.buildingName : null, spotName: result ? result.roomId : null});
+        }
+        let result = await Review.editReview(reviewId, title, content, rating, req.session.user.username, req.session.user.role === 'Admin')
         console.log(result)
         let updated = await Review.findByreviewId(reviewId)
         res.render("update-review", {result: updated, msg: 'Review has been successfully updated.', building: updated.buildingName, spotName: updated.roomId})
@@ -126,7 +129,7 @@ exports.deleteAReview = async (req,res) => {
     const spotName = req.body.spotName;
     console.log(reviewId)
     try{
-        let success = await Review.deleteReview(reviewId)
+        let success = await Review.deleteReview(reviewId, req.session.user.username, req.session.user.role === 'Admin')
         console.log(success)
         res.redirect(`/review-list/${building}/${spotName}`)
         }

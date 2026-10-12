@@ -13,11 +13,11 @@
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
             <a href="/studyspot-list">Edit Study Spots</a> |
-            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/add-studyspot">Add Study Spot</a> |
             <a href="/admin/reports">Pending Reports</a> |
-        <% } %> 
+        <% } %>
         <a href="/favourites">Favourites</a> |
-         <a href='/logout'>Logout</a>
+         <form action="/logout" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit">Logout</button></form>
     </nav>
     <br>
     <p><strong>Building Marked for Deletion.</strong></p>
@@ -25,11 +25,12 @@
         Building Name: <%= result.buildingname %><br>
         Number of Floors:  <%= result.floors %><br>
         Postal Code: <%= result.postal %><br>
-        
+
     <% }else if(result===null){%>
         <p>Building not found</p>
     <%} %>
     <form action="/delete-building" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <p>Click the Confirm button to delete this building.</p>
        <input type="hidden" name="postal" value="<%= result.postal %>">
        <button type="submit" >Confirm</button>

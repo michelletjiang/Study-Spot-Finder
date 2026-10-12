@@ -11,11 +11,11 @@
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
             <a href="/studyspot-list">Edit Study Spots</a> |
-            <a href="/add-studyspot">Add Study Spot</a> | 
+            <a href="/add-studyspot">Add Study Spot</a> |
             <a href="/admin/reports">Pending Reports</a> |
-        <% } %> 
+        <% } %>
         <a href="/favourites">Favourites</a> |
-         <a href='/logout'>Logout</a>
+         <form action="/logout" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit">Logout</button></form>
     </nav>
     <br>
   <!-- EJS conditional block: Check if there are any book list -->
@@ -24,9 +24,9 @@
   <% } else { %>
     <h2>Building List</h2>
     <!-- EJS loop to render each book -->
-     
+
     <% buildings.forEach(building => { %>
-      
+
         <p><strong>Name: <%= building.buildingname %></strong></p>      <!-- Display the book title -->
         Number of Floors: <%= building.floors %><br>             <!-- Display the isbn number -->
         Postal Code:<%=building.postal %><br>           <!-- Display the rating -->
@@ -34,8 +34,8 @@
       <a href="/delete-building?postal=<%= building.postal %>">Delete</a>
       <hr>
     <% }); %>
-    
+
   <% } %>
-     
+
 </body>
 </html>
