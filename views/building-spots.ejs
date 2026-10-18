@@ -34,8 +34,16 @@
             Power Socket: <%= spot.hasPowerSocket ? 'Yes' : 'No' %><br>
             Noise Level: <%= spot.noiseLevel %><br>
             <a href = '/add-review/<%= buildingname %>/<%= spot.name %>'>Add a Review</a><br>
-            <a href = '/review-list/<%= buildingname %>/ <%= spot.name %>'> View Reviews </a> <br>
-            <a href="/favourites/add?spotName=<%= spot.name %>&buildingName=<%= spot.buildingName %>&floor=<%= spot.floor %>&seatCount=<%= spot.seatCount %>&hasPowerSocket=<%= spot.hasPowerSocket %>&noiseLevel=<%= spot.noiseLevel %>">Add to Favourites</a>
+            <a href = '/review-list/<%= buildingname %>/<%= spot.name %>'> View Reviews </a> <br>
+            <form action="/favourites/add" method="POST">
+                <input type="hidden" name="spotName" value="<%= spot.name %>">
+                <input type="hidden" name="buildingName" value="<%= spot.buildingName %>">
+                <input type="hidden" name="floor" value="<%= spot.floor %>">
+                <input type="hidden" name="seatCount" value="<%= spot.seatCount %>">
+                <input type="hidden" name="hasPowerSocket" value="<%= spot.hasPowerSocket %>">
+                <input type="hidden" name="noiseLevel" value="<%= spot.noiseLevel %>">
+                <button type="submit">Add to Favourites</button>
+            </form>
             <hr>
         <% }); %>
     <% } %>

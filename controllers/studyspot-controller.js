@@ -1,5 +1,8 @@
 const StudySpot = require('../models/studyspot-model');
 const Building = require('../models/building-model');
+const Review = require('../models/reviews-model');
+const Report = require('../models/reports');
+const Favourite = require('../models/favourites-model');
 
 // showStudySpots displays all the study spots filtered by buildingName
 exports.showStudySpots = async (req, res) => {
@@ -51,6 +54,9 @@ exports.createSpot = async (req, res) => {
     console.log(building_data)
     if (!buildingName || !name || !floor || !seatCount || !noiseLevel) {
         return res.render('add-studyspot', { buildings, result: '', msg: 'All fields are required.' })
+    };
+    if (!building_data) {
+        return res.render('add-studyspot', { buildings, result: '', msg: 'That building does not exist.' })
     };
     if ( (isNaN(floor) && floor.toUpperCase() !== 'B1') || (!isNaN(floor) && (floor < 1 || floor > building_data.floors))) {
         return res.render('add-studyspot', { buildings, result: '', msg: 'Please enter valid floor'})
@@ -123,6 +129,17 @@ exports.deleteSpot = async (req, res) => {
     const spotId = req.body.id; // in the hidden field
     console.log(spotId);
     try {
+        const spot = await StudySpot.findById(spotId);
+        if (!spot) {
+            return res.send('Study spot not found.');
+        }
+
+        // clear the children first so no review or favourite is left orphaned
+        const reviews = await Review.findByRoom(spot.buildingName, spot.name);
+        await Report.deleteByReviews(reviews.map(r => r._id));
+        await Review.deleteByRoom(spot.buildingName, spot.name);
+        await Favourite.deleteBySpot(spot.buildingName, spot.name);
+
         let success = await StudySpot.deleteSpot(spotId);
         console.log(success);
         if (success.deletedCount === 1) {

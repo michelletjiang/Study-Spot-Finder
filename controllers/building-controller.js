@@ -3,8 +3,16 @@ const fs = require('fs/promises');
 // Get Service model
 const Building = require('../models/building-model');
 const StudySpot = require('../models/studyspot-model'); // add this at the top with the other requires
+const Review = require('../models/reviews-model');
+const Report = require('../models/reports');
+const Favourite = require('../models/favourites-model');
 
 
+
+// a building must have 1-10 floors; used by both create and update
+function validFloors(floors) {
+  return ['1','2','3','4','5','6','7','8','9','10'].includes(String(floors).trim());
+}
 
 exports.showAddForm = async (req, res) => {
     let result= "";
@@ -33,7 +41,7 @@ exports.createBuilding = async (req, res) => {
      return;
   } 
 
-if (!['1','2','3','4','5','6','7','8','9','10'].includes(floors)) {
+if (!validFloors(floors)) {
      let result="";
      let msg="Enter Valid Floor."
       res.render("add-building", {result,msg}); 
@@ -90,7 +98,12 @@ exports.getBuilding = async (req, res) => {
 exports.updateBuilding = async (req, res) => {
   const postal= req.body.postal;
   const newfloors = req.body.floors; 
-  
+
+  if (!validFloors(newfloors)) {
+    let result = await Building.findByPostal(postal);
+    return res.render("update-building", {result: result || null, msg: "Enter Valid Floor."});
+  }
+
   try {
     
     let success= await Building.editBuilding (postal,newfloors);
@@ -126,6 +139,22 @@ exports.deleteABuilding = async (req, res) => {
   const postal= req.body.postal; 
   console.log(postal);
   try {
+    const building = await Building.findByPostal(postal);
+    if (!building) {
+      return res.send(`
+      <p>Building not found.</p>
+      <br>
+      <a href="/edit-buildings">Back to All Buildings</a>
+      `);
+    }
+
+    // clear the children first so nothing is left pointing at a dead building
+    const reviews = await Review.findByBuilding(building.buildingname);
+    await Report.deleteByReviews(reviews.map(r => r._id));
+    await Review.deleteByBuilding(building.buildingname);
+    await Favourite.deleteByBuilding(building.buildingname);
+    await StudySpot.deleteByBuilding(building.buildingname);
+
     let success= await Building.deleteBuilding(postal);
 
     console.log(success); 

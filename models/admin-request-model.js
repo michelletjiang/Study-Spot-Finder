@@ -33,4 +33,8 @@ AdminRequest.updateRequestStatus = function(_id, status) {
     );
 };
 
+AdminRequest.deleteByUser = function(userId) {
+    return AdminRequest.deleteMany({ userId: userId });
+};
+
 module.exports = AdminRequest;

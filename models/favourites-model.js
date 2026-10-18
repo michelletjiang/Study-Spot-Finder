@@ -31,3 +31,22 @@ exports.addFavourite = function(newFavourite) {
 exports.removeFavourite = function(favId) {
     return Favourite.deleteOne({ _id: favId });
 };
+
+// used by the ownership guard
+exports.findById = function(favId) {
+    return Favourite.findById(favId);
+};
+
+
+// used when a study spot or building is deleted
+exports.deleteBySpot = function(buildingName, spotName) {
+    return Favourite.deleteMany({ buildingName: buildingName, spotName: spotName });
+};
+
+exports.deleteByBuilding = function(buildingName) {
+    return Favourite.deleteMany({ buildingName: buildingName });
+};
+
+exports.deleteByUser = function(userName) {
+    return Favourite.deleteMany({ userName: userName });
+};

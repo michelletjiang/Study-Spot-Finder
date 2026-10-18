@@ -34,6 +34,13 @@ server.use(session({
   saveUninitialized: false // Prevents a new, empty session from being saved to the store.
 }));
 
+// Every view's nav reads `user`, so expose the session user to all renders once
+// instead of passing it in each res.render call.
+server.use((req, res, next) => {
+  res.locals.user = req.session.user;
+  next();
+});
+
 // root routes
 server.use('/', userRoutes);
 server.use('/', buildingsRoutes);

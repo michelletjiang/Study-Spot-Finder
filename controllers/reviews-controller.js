@@ -1,14 +1,15 @@
 const Review = require('../models/reviews-model'); // path to model
+const Report = require('../models/reports');
 
 exports.showReview = async (req,res) => {
     const roomId =req.params.spotName // comes from auery
     const user = req.session.user.username
     const buildingName = req.params.building
     try{
-        let reviewList = await Review.findByRoom(buildingName,roomId.trim())
+        let reviewList = await Review.findByRoom(buildingName,roomId)
         console.log(reviewList)
         
-        res.render('display-reviews', {reviewList, user : user, building: buildingName})
+        res.render('display-reviews', {reviewList, building: buildingName})
     } catch (error) {
         console.error(error)
         res.send("Error reading database.")
@@ -21,7 +22,7 @@ exports.showAddReview = async (req, res) => {
     const building = req.params.building
     console.log(building)
     try{
-        await res.render("add-review", {result:null, msg:'', spotName : roomName, user : userName, building: building})
+        res.render("add-review", {result:null, msg:'', spotName : roomName, building: building})
     } catch (error) {
         console.error(error)
         res.send("Error displaying form.")
@@ -38,7 +39,7 @@ exports.createReview = async (req,res) => {
     const user = req.session.user.username
     console.log(building)
     if (!title || !content || !rating) {
-        return res.render("add-review", {result:null, msg:"All fields are required.", user : user, spotName:roomName, building: building});
+        return res.render("add-review", {result:null, msg:"All fields are required.", spotName:roomName, building: building});
     };
 
     let newReview = {
@@ -53,10 +54,10 @@ exports.createReview = async (req,res) => {
     try{
         let result=await Review.addReview(newReview)
         console.log("mylog:"+result)
-        res.render("add-review", {result:result, msg:"Review added!",user : user, spotName:roomName, building: building})
+        res.render("add-review", {result:result, msg:"Review added!", spotName:roomName, building: building})
     } catch (error){
         console.error(error);
-        res.render("add-review", {result:null,msg:"Error reading review",user : user, spotName:roomName, building: building})
+        res.render("add-review", {result:null,msg:"Error reading review", spotName:roomName, building: building})
     }
 };
 
@@ -67,7 +68,7 @@ exports.showUserReviews = async(req,res)=> { // this is edit-books
     console.log(userName)
     let reviewList = await Review.findbyUser(userName)
     console.log(reviewList)
-    res.render("user-reviews", {reviewList,user : userName})
+    res.render("user-reviews", {reviewList})
   } catch (error) {
     console.error(error);
     res.send("Error reading database.")
@@ -95,7 +96,7 @@ exports.updateReview = async (req,res) => {
     try{
         if (!title || !content || !rating) {
         let result=await Review.findByreviewId(reviewId)
-        res.render("update-review", {result:result || null , msg : 'All fields are required.', building: result ? result.buildingName : null, spotName: result ? result.roomId : null})
+        return res.render("update-review", {result:result || null , msg : 'All fields are required.', building: result ? result.buildingName : null, spotName: result ? result.roomId : null})
         };
         let result = await Review.editReview(reviewId, title, content, rating)
         console.log(result)
@@ -127,6 +128,7 @@ exports.deleteAReview = async (req,res) => {
     console.log(reviewId)
     try{
         let success = await Review.deleteReview(reviewId)
+        await Report.deleteByReview(reviewId) // don't leave reports pointing at a deleted review
         console.log(success)
         res.redirect(`/review-list/${building}/${spotName}`)
         }

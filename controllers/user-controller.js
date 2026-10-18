@@ -1,5 +1,8 @@
 const User = require('../models/user-model');
 const AdminRequest = require('../models/admin-request-model');
+const Review = require('../models/reviews-model');
+const Report = require('../models/reports');
+const Favourite = require('../models/favourites-model');
 const bcrypt = require('bcrypt');
 
 exports.registerGet = (req, res) => {
@@ -88,8 +91,8 @@ exports.loginPost = async (req, res) => {
             return res.render ('login', {session: req.session, error: ["Email or Password cannot be empty"]});
         }
         const foundUser = await User.findOne({email});
-        const match = await bcrypt.compare(password, foundUser.password);   
-        if (!foundUser || !match) {
+        // check the user exists BEFORE touching foundUser.password
+        if (!foundUser || !await bcrypt.compare(password, foundUser.password)) {
             return res.render ('login', {session: req.session, error: ["Invalid email or password"]});
         }
 
@@ -112,6 +115,9 @@ exports.loginPost = async (req, res) => {
 
 exports.profile = async (req, res) => {
     const dbUser = await User.findById(req.session.user.id);
+    if (!dbUser) {
+        return req.session.destroy(() => res.redirect('/login'));
+    }
     // Sync role from DB in case an admin approved this user since last login
     if (dbUser.role !== req.session.user.role) {
         req.session.user.role = dbUser.role;
@@ -155,7 +161,7 @@ exports.editProfilePost = async (req, res) => {
         }
 
         if (errors.length > 0) {
-            return res.render('edit-profile', {session: req.session, user: req.body, error: errors});
+            return res.render('edit-profile', {session: req.session, user: {...req.session.user, username, email}, error: errors});
         }
 
         const user = await User.findById(req.session.user.id);
@@ -189,9 +195,7 @@ exports.goToFavourites = (req, res) => {
 
 //NEED TO CHECK ROUTE NAMES
 exports.goToReviews = (req, res) => {
-    if (!req.session.user) {
-        return res.redirect('/login');
-    }
+    res.redirect('/reviews/' + req.session.user.username);
 };
 
 exports.logout = (req, res) => {
@@ -202,10 +206,19 @@ exports.logout = (req, res) => {
 
 exports.deleteUser = async (req, res) => {
     try {
+        const username = req.session.user.username;
+
+        // clear the user's own data so nothing is left attributed to a dead account
+        const reviews = await Review.findbyUser(username);
+        await Report.deleteByReviews(reviews.map(r => r._id));
+        await Review.deleteByUser(username);
+        await Favourite.deleteByUser(username);
+        await AdminRequest.deleteByUser(req.session.user.id);
+
         await User.deleteOne({_id: req.session.user.id});
-        req.session.destroy();
-        res.redirect('/');
+        req.session.destroy(() => res.redirect('/'));
     } catch (error) {
+        console.error(error);
         res.send('Error deleting account');
     }
 }

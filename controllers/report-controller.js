@@ -21,6 +21,9 @@ exports.findReviewforReport = async (req, res) =>{
 exports.uploadReport = async (req,res) => {
 
     const review = await Review.findByreviewId(req.params.reviewId);
+    if (!review){
+      return res.render("error", {message: "That review no longer exists"})
+    }
     const reason = req.body.reason;
     const description = req.body.description;
     const reportBy = req.session.user.username
@@ -57,8 +60,9 @@ try {
 // GET route to edit report
 exports.editReport = async (req,res) => {
   const report = await Report.findById(req.params.reportId); // finds report from the query
-  console.log(report)
-  console.log("reportId param:", req.params.reportId);
+  if (!report){
+    return res.render("error", {message: "Report not found"})
+  }
   res.render('edit-report', { report, msg: '' }) // renders the edit report form with pre-filled fields
 }
 
@@ -68,6 +72,9 @@ exports.updateReport = async (req,res) => {
   const editedReason = req.body.reason
   const editedDescription = req.body.description
   const report = await Report.findById(req.params.reportId) // find report in database
+  if (!report){
+    return res.render("error", {message: "Report not found"})
+  }
   if (!editedDescription || editedDescription.trim() == ""){ // makes sure description cannot be empty
       return res.render('edit-report',{report, msg: 'Description cannot be empty'})
     }
@@ -99,6 +106,9 @@ exports.updateAdminDisplayReports = async (req,res) => {
   const reportId = req.body.reportId
   const action = req.body.action
   const report = await Report.findById(reportId); // finds report from db
+  if (!report){
+    return res.render("error", {message: "Report not found"})
+  }
   const reviewId = report.reviewId // pulls review id from report
   
   try {

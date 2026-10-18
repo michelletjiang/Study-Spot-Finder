@@ -62,3 +62,8 @@ exports.editSpot = function(id, updatedData) {
 exports.deleteSpot = function(id) {
     return StudySpot.deleteOne({ _id: id });
 };
+
+// used when a building is deleted
+exports.deleteByBuilding = function(buildingName) {
+    return StudySpot.deleteMany({ buildingName: buildingName });
+};

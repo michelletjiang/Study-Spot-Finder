@@ -30,10 +30,10 @@
         <p><strong>Title: <%= review.title %></strong></p>      <!-- Display the book title -->
         Content: <%= review.content %><br>             <!-- Display the isbn number -->
         Rating:<%=review.rating %><br> 
-        <% if(user == review.userId){ %>
+        <% if(user.username == review.userId){ %>
             <a href="/update-review/<%=review._id %>">Edit</a> |
+            <a href="/delete-review?id=<%= review._id %>">Delete</a>
         <% } %>
-        <a href="/delete-review?id=<%= review._id %>">Delete</a>      <!-- Display the rating -->         
       <hr>
     <% }); %>
     

@@ -18,7 +18,8 @@
         <a href="/favourites">Favourites</a> |
          <a href='/logout'>Logout</a>
     </nav>
-      <%  if(result.buildingname){ %>
+    <p><%= locals.msg || '' %></p>
+      <%  if(result){ %>
     <h3>Update Building </h3>
     <form action="/update-building" method="POST">
         <table border="1">
@@ -39,6 +40,8 @@
      
         
     </form>
+     <% } else { %>
+    <p>Building not found. <a href="/edit-buildings">Back to All Buildings</a></p>
      <% } %>
 
 

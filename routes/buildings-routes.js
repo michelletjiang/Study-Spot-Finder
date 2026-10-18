@@ -5,11 +5,6 @@ const authentication = require('../middleware/auth-middleware')
 const router = express.Router(); // sub application
 
 
-router.get("/admin", authentication.isAdmin, (req, res) => {
-  res.render("admin");
-});
-
-
 router.get("/add-building", authentication.isAdmin, buildingsController.showAddForm);
 router.post("/add-building", authentication.isAdmin, buildingsController.createBuilding);
 

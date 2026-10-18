@@ -17,7 +17,7 @@ const reportSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        default: "pending",
+        default: "Pending",
         enum: ["Pending","Approved","Declined"]
     },
     reason: {
@@ -46,4 +46,13 @@ Report.editReport = function(_id, description,reason) {
       }
   );
 };
+// used when a review is deleted
+Report.deleteByReview = function(reviewId) {
+  return Report.deleteMany({ reviewId: reviewId });
+};
+
+Report.deleteByReviews = function(reviewIds) {
+  return Report.deleteMany({ reviewId: { $in: reviewIds } });
+};
+
 module.exports = Report;

@@ -74,3 +74,20 @@ exports.deleteReview = function (reviewId){
     return Review.findOneAndDelete({_id:reviewId})
 };
 
+
+// used when a study spot or building is deleted
+exports.deleteByRoom = function(buildingName, roomId){
+    return Review.deleteMany({buildingName: buildingName, roomId: roomId})
+}
+
+exports.deleteByBuilding = function(buildingName){
+    return Review.deleteMany({buildingName: buildingName})
+}
+
+exports.findByBuilding = function(buildingName){
+    return Review.find({buildingName: buildingName})
+}
+
+exports.deleteByUser = function(userId){
+    return Review.deleteMany({userId: userId})
+}
