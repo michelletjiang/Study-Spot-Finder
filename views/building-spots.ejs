@@ -36,12 +36,7 @@
             <a href = '/add-review/<%= buildingname %>/<%= spot.name %>'>Add a Review</a><br>
             <a href = '/review-list/<%= buildingname %>/<%= spot.name %>'> View Reviews </a> <br>
             <form action="/favourites/add" method="POST">
-                <input type="hidden" name="spotName" value="<%= spot.name %>">
-                <input type="hidden" name="buildingName" value="<%= spot.buildingName %>">
-                <input type="hidden" name="floor" value="<%= spot.floor %>">
-                <input type="hidden" name="seatCount" value="<%= spot.seatCount %>">
-                <input type="hidden" name="hasPowerSocket" value="<%= spot.hasPowerSocket %>">
-                <input type="hidden" name="noiseLevel" value="<%= spot.noiseLevel %>">
+                <input type="hidden" name="spotId" value="<%= spot._id %>">
                 <button type="submit">Add to Favourites</button>
             </form>
             <hr>

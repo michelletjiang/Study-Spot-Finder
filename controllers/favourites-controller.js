@@ -1,4 +1,5 @@
 const Favourite = require('../models/favourites-model');
+const StudySpot = require('../models/studyspot-model');
  
 // READ MANY - show all favourites for the logged-in user
 exports.showFavourites = async (req, res) => {
@@ -16,12 +17,17 @@ exports.showFavourites = async (req, res) => {
 exports.addFavourite = async (req, res) => {
     try {
         const userName       = req.session.user.username;
-        const spotName       = req.body.spotName;
-        const buildingName   = req.body.buildingName;
-        const floor          = req.body.floor;
-        const seatCount      = req.body.seatCount;
-        const hasPowerSocket = req.body.hasPowerSocket === 'true';
-        const noiseLevel     = req.body.noiseLevel;
+        const spot = await StudySpot.findById(req.body.spotId);
+        if (!spot) {
+            return res.render('error', { message: 'Study spot not found' });
+        }
+
+        const spotName       = spot.name;
+        const buildingName   = spot.buildingName;
+        const floor          = spot.floor;
+        const seatCount      = spot.seatCount;
+        const hasPowerSocket = spot.hasPowerSocket;
+        const noiseLevel     = spot.noiseLevel;
  
         // prevent duplicates for this user
         const existing = await Favourite.findByUserAndSpotAndBuilding(userName, spotName, buildingName);
@@ -30,7 +36,7 @@ exports.addFavourite = async (req, res) => {
         }
  
         // go back to the building page instead of redirecting to favourites
-        res.redirect('/building/' + buildingName);
+        res.redirect('/building/' + encodeURIComponent(buildingName));
     } catch (error) {
         console.error('Error adding favourite:', error);
         res.send('Error adding favourite');

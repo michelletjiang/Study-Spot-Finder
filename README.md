@@ -174,6 +174,20 @@ StudySpot Finder allows students to browse study spots organized by building, le
 
 ---
 
+## How to Test
+
+Run the local smoke and controller regression checks:
+
+```bash
+npm test
+```
+
+The checks cover EJS view rendering, protected-route wiring, ownership guards,
+report error handling and moderation, and server-side validation of favourites.
+They do not replace the proposal's planned Playwright end-to-end tests.
+
+---
+
 ## User Accounts & Roles
 
 ### Roles
