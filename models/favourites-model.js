@@ -31,3 +31,7 @@ exports.addFavourite = function(newFavourite) {
 exports.removeFavourite = function(favId) {
     return Favourite.deleteOne({ _id: favId });
 };
+// DELETE - remove a favourite only if it belongs to this user (used by the JSON API)
+exports.removeFavouriteForUser = function(favId, userName) {
+    return Favourite.deleteOne({ _id: favId, userName: userName });
+};

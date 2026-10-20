@@ -2,13 +2,51 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { auth } from './stores/auth'
 import HomeView from './views/HomeView.vue'
 import LoginView from './views/LoginView.vue'
+import RegisterView from './views/RegisterView.vue'
+import ProfileView from './views/ProfileView.vue'
+import EditProfileView from './views/EditProfileView.vue'
+import BuildingSpotsView from './views/BuildingSpotsView.vue'
+import SpotDetailView from './views/SpotDetailView.vue'
+import ReviewFormView from './views/ReviewFormView.vue'
+import MyReviewsView from './views/MyReviewsView.vue'
+import ReportFormView from './views/ReportFormView.vue'
+import FavouritesView from './views/FavouritesView.vue'
+import AdminBuildingsView from './views/AdminBuildingsView.vue'
+import BuildingFormView from './views/BuildingFormView.vue'
+import AdminSpotsView from './views/AdminSpotsView.vue'
+import SpotFormView from './views/SpotFormView.vue'
+import AdminReportsView from './views/AdminReportsView.vue'
 
 // meta.requiresAuth / meta.requiresAdmin are checked in the guard below.
-// TODO(M1): add LoginView and RegisterView; add admin pages with meta: { requiresAdmin: true }
 const routes = [
-  { path: '/', name: 'home', component: HomeView },
-  { path: '/', name: 'home', component: HomeView, meta: { requiresAuth: true } },
+  // public
   { path: '/login', name: 'login', component: LoginView },
+  { path: '/register', name: 'register', component: RegisterView },
+
+  // any logged-in user
+  { path: '/', name: 'home', component: HomeView, meta: { requiresAuth: true } },
+  { path: '/profile', component: ProfileView, meta: { requiresAuth: true } },
+  { path: '/profile/edit', component: EditProfileView, meta: { requiresAuth: true } },
+  { path: '/building/:name', component: BuildingSpotsView, meta: { requiresAuth: true } },
+  { path: '/spots/:id', component: SpotDetailView, meta: { requiresAuth: true } },
+  { path: '/spots/:spotId/reviews/new', component: ReviewFormView, meta: { requiresAuth: true } },
+  { path: '/reviews/:id/edit', component: ReviewFormView, meta: { requiresAuth: true } },
+  { path: '/reviews/:reviewId/report', component: ReportFormView, meta: { requiresAuth: true } },
+  { path: '/reports/:id/edit', component: ReportFormView, meta: { requiresAuth: true } },
+  { path: '/my-reviews', component: MyReviewsView, meta: { requiresAuth: true } },
+  { path: '/favourites', component: FavouritesView, meta: { requiresAuth: true } },
+
+  // admin only
+  { path: '/admin/buildings', component: AdminBuildingsView, meta: { requiresAdmin: true } },
+  { path: '/admin/buildings/new', component: BuildingFormView, meta: { requiresAdmin: true } },
+  { path: '/admin/buildings/:postal/edit', component: BuildingFormView, meta: { requiresAdmin: true } },
+  { path: '/admin/spots', component: AdminSpotsView, meta: { requiresAdmin: true } },
+  { path: '/admin/spots/new', component: SpotFormView, meta: { requiresAdmin: true } },
+  { path: '/admin/spots/:id/edit', component: SpotFormView, meta: { requiresAdmin: true } },
+  { path: '/admin/reports', component: AdminReportsView, meta: { requiresAdmin: true } },
+
+  // unknown URL -> home
+  { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
 const router = createRouter({
@@ -20,9 +58,10 @@ const router = createRouter({
 // The real protection is the Express middleware on each /api route.
 router.beforeEach(async (to) => {
   const user = await auth.fetchMe()
-  // TODO(M1): redirect to { name: 'login' } once LoginView exists
-  if (to.meta.requiresAuth && !user) return { name: 'home' }
+  if ((to.meta.requiresAuth || to.meta.requiresAdmin) && !user) return { name: 'login', query: { redirect: to.fullPath } }
   if (to.meta.requiresAdmin && !auth.isAdmin) return { name: 'home' }
+  // already logged in: skip the login/register pages
+  if ((to.name === 'login' || to.name === 'register') && user) return { name: 'home' }
 })
 
 export default router

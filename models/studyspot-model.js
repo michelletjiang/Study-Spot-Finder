@@ -23,8 +23,8 @@ const studySpotSchema = new mongoose.Schema({
         default: false
     },
     noiseLevel: {
-        // TODO(M2): add enum: ['Quiet', 'Moderate', 'Loud'] so filters (M5a) can rely on exact values
         type: String,
+        enum: ['Quiet','Moderate','Loud'],
         required: [true, 'A study spot must have a noise level']
     },
     image: {

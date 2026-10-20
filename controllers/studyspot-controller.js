@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const StudySpot = require('../models/studyspot-model');
 const Building = require('../models/building-model');
 
@@ -142,5 +143,105 @@ exports.deleteSpot = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.send('Failed to delete study spot.')
+    }
+};
+
+// ---------- JSON API (used by Vue) ----------
+
+const NOISE_LEVELS = ['Quiet', 'Moderate', 'Loud'];
+
+// returns an error message, or null if the spot is valid for this building
+function validateSpot({ name, floor, seatCount, noiseLevel }, building) {
+    if (!name?.trim() || !floor || seatCount === undefined || seatCount === '' || !noiseLevel)
+        return 'All fields are required.';
+    const f = String(floor).toUpperCase();
+    if (f !== 'B1' && !(Number.isInteger(Number(f)) && f >= 1 && f <= building.floors))
+        return `Floor must be B1 or 1-${building.floors}.`;
+    if (!(Number(seatCount) >= 1)) return 'Seat count must be at least 1.';
+    if (!NOISE_LEVELS.includes(noiseLevel)) return 'Noise level must be Quiet, Moderate or Loud.';
+    return null;
+}
+
+// GET /api/spots
+exports.listSpots = async (req, res) => {
+    try {
+        res.json(await StudySpot.retrieveAll());
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error reading database' });
+    }
+};
+
+// GET /api/spots/:id
+exports.getSpotJson = async (req, res) => {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ message: 'Study spot not found' });
+    try {
+        const spot = await StudySpot.findById(req.params.id);
+        if (!spot) return res.status(404).json({ message: 'Study spot not found' });
+        res.json(spot);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error reading database' });
+    }
+};
+
+// POST /api/spots
+exports.createSpotJson = async (req, res) => {
+    try {
+        const building = await Building.findByName(req.body.buildingName);
+        if (!building) return res.status(404).json({ message: 'Building not found' }); // the old createSpot crashed here
+        const msg = validateSpot(req.body, building);
+        if (msg) return res.status(400).json({ message: msg });
+
+        const spot = await StudySpot.addSpot({
+            buildingName:   building.buildingname,
+            name:           req.body.name.trim(),
+            floor:          String(req.body.floor).toUpperCase(),
+            seatCount:      Number(req.body.seatCount),
+            hasPowerSocket: Boolean(req.body.hasPowerSocket), // JSON sends a real boolean now
+            noiseLevel:     req.body.noiseLevel
+        });
+        res.status(201).json(spot);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error adding study spot' });
+    }
+};
+
+// PUT /api/spots/:id   (building can't change, same as the old edit form)
+exports.updateSpotJson = async (req, res) => {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ message: 'Study spot not found' });
+    try {
+        const spot = await StudySpot.findById(req.params.id);
+        if (!spot) return res.status(404).json({ message: 'Study spot not found' });
+        const building = await Building.findByName(spot.buildingName);
+        if (!building) return res.status(404).json({ message: 'Building not found' });
+        const msg = validateSpot(req.body, building);
+        if (msg) return res.status(400).json({ message: msg });
+
+        await StudySpot.editSpot(spot._id, {
+            name:           req.body.name.trim(),
+            floor:          String(req.body.floor).toUpperCase(),
+            seatCount:      Number(req.body.seatCount),
+            hasPowerSocket: Boolean(req.body.hasPowerSocket),
+            noiseLevel:     req.body.noiseLevel
+        });
+        res.json(await StudySpot.findById(spot._id));
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error updating study spot' });
+    }
+};
+
+// DELETE /api/spots/:id
+exports.deleteSpotJson = async (req, res) => {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ message: 'Study spot not found' });
+    try {
+        const result = await StudySpot.deleteSpot(req.params.id);
+        if (result.deletedCount === 0) return res.status(404).json({ message: 'Study spot not found' });
+        res.status(204).end();
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error deleting study spot' });
     }
 };
