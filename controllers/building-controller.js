@@ -165,3 +165,91 @@ exports.showBuildingSpots = async (req, res) => {
         res.status(500).send('Error loading study spots');
     }
 };
+
+
+// ---------- JSON API (used by Vue) ----------
+
+// shared validation for create
+function validateBuilding({ buildingname, postal, floors }) {
+    if (!buildingname?.trim() || !postal || !floors) return 'All Fields Are Required.';
+    if (!/^\d{6}$/.test(String(postal))) return 'Enter Valid Postal Code.';
+    if (!(Number(floors) >= 1 && Number(floors) <= 10)) return 'Enter Valid Floor.';
+    return null;
+}
+
+// GET /api/buildings
+exports.listBuildings = async (req, res) => {
+    try {
+        res.json(await Building.retrieveAll());
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error reading database' });
+    }
+};
+
+// GET /api/buildings/:postal
+exports.getBuildingJson = async (req, res) => {
+    try {
+        const building = await Building.findByPostal(req.params.postal);
+        if (!building) return res.status(404).json({ message: 'Building not found' });
+        res.json(building);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error reading database' });
+    }
+};
+
+// GET /api/buildings/:buildingname/spots
+exports.listBuildingSpots = async (req, res) => {
+    try {
+        const building = await Building.findByName(req.params.buildingname);
+        if (!building) return res.status(404).json({ message: 'Building not found' });
+        const studySpots = await StudySpot.findByBuilding(building.buildingname);
+        res.json({ building, studySpots });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error loading study spots' });
+    }
+};
+
+// POST /api/buildings
+exports.createBuildingJson = async (req, res) => {
+    const msg = validateBuilding(req.body);
+    if (msg) return res.status(400).json({ message: msg });
+
+    const { buildingname, postal, floors } = req.body;
+    try {
+        const building = await Building.addBuilding({ buildingname: buildingname.trim(), postal, floors });
+        res.status(201).json(building);
+    } catch (error) {
+        if (error.code === 11000) return res.status(409).json({ message: 'Postal Code Exist Already.' });
+        console.error(error);
+        res.status(500).json({ message: 'Error adding building' });
+    }
+};
+
+// PUT /api/buildings/:postal  (only floors can change, same as the old form)
+exports.updateBuildingJson = async (req, res) => {
+    const floors = Number(req.body.floors);
+    if (!(floors >= 1 && floors <= 10)) return res.status(400).json({ message: 'Enter Valid Floor.' });
+    try {
+        const result = await Building.editBuilding(req.params.postal, floors);
+        if (result.matchedCount === 0) return res.status(404).json({ message: 'Building not found' });
+        res.json(await Building.findByPostal(req.params.postal));
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error updating building' });
+    }
+};
+
+// DELETE /api/buildings/:postal
+exports.deleteBuildingJson = async (req, res) => {
+    try {
+        const result = await Building.deleteBuilding(req.params.postal);
+        if (result.deletedCount === 0) return res.status(404).json({ message: 'Building not found' });
+        res.status(204).end();
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error deleting building' });
+    }
+};

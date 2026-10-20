@@ -1,6 +1,13 @@
 const StudySpot = require('../models/studyspot-model');
 const Building = require('../models/building-model');
 
+// TODO(M2): convert every handler in this file to JSON:
+//   res.render(view, data)      -> res.json(data)
+//   res.send('not found')       -> res.status(404).json({ message })
+//   res.send('Error ...')       -> res.status(500).json({ message })
+//   res.redirect(...)           -> res.json(result) and let the Vue router navigate
+//   showAddForm/showEditForm/showDeleteForm become unnecessary (Vue builds the forms)
+
 // showStudySpots displays all the study spots filtered by buildingName
 exports.showStudySpots = async (req, res) => {
     // const buildingname = req.query.buildingname; // get buildingName from url if provided
@@ -44,11 +51,14 @@ exports.showAddForm = async (req, res) => {
 
 exports.createSpot = async (req, res) => {
     const { buildingName, name, floor, seatCount, noiseLevel } = req.body;
+    // TODO(M2): JSON sends a real boolean, so use Boolean(req.body.hasPowerSocket) instead
     const hasPowerSocket = req.body.hasPowerSocket === 'true' ? true : false;
     const buildingNameSearch = req.body.buildingName
     const buildings = await Building.retrieveAll();
     const building_data = await Building.findByName(buildingNameSearch)
     console.log(building_data)
+    // TODO(M2): BUG - building_data is null for an unknown building, so building_data.floors below crashes.
+    //           Add: if (!building_data) return res.status(404).json({ message: 'Building not found' })
     if (!buildingName || !name || !floor || !seatCount || !noiseLevel) {
         return res.render('add-studyspot', { buildings, result: '', msg: 'All fields are required.' })
     };
@@ -128,6 +138,7 @@ exports.deleteSpot = async (req, res) => {
         if (success.deletedCount === 1) {
             res.redirect('/studyspot-list');
         }
+        // TODO(M2): BUG - if deletedCount is 0 no response is sent and the request hangs; return 404
     } catch (error) {
         console.error(error);
         res.send('Failed to delete study spot.')

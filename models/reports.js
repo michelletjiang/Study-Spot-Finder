@@ -17,6 +17,7 @@ const reportSchema = new mongoose.Schema({
     },
     status: {
         type: String,
+        // TODO(M4): BUG - "pending" is not in the enum below; change to "Pending"
         default: "pending",
         enum: ["Pending","Approved","Declined"]
     },

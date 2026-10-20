@@ -1,4 +1,11 @@
 {
+  "name": "study-spot-finder",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "dev": "concurrently -n server,client -c blue,green \"node --watch server.js\" \"npm --prefix client run dev\"",
+    "build": "npm --prefix client ci && npm --prefix client run build"
+  },
   "dependencies": {
     "bcrypt": "^6.0.0",
     "dotenv": "^17.3.1",
@@ -6,5 +13,8 @@
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "mongoose": "^9.3.1"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6"
   }
 }

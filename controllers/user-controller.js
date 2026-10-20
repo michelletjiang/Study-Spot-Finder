@@ -209,3 +209,45 @@ exports.deleteUser = async (req, res) => {
         res.send('Error deleting account');
     }
 }
+
+// ---------- JSON API (used by Vue) ----------
+
+// POST /api/login   body: { email, password }
+exports.apiLogin = async (req, res) => {
+    const email = String(req.body.email || '').trim().toLowerCase(); // register lowercases, so login must too
+    const password = String(req.body.password || '');
+    if (!email || !password) return res.status(400).json({ message: 'Email or Password cannot be empty' });
+
+    try {
+        const foundUser = await User.findOne({ email });
+        // check foundUser BEFORE reading .password (the old loginPost crashes here)
+        if (!foundUser || !(await bcrypt.compare(password, foundUser.password))) {
+            return res.status(401).json({ message: 'Invalid email or password' });
+        }
+
+        // new session ID on login, so an old/stolen ID can't be reused
+        req.session.regenerate((err) => {
+            if (err) return res.status(500).json({ message: 'Server Error' });
+            req.session.user = {
+                id: foundUser._id,
+                username: foundUser.username,
+                email: foundUser.email,
+                school: foundUser.school,
+                role: foundUser.role,
+                createdAt: foundUser.createdAt
+            };
+            res.json({ user: req.session.user });
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// POST /api/logout
+exports.apiLogout = (req, res) => {
+    req.session.destroy(() => {
+        res.clearCookie('connect.sid');
+        res.json({ user: null });
+    });
+};
