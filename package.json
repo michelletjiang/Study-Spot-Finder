@@ -4,7 +4,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "concurrently -n server,client -c blue,green \"node --watch server.js\" \"npm --prefix client run dev\"",
-    "build": "npm --prefix client ci && npm --prefix client run build"
+    "build": "npm --prefix client ci && npm --prefix client run build",
+    "geocode": "node scripts/geocode-buildings.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

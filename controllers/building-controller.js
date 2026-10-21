@@ -3,6 +3,7 @@ const fs = require('fs/promises');
 // Get Service model
 const Building = require('../models/building-model');
 const StudySpot = require('../models/studyspot-model'); // add this at the top with the other requires
+const onemap = require('../services/onemap');
 
 
 
@@ -219,7 +220,15 @@ exports.createBuildingJson = async (req, res) => {
 
     const { buildingname, postal, floors } = req.body;
     try {
-        const building = await Building.addBuilding({ buildingname: buildingname.trim(), postal, floors });
+        // look up lat/lng from OneMap; if that fails the building is still saved
+        // without them and `npm run geocode` can fill them in later
+        let coords = null;
+        try {
+            coords = await onemap.geocodePostal(postal);
+        } catch (error) {
+            console.error('Geocode failed for postal ' + postal + ':', error.message);
+        }
+        const building = await Building.addBuilding({ buildingname: buildingname.trim(), postal, floors, ...coords });
         res.status(201).json(building);
     } catch (error) {
         if (error.code === 11000) return res.status(409).json({ message: 'Postal Code Exist Already.' });
