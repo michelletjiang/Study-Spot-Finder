@@ -18,16 +18,17 @@ import SpotFormView from './views/SpotFormView.vue'
 import AdminReportsView from './views/AdminReportsView.vue'
 
 // meta.requiresAuth / meta.requiresAdmin are checked in the guard below.
+// meta.showMap shows the floating minimap (components/MiniMap.vue) on that page.
 const routes = [
   // public
   { path: '/login', name: 'login', component: LoginView },
   { path: '/register', name: 'register', component: RegisterView },
 
   // any logged-in user
-  { path: '/', name: 'home', component: HomeView, meta: { requiresAuth: true } },
+  { path: '/', name: 'home', component: HomeView, meta: { requiresAuth: true, showMap: true } },
   { path: '/profile', component: ProfileView, meta: { requiresAuth: true } },
   { path: '/profile/edit', component: EditProfileView, meta: { requiresAuth: true } },
-  { path: '/building/:name', component: BuildingSpotsView, meta: { requiresAuth: true } },
+  { path: '/building/:name', component: BuildingSpotsView, meta: { requiresAuth: true, showMap: true } },
   { path: '/spots/:id', component: SpotDetailView, meta: { requiresAuth: true } },
   { path: '/spots/:spotId/reviews/new', component: ReviewFormView, meta: { requiresAuth: true } },
   { path: '/reviews/:id/edit', component: ReviewFormView, meta: { requiresAuth: true } },

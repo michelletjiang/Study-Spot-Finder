@@ -221,6 +221,14 @@ pre.mermaid { background: var(--surface); border: 1px solid var(--line); border-
             <li><a href="#vue-patterns">Vue patterns used</a></li>
           </ol>
         </li>
+        <li><a href="#onemap">Map &amp; directions</a>
+          <ol>
+            <li><a href="#coords">Building coordinates</a></li>
+            <li><a href="#onemap-service">services/onemap.js</a></li>
+            <li><a href="#fastest">Finding the fastest route</a></li>
+            <li><a href="#minimap">The minimap</a></li>
+          </ol>
+        </li>
         <li><a href="#legacy">Legacy EJS app</a></li>
         <li><a href="#limits">Known limits</a></li>
         <li><a href="#add-feature">Adding a feature</a></li>
@@ -235,7 +243,7 @@ pre.mermaid { background: var(--surface); border: 1px solid var(--line); border-
       <h1>Study Spot Finder Codebase</h1>
       <p class="lede">What every file does, how a click in the browser turns into a database query and back, and what to watch out for. Written for anyone on the team picking up a part of the code they didn't write.</p>
       <div class="meta-row">
-        <div>Describes commit <span>6f5a442</span></div>
+        <div>Describes commit <span>6f5a442</span> plus the map work on <span>onemap-implementation</span></div>
         <div>Stack <span>Vue 3 · Vite · Express 5 · Mongoose 9 · MongoDB Atlas</span></div>
       </div>
     </header>
@@ -292,6 +300,7 @@ npm run dev                  <span class="c"># starts Express (8000) and Vite (5
           <tr><td><code>npm run dev</code></td><td class="wrap"><code>concurrently</code> runs <code>node --watch server.js</code> and <code>npm --prefix client run dev</code></td><td>Day-to-day work. The server restarts when you save a server file; Vite hot-reloads Vue files.</td></tr>
           <tr><td><code>npm start</code></td><td><code>node server.js</code></td><td>Production / AWS. No file watching.</td></tr>
           <tr><td><code>npm run build</code></td><td class="wrap"><code>npm --prefix client ci</code> then <code>vite build</code></td><td>Makes <code>client/dist/</code> for production.</td></tr>
+          <tr><td><code>npm run geocode</code></td><td class="wrap"><code>node scripts/geocode-buildings.js</code></td><td>Fills in <code>lat</code>/<code>lng</code> for buildings that don't have them. Add <code>-- --all</code> to redo every building. See <a href="#coords">Building coordinates</a>.</td></tr>
         </tbody>
       </table></div>
 
@@ -300,6 +309,7 @@ npm run dev                  <span class="c"># starts Express (8000) and Vite (5
         <tbody>
           <tr><td><code>DB</code></td><td><code>config.env</code></td><td>MongoDB Atlas connection string. Ask a teammate for it; it is not in git.</td></tr>
           <tr><td><code>SECRET</code></td><td><code>config.env</code></td><td>Signs the session cookie so it can't be forged. Any long random string.</td></tr>
+          <tr><td><code>ONEMAP_EMAIL</code><br><code>ONEMAP_PASSWORD</code></td><td><code>config.env</code></td><td>Login for a free OneMap API account (<a href="https://www.onemap.gov.sg/apidocs/register">register here</a>). The server uses it to get a OneMap token by itself and gets a new one when it expires (about every 3 days). Without these, adding buildings still works but they get no coordinates, and the map can't show routes.</td></tr>
           <tr><td><code>PORT</code></td><td>environment (optional)</td><td>Port Express listens on. Defaults to 8000. AWS sets it for you.</td></tr>
           <tr><td>Vite proxy</td><td><code>client/vite.config.js</code></td><td>Forwards <code>/api</code> to <code>http://127.0.0.1:8000</code>. It uses <code>127.0.0.1</code> because Node can resolve <code>localhost</code> to IPv6, which Express isn't listening on.</td></tr>
         </tbody>
@@ -323,12 +333,14 @@ npm run dev                  <span class="c"># starts Express (8000) and Vite (5
         <tbody>
           <tr class="group"><td colspan="3">Server (project root)</td></tr>
           <tr><td><code>server.js</code></td><td><span class="tag shared">shared</span></td><td>Entry point. Sets up Express, sessions, mounts the API and the old routes, connects to MongoDB, starts listening.</td></tr>
-          <tr><td><code>config.env</code></td><td><span class="tag shared">shared</span></td><td><code>DB</code> and <code>SECRET</code>. Not in git.</td></tr>
+          <tr><td><code>config.env</code></td><td><span class="tag shared">shared</span></td><td><code>DB</code>, <code>SECRET</code>, and the OneMap login. Not in git.</td></tr>
           <tr><td><code>middleware/auth-middleware.js</code></td><td><span class="tag shared">shared</span></td><td>Login/admin checks. <code>apiLoggedIn</code>/<code>apiAdmin</code> answer with JSON; <code>isLoggedIn</code>/<code>isAdmin</code> redirect (legacy).</td></tr>
           <tr><td><code>models/*.js</code></td><td><span class="tag shared">shared</span></td><td>Mongoose schemas and small query helpers, one file per collection.</td></tr>
           <tr><td><code>controllers/*.js</code></td><td><span class="tag shared">shared</span></td><td>Request handlers. The top of each file is the legacy EJS version; the <code>// ---------- JSON API ----------</code> section at the bottom is the Vue version.</td></tr>
           <tr><td><code>routes/api/index.js</code></td><td><span class="tag new">new</span></td><td>Mounts every feature router under <code>/api</code>, plus the JSON 404 for unknown API paths.</td></tr>
           <tr><td><code>routes/api/*-routes.js</code></td><td><span class="tag new">new</span></td><td>One file per feature: URL + HTTP method → middleware → controller function.</td></tr>
+          <tr><td><code>services/onemap.js</code></td><td><span class="tag new">new</span></td><td>Talks to OneMap: login token, place search, postal code → coordinates, and walking / public transport routes. The OneMap token never leaves the server.</td></tr>
+          <tr><td><code>scripts/geocode-buildings.js</code></td><td><span class="tag new">new</span></td><td>One-off script behind <code>npm run geocode</code>: adds coordinates to buildings that don't have them.</td></tr>
           <tr><td><code>routes/*.js</code> (not in <code>api/</code>)</td><td><span class="tag legacy">legacy</span></td><td>The old page routes (<code>/login</code>, <code>/add-studyspot</code>, ...).</td></tr>
           <tr><td><code>views/*.ejs</code></td><td><span class="tag legacy">legacy</span></td><td>The old HTML templates (about 25 pages).</td></tr>
           <tr><td><code>public/styles.css</code></td><td><span class="tag legacy">legacy</span></td><td>Stylesheet for the EJS pages.</td></tr>
@@ -336,12 +348,13 @@ npm run dev                  <span class="c"># starts Express (8000) and Vite (5
           <tr><td><code>index.html</code></td><td><span class="tag new">new</span></td><td>The single HTML page. Contains an empty <code>&lt;div id="app"&gt;</code> that Vue fills in.</td></tr>
           <tr><td><code>vite.config.js</code></td><td><span class="tag new">new</span></td><td>Enables the Vue plugin and the <code>/api</code> proxy.</td></tr>
           <tr><td><code>src/main.js</code></td><td><span class="tag new">new</span></td><td>Creates the Vue app, plugs in the router, mounts it on <code>#app</code>.</td></tr>
-          <tr><td><code>src/App.vue</code></td><td><span class="tag new">new</span></td><td>The frame around every page: <code>&lt;NavBar /&gt;</code> above <code>&lt;RouterView /&gt;</code>.</td></tr>
+          <tr><td><code>src/App.vue</code></td><td><span class="tag new">new</span></td><td>The frame around every page: <code>&lt;NavBar /&gt;</code> above <code>&lt;RouterView /&gt;</code>, then <code>&lt;MiniMap /&gt;</code> when logged in.</td></tr>
           <tr><td><code>src/router.js</code></td><td><span class="tag new">new</span></td><td>URL → page table and the login/admin guard.</td></tr>
           <tr><td><code>src/api.js</code></td><td><span class="tag new">new</span></td><td>The one function every page uses to call the server.</td></tr>
           <tr><td><code>src/stores/auth.js</code></td><td><span class="tag new">new</span></td><td>Who is logged in, shared by all components.</td></tr>
           <tr><td><code>src/stores/favourites.js</code></td><td><span class="tag new">new</span></td><td>The logged-in user's favourites, shared by every ☆ button.</td></tr>
-          <tr><td><code>src/components/</code></td><td><span class="tag new">new</span></td><td>Pieces used inside pages: <code>NavBar.vue</code>, <code>FavouriteButton.vue</code>.</td></tr>
+          <tr><td><code>src/stores/map.js</code></td><td><span class="tag new">new</span></td><td>The minimap's state: your location, the building you're heading to, and its routes.</td></tr>
+          <tr><td><code>src/components/</code></td><td><span class="tag new">new</span></td><td>Pieces used inside pages: <code>NavBar.vue</code>, <code>FavouriteButton.vue</code>, <code>MiniMap.vue</code>.</td></tr>
           <tr><td><code>src/views/</code></td><td><span class="tag new">new</span></td><td>One file per page the router can show (16 pages).</td></tr>
           <tr><td><code>src/style.css</code></td><td><span class="tag new">new</span></td><td>Still Vite's starter stylesheet; replace with the team's styles.</td></tr>
         </tbody>
@@ -437,8 +450,8 @@ npm run dev                  <span class="c"># starts Express (8000) and Vite (5
             <td class="wrap"><code>username</code> (unique, ≥5 chars), <code>email</code> (unique, lowercased), <code>password</code> (bcrypt hash), <code>school</code> (array, max 2), <code>role</code> (<code>'Student'</code> or <code>'Admin'</code>), <code>createdAt</code></td>
             <td>Exports the Mongoose model itself, so controllers call <code>User.findOne</code>, <code>User.findById</code> directly.</td></tr>
           <tr><td><code>building-model.js</code><br><code>building</code></td>
-            <td class="wrap"><code>buildingname</code>, <code>floors</code> (Number), <code>postal</code> (Number, unique)</td>
-            <td><code>retrieveAll</code>, <code>findByPostal</code>, <code>findByName</code>, <code>addBuilding</code>, <code>editBuilding(postal, floors)</code>, <code>deleteBuilding(postal)</code>. Buildings are looked up by postal code, not <code>_id</code>.</td></tr>
+            <td class="wrap"><code>buildingname</code>, <code>floors</code> (Number), <code>postal</code> (Number, unique), <code>lat</code>, <code>lng</code> (Number, optional, filled from OneMap)</td>
+            <td><code>retrieveAll</code>, <code>findByPostal</code>, <code>findByName</code>, <code>addBuilding</code>, <code>editBuilding(postal, floors)</code>, <code>deleteBuilding(postal)</code>, <code>setCoordinates(postal, lat, lng)</code>, <code>findMissingCoordinates()</code>. Buildings are looked up by postal code, not <code>_id</code>.</td></tr>
           <tr><td><code>studyspot-model.js</code><br><code>studyspot</code></td>
             <td class="wrap"><code>buildingName</code> <em>link → building.buildingname</em>, <code>name</code>, <code>floor</code> (String: <code>"B1"</code> or a number), <code>seatCount</code>, <code>hasPowerSocket</code>, <code>noiseLevel</code> (enum Quiet / Moderate / Loud), <code>image</code></td>
             <td><code>retrieveAll</code>, <code>findById</code>, <code>findByBuilding(name)</code>, <code>addSpot</code>, <code>editSpot(id, data)</code>, <code>deleteSpot(id)</code>.</td></tr>
@@ -527,7 +540,7 @@ exports.apiDoThing = async (req, res) => {
           <tr><td><span class="m get">GET</span></td><td><code>/api/buildings</code></td><td><span class="a login">login</span></td><td></td><td>array</td><td><code>listBuildings</code>.</td></tr>
           <tr><td><span class="m get">GET</span></td><td><code>/api/buildings/:postal</code></td><td><span class="a login">login</span></td><td></td><td>building</td><td><code>getBuildingJson</code>. 404 if no such postal.</td></tr>
           <tr><td><span class="m get">GET</span></td><td><code>/api/buildings/:name/spots</code></td><td><span class="a login">login</span></td><td></td><td><code>{ building, studySpots }</code></td><td><code>listBuildingSpots</code>. 404 if no such building.</td></tr>
-          <tr><td><span class="m post">POST</span></td><td><code>/api/buildings</code></td><td><span class="a admin">admin</span></td><td class="wrap"><code>buildingname, postal</code> (6 digits), <code>floors</code> (1–10)</td><td>201</td><td><code>createBuildingJson</code>. 400; 409 on duplicate postal.</td></tr>
+          <tr><td><span class="m post">POST</span></td><td><code>/api/buildings</code></td><td><span class="a admin">admin</span></td><td class="wrap"><code>buildingname, postal</code> (6 digits), <code>floors</code> (1–10)</td><td>201</td><td><code>createBuildingJson</code>. Looks up <code>lat</code>/<code>lng</code> from OneMap first; if that fails the building is saved without them. 400; 409 on duplicate postal.</td></tr>
           <tr><td><span class="m put">PUT</span></td><td><code>/api/buildings/:postal</code></td><td><span class="a admin">admin</span></td><td><code>floors</code></td><td>building</td><td><code>updateBuildingJson</code>. Only floors can change.</td></tr>
           <tr><td><span class="m del">DELETE</span></td><td><code>/api/buildings/:postal</code></td><td><span class="a admin">admin</span></td><td></td><td>204</td><td><code>deleteBuildingJson</code>. Does not touch the building's spots.</td></tr>
 
@@ -559,6 +572,9 @@ exports.apiDoThing = async (req, res) => {
           <tr><td><span class="m post">POST</span></td><td><code>/api/favourites</code></td><td><span class="a login">login</span></td><td><code>spotId</code></td><td>201 / 200</td><td><code>apiAddFavourite</code>. Copies the spot's details from the DB. Adding again returns the existing one (200), no duplicate.</td></tr>
           <tr><td><span class="m del">DELETE</span></td><td><code>/api/favourites/:id</code></td><td><span class="a owner">owner</span></td><td></td><td>204</td><td><code>apiRemoveFavourite</code>. 404 if it isn't yours.</td></tr>
 
+          <tr class="group"><td colspan="6">Directions · directions-routes.js → directions-controller.js</td></tr>
+          <tr><td><span class="m get">GET</span></td><td><code>/api/directions?from=&amp;to=</code></td><td><span class="a login">login</span></td><td class="wrap"><code>from</code>, <code>to</code> query, each <code>"lat,lng"</code></td><td><code>{ routes, fastest }</code></td><td><code>getDirections</code>. Walking and public transport routes, see <a href="#fastest">Finding the fastest route</a>. 400 if either point isn't <code>"lat,lng"</code>; 502 if OneMap finds no route. Makes two OneMap calls each time.</td></tr>
+
           <tr class="group"><td colspan="6">Fallback · routes/api/index.js</td></tr>
           <tr><td>any</td><td><code>/api/anything-else</code></td><td><span class="a">public</span></td><td></td><td>404</td><td><code>{ message: 'No API route for GET /api/...' }</code>. Stops typos falling through to the EJS routes.</td></tr>
         </tbody>
@@ -577,12 +593,12 @@ exports.apiDoThing = async (req, res) => {
   .use(router)      <span class="c">// turns on URL → page switching</span>
   .mount('#app')    <span class="c">// draws it inside &lt;div id="app"&gt; in index.html</span></pre>
       <div class="prose">
-        <p><code>App.vue</code> is the frame: <code>&lt;NavBar /&gt;</code> always on top, then <code>&lt;RouterView /&gt;</code>, which shows whichever page matches the URL. Moving between pages swaps only what's inside <code>RouterView</code>. The page never fully reloads, which is why the app feels fast.</p>
+        <p><code>App.vue</code> is the frame: <code>&lt;NavBar /&gt;</code> always on top, then <code>&lt;RouterView /&gt;</code>, which shows whichever page matches the URL. Moving between pages swaps only what's inside <code>RouterView</code>. The page never fully reloads, which is why the app feels fast. When you're logged in, <code>App.vue</code> also mounts <code>&lt;MiniMap /&gt;</code> after <code>RouterView</code>, so the map stays loaded while you move between pages.</p>
       </div>
 
       <h3 id="router">router.js</h3>
       <div class="prose">
-        <p>A list of <code>{ path, component, meta }</code> entries. <code>:name</code> in a path is a parameter: <code>/spots/:id</code> matches <code>/spots/6712f0…</code>, and the page reads it as <code>route.params.id</code>. <code>createWebHistory()</code> gives normal-looking URLs (no <code>#</code>).</p>
+        <p>A list of <code>{ path, component, meta }</code> entries. <code>:name</code> in a path is a parameter: <code>/spots/:id</code> matches <code>/spots/6712f0…</code>, and the page reads it as <code>route.params.id</code>. <code>createWebHistory()</code> gives normal-looking URLs (no <code>#</code>). <code>meta.showMap: true</code> shows the floating minimap on that page; it's set on home and on <code>/building/:name</code>.</p>
         <p>Before every page change, <code>router.beforeEach</code> runs:</p>
       </div>
 <pre class="code">const user = await auth.fetchMe()                       <span class="c">// GET /api/me</span>
@@ -624,6 +640,7 @@ await api('/api/spots', { method: 'POST', body: { name: 'Level 3', ... } }) <spa
         <tbody>
           <tr><td><code>stores/auth.js</code></td><td><code>user</code> (the session user, or null)</td><td class="wrap"><code>isAdmin</code> (getter: <code>user.role === 'Admin'</code>), <code>fetchMe()</code> (calls <code>/api/me</code>)</td><td>router guard, NavBar, LoginView, ProfileView, EditProfileView, SpotDetailView</td></tr>
           <tr><td><code>stores/favourites.js</code></td><td><code>list</code> (your favourites)</td><td class="wrap"><code>load()</code>, <code>find(spot)</code> (matches by spot name + building name), <code>toggle(spot)</code> (add or remove)</td><td>FavouriteButton, FavouritesView, NavBar (clears it on logout)</td></tr>
+          <tr><td><code>stores/map.js</code></td><td class="wrap"><code>userPos</code>, <code>destination</code> (a building), <code>routes</code>, <code>fastest</code>, <code>activeMode</code>, <code>expanded</code>, plus loading / error flags</td><td class="wrap"><code>locate()</code> / <code>stopLocating()</code> (follow your location), <code>showBuilding(building)</code>, <code>clearDestination()</code>, <code>fetchRoutes()</code>, <code>activeRoute</code> (getter: the route being drawn)</td><td>MiniMap, HomeView, BuildingSpotsView</td></tr>
         </tbody>
       </table></div>
 
@@ -633,6 +650,7 @@ await api('/api/spots', { method: 'POST', body: { name: 'Level 3', ... } }) <spa
         <tbody>
           <tr><td><code>NavBar.vue</code></td><td>Links that depend on <code>auth.user</code> and <code>auth.isAdmin</code>: Login/Register when logged out, Profile/Favourites/Reviews plus the five admin links for admins. <code>logout()</code> calls <code>POST /api/logout</code>, clears both stores, and goes to <code>/login</code>.</td></tr>
           <tr><td><code>FavouriteButton.vue</code></td><td>Takes a <code>spot</code> prop. Shows ☆ or ★ from <code>favourites.find(spot)</code> and calls <code>favourites.toggle(spot)</code> on click. The page that uses it must call <code>favourites.load()</code> once when it mounts.</td></tr>
+          <tr><td><code>MiniMap.vue</code></td><td>The floating map in the bottom-right corner. Shows your location, every building, and the route to the current building; expands to show step-by-step directions. Mounted once in <code>App.vue</code>, not inside pages. See <a href="#minimap">The minimap</a>.</td></tr>
         </tbody>
       </table></div>
 
@@ -654,7 +672,7 @@ await api('/api/spots', { method: 'POST', body: { name: 'Level 3', ... } }) <spa
         <article class="view">
           <h4>HomeView</h4>
           <div class="route">/ · login</div>
-          <p>Lists every building with a link to its spots.</p>
+          <p>Lists every building with a link to its spots. Clears the minimap's destination, so the map goes back to showing just your location.</p>
           <dl><dt>Calls</dt><dd><code>GET /api/buildings</code></dd><dt>Replaces</dt><dd>home.ejs</dd></dl>
         </article>
         <article class="view">
@@ -672,7 +690,7 @@ await api('/api/spots', { method: 'POST', body: { name: 'Level 3', ... } }) <spa
         <article class="view">
           <h4>BuildingSpotsView</h4>
           <div class="route">/building/:name · login</div>
-          <p>The spots in one building, each with links to details and to add a review, plus a favourite button.</p>
+          <p>The spots in one building, each with links to details and to add a review, plus a favourite button. Sends the building to the minimap (<code>mapStore.showBuilding</code>) to show the fastest route there. Reloads when the name in the URL changes, because clicking another building on the map reuses this page.</p>
           <dl><dt>Calls</dt><dd><code>GET /api/buildings/:name/spots</code>, <code>GET /api/favourites</code></dd><dt>Replaces</dt><dd>building-spots.ejs</dd></dl>
         </article>
         <article class="view">
@@ -762,6 +780,91 @@ await api('/api/spots', { method: 'POST', body: { name: 'Level 3', ... } }) <spa
 
     <!-- ================================================================ -->
     <section>
+      <h2 id="onemap">Map &amp; directions</h2>
+      <div class="prose">
+        <p>This part is on the <code>onemap-implementation</code> branch and isn't merged into <code>configure-vue</code> yet. It uses <a href="https://www.onemap.gov.sg/apidocs/">OneMap</a>, the Singapore Land Authority's free map service, for three things: the map pictures (tiles), turning a postal code into coordinates, and routes.</p>
+        <p>The browser loads map tiles from OneMap directly, because tiles need no login. Search and routing need a OneMap token, so the browser asks our server, and only the server talks to OneMap.</p>
+      </div>
+
+<pre class="mermaid">
+flowchart LR
+  MM["MiniMap.vue<br/>(Leaflet)"]
+  FORM["BuildingFormView"]
+  EXP["Express<br/>services/onemap.js"]
+  TILES["OneMap tiles"]
+  OMA["OneMap API"]
+  DB[("MongoDB")]
+  MM -- "map tiles, no token" --> TILES
+  MM -- "GET /api/directions" --> EXP
+  FORM -- "POST /api/buildings" --> EXP
+  EXP -- "token + search / route" --> OMA
+  EXP -- "building with lat, lng" --> DB
+</pre>
+
+      <h3 id="coords">Building coordinates</h3>
+      <div class="prose">
+        <p>To put a building on the map, we need its latitude and longitude. Admins only type a postal code, so the server looks the coordinates up:</p>
+        <ul>
+          <li><strong>New buildings:</strong> <code>createBuildingJson</code> calls <code>onemap.geocodePostal(postal)</code> and saves <code>lat</code>/<code>lng</code> with the rest of the building. If OneMap fails, the building is still saved, just without coordinates, and the error is logged.</li>
+          <li><strong>Existing buildings:</strong> <code>npm run geocode</code> finds every building without coordinates and fills them in, printing ✓ or ✗ for each. A ✗ usually means a wrong postal code. Run it again after fixing; it only retries the ones still missing.</li>
+        </ul>
+        <p>The old EJS add-building page doesn't look up coordinates. Buildings added there need <code>npm run geocode</code>. Postal codes can't be edited, so saved coordinates never go out of date.</p>
+      </div>
+
+      <h3 id="onemap-service">services/onemap.js</h3>
+      <div class="prose"><p>The only file that talks to OneMap. A <code>services/</code> file holds code that isn't a route handler or a model, so controllers and scripts can both use it.</p></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Function</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>getToken()</code> (private)</td><td>Logs in with <code>ONEMAP_EMAIL</code>/<code>ONEMAP_PASSWORD</code> and keeps the token in memory until a minute before it expires (tokens last about 3 days), then gets a new one.</td></tr>
+          <tr><td><code>search(text)</code></td><td>OneMap place search by name, address or postal code. Returns <code>[{ name, address, postal, lat, lng }]</code>.</td></tr>
+          <tr><td><code>geocodePostal(postal)</code></td><td>Returns <code>{ lat, lng }</code> for a postal code, or <code>null</code>. Prefers the result whose postal code matches exactly.</td></tr>
+          <tr><td><code>routes(from, to)</code></td><td>Walking and public transport routes between two <code>"lat,lng"</code> points, and which is faster. Used by <code>GET /api/directions</code>.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3 id="fastest">Finding the fastest route</h3>
+      <ol class="steps">
+        <li>Opening a building page loads the building (which now includes <code>lat</code>/<code>lng</code>) and calls <code>mapStore.showBuilding(building)</code>.
+          <span class="where">client/src/views/BuildingSpotsView.vue</span></li>
+        <li>The store waits until the browser has given your location, then calls <code>GET /api/directions?from=&lt;you&gt;&amp;to=&lt;building&gt;</code>.
+          <span class="where">client/src/stores/map.js</span></li>
+        <li>The controller checks that both points really are <code>"lat,lng"</code> numbers (400 otherwise), so nothing else can be slipped into the OneMap URL.
+          <span class="where">controllers/directions-controller.js</span></li>
+        <li>The service asks OneMap for a walking route and a public transport route at the same time. Public transport uses the current Singapore date and time and asks for 3 options, keeping the quickest. If one mode fails, the other is still returned; if both fail, the endpoint answers 502.
+          <span class="where">services/onemap.js</span></li>
+        <li>Both answers are converted to the same shape. OneMap sends each line as an "encoded polyline" (a compressed string); the server decodes it into a list of points so the browser can draw it straight away.</li>
+        <li>The store selects the faster route. MiniMap draws it, colouring each part by how you travel, and zooms to fit it. The other route is one tap away.
+          <span class="where">client/src/components/MiniMap.vue</span></li>
+      </ol>
+<pre class="code">{
+  routes: [{
+    mode: 'walk' | 'pt',      <span class="c">// pt = public transport</span>
+    duration, distance,        <span class="c">// seconds, metres</span>
+    legs: [{ mode: 'WALK' | 'BUS' | 'SUBWAY' | 'TRAM' | ...,   <span class="c">// SUBWAY = MRT, TRAM = LRT</span>
+             route: '74', from, to, duration, distance,
+             points: [[lat, lng], ...] }]
+  }],
+  fastest: 'pt'
+}</pre>
+
+      <h3 id="minimap">The minimap</h3>
+      <div class="prose">
+        <p>Drawn with <a href="https://leafletjs.com/">Leaflet</a> (<code>leaflet</code> in <code>client/package.json</code>) on top of OneMap's tiles.</p>
+        <ul>
+          <li><strong>Where it lives.</strong> <code>App.vue</code> mounts it once, after <code>RouterView</code>, when someone is logged in. It shows itself only on pages with <code>meta.showMap</code> and hides with <code>v-show</code> elsewhere, so the map isn't rebuilt on every page change. Logging out unmounts it, which stops location tracking and clears its state.</li>
+          <li><strong>What's on it.</strong> A blue dot for you, purple dots for every building with coordinates (clicking one opens that building's page), a red dot with a label for the building you're heading to, and the route: grey dots for walking, green for bus, red for MRT, teal for LRT. Dark mode switches to OneMap's Night tiles.</li>
+          <li><strong>Buttons.</strong> ◎ re-centres on the route, building or you. ⤢ expands the map and lists the steps ("Bus 74 to Blk 306 · 2 min").</li>
+        </ul>
+      </div>
+      <div class="note prose">
+        <span class="label">Two Leaflet gotchas</span>
+        <p>Keep the Leaflet <code>map</code> in a plain <code>let</code>, never in <code>ref()</code> or <code>reactive()</code>: Vue's wrapper breaks Leaflet's internals. And Leaflet doesn't notice when its box changes size, so after expanding (and after being hidden) the component calls <code>map.invalidateSize()</code>. Without it, part of the map stays grey.</p>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <section>
       <h2 id="legacy">Legacy EJS app</h2>
       <div class="prose">
         <p>Nothing from the original app was deleted. The old routers in <code>routes/*.js</code>, the EJS-rendering functions at the top of each controller, and <code>views/*.ejs</code> all still run at <code>localhost:8000</code>. Both versions use the same database and login, so data written in one shows up in the other.</p>
@@ -800,6 +903,10 @@ await api('/api/spots', { method: 'POST', body: { name: 'Level 3', ... } }) <spa
           <tr><td>Saving a server file logs everyone out</td><td>Sessions live in server memory, and <code>node --watch</code> restarts the server.</td><td><code>connect-mongo</code> session store (TODO in <code>server.js</code>).</td></tr>
           <tr><td>A newly approved admin keeps Student access until they open Profile or log in again</td><td><code>/api/me</code> reads the session, which only refreshes in <code>GET /api/profile</code> and at login.</td><td>Re-read the role in <code>/api/me</code>, at the cost of one query per page change.</td></tr>
           <tr><td>Postal codes starting with 0 lose the 0</td><td><code>postal</code> is a Number.</td><td>Change it to a String.</td></tr>
+          <tr><td>The map can't find your location when the site is opened over Wi-Fi by IP (e.g. from a phone)</td><td>Browsers only share location with <code>https</code> pages or <code>localhost</code>.</td><td>Test on <code>localhost</code>; the AWS deployment is served over HTTPS.</td></tr>
+          <tr><td>Some buildings are missing from the map and have no route</td><td>They have no <code>lat</code>/<code>lng</code>: added on the old EJS page, or OneMap was down when they were added.</td><td>Run <code>npm run geocode</code>.</td></tr>
+          <tr><td>The route doesn't change as you walk</td><td>Routes are fetched once per building; only the blue dot follows you.</td><td>Fetch again once you've moved more than a few hundred metres.</td></tr>
+          <tr><td>Every route costs two OneMap calls</td><td>Walking and public transport are asked for separately. OneMap allows about 250 calls a minute per account.</td><td>Cache routes per building for a few minutes.</td></tr>
           <tr><td>Pages are unstyled; deletes use the browser's <code>confirm()</code></td><td>The conversion focused on behaviour.</td><td>Bootstrap / team styles; a <code>ConfirmModal</code> component.</td></tr>
         </tbody>
       </table></div>

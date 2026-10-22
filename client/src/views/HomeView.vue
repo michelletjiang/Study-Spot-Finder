@@ -1,11 +1,14 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { api } from '../api'
+import { mapStore } from '../stores/map'
 
 const buildings = ref([])
 const error = ref('')
 
 onMounted(async () => {
+  mapStore.clearDestination() // minimap goes back to just the user's location
+
   try {
     buildings.value = await api('/api/buildings')
   } catch (e) {
