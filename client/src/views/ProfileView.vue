@@ -90,15 +90,19 @@ async function deleteAccount() {
       <h3>Pending Admin Requests</h3>
       <p v-if="pendingRequests.length === 0">No pending requests.</p>
       <table v-else border="1" cellpadding="5">
-        <tr><th>Username</th><th>Requested At</th><th>Action</th></tr>
-        <tr v-for="req in pendingRequests" :key="req._id">
+        <thead>
+          <tr><th>Username</th><th>Requested At</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="req in pendingRequests" :key="req._id">
           <td>{{ req.username }}</td>
           <td>{{ new Date(req.createdAt).toDateString() }}</td>
           <td>
             <button @click="processRequest(req, 'approve')">Approve</button>
             <button @click="processRequest(req, 'deny')">Deny</button>
           </td>
-        </tr>
+          </tr>
+        </tbody>
       </table>
     </template>
   </template>
