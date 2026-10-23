@@ -16,6 +16,8 @@ const requestedIds = computed(() => String(route.query.ids || '').split(',').map
 async function load() {
   loading.value = true
   error.value = ''
+  spots.value = []
+  missingIds.value = []
   comparison.restore(requestedIds.value)
   if (requestedIds.value.length < 2 || requestedIds.value.length > 3) {
     error.value = 'Choose exactly two or three spots from a spot list.'
