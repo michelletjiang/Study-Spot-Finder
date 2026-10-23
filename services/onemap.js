@@ -1,29 +1,10 @@
 // Server-side OneMap client. The token stays here so it never reaches the browser.
 // Needs ONEMAP_EMAIL and ONEMAP_PASSWORD in config.env (register at https://www.onemap.gov.sg/apidocs/register).
 
-let token = null;
-let expiresAt = 0; // ms timestamp
+const { createTokenManager } = require('./onemap-auth');
 
-// OneMap tokens last ~3 days; fetch a new one when the cached one is about to expire
-async function getToken() {
-  if (token && Date.now() < expiresAt - 60_000) return token;
-
-  if (!process.env.ONEMAP_EMAIL || !process.env.ONEMAP_PASSWORD) {
-    throw new Error('ONEMAP_EMAIL and ONEMAP_PASSWORD must be set in config.env');
-  }
-
-  const res = await fetch('https://www.onemap.gov.sg/api/auth/post/getToken', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: process.env.ONEMAP_EMAIL, password: process.env.ONEMAP_PASSWORD }),
-  });
-  if (!res.ok) throw new Error(`OneMap login failed (${res.status})`);
-
-  const data = await res.json();
-  token = data.access_token;
-  expiresAt = Number(data.expiry_timestamp) * 1000;
-  return token;
-}
+// OneMap tokens last ~3 days; fetch a new one when the cached one is about to expire.
+const getToken = createTokenManager();
 
 // GET a OneMap API URL with the token attached and return the parsed JSON
 async function get(url, what) {
