@@ -2,6 +2,7 @@
   "name": "study-spot-finder",
   "private": true,
   "scripts": {
+    "test": "node --test test/*.test.js",
     "start": "node server.js",
     "dev": "concurrently -n server,client -c blue,green \"node --watch server.js\" \"npm --prefix client run dev\"",
     "build": "npm --prefix client ci && npm --prefix client run build",

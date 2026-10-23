@@ -1,6 +1,7 @@
 <script setup>
 import NavBar from './components/NavBar.vue'
 import MiniMap from './components/MiniMap.vue'
+import CompareTray from './components/CompareTray.vue'
 import { auth } from './stores/auth'
 </script>
 
@@ -9,4 +10,5 @@ import { auth } from './stores/auth'
   <RouterView />
   <!-- outside RouterView so the map survives page changes; it hides itself on pages without meta.showMap -->
   <MiniMap v-if="auth.user" />
+  <CompareTray v-if="auth.user" />
 </template>

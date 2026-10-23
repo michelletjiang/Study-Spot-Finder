@@ -5,6 +5,7 @@ import { api } from '../api'
 import { auth } from '../stores/auth'
 import { favourites } from '../stores/favourites'
 import FavouriteButton from '../components/FavouriteButton.vue'
+import { comparison } from '../stores/compare'
 
 // Spot details + its reviews (replaces studyspot-details.ejs and display-reviews.ejs)
 const route = useRoute()
@@ -43,6 +44,9 @@ async function deleteReview(review) {
     Power Socket: {{ spot.hasPowerSocket ? 'Yes' : 'No' }}<br>
     Noise Level: {{ spot.noiseLevel }}<br>
     <FavouriteButton :spot="spot" />
+    <button type="button" class="secondary compare-button" :aria-pressed="comparison.has(spot._id)" @click="comparison.toggle(spot._id)">
+      {{ comparison.has(spot._id) ? 'Remove from comparison' : 'Compare' }}
+    </button>
     <hr>
 
     <h3>Reviews</h3>
