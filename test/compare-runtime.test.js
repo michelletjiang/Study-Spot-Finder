@@ -22,11 +22,26 @@ test('runtime selection helpers cap, remove, clear, and restore', async () => {
   assert.deepEqual(selection.toggleSelection(ids, 'x'), ['x']);
 });
 
-test('runtime removal navigation updates the comparison query', async () => {
+test('runtime selection explains the cap and clears session-local state', async () => {
+  const { comparison } = await import('../client/src/stores/compare.js');
+  comparison.clear();
+  assert.equal(comparison.toggle('one'), true);
+  assert.equal(comparison.toggle('two'), true);
+  assert.equal(comparison.toggle('three'), true);
+  assert.equal(comparison.toggle('four'), false);
+  assert.deepEqual(comparison.selectedIds.value, ['one', 'two', 'three']);
+  assert.match(comparison.notice.value, /up to three spots/);
+  comparison.clear();
+  assert.deepEqual(comparison.selectedIds.value, []);
+  assert.equal(comparison.notice.value, '');
+});
+
+test('runtime removal navigation updates valid queries and exits an incomplete comparison', async () => {
   const nav = await import('../client/src/views/compare-navigation.js');
   const ids = nav.idsAfterRemoval(['one', 'two', 'three'], 'two');
   assert.deepEqual(ids, ['one', 'three']);
   assert.deepEqual(nav.comparisonLocation(ids), { path: '/compare', query: { ids: 'one,three' } });
+  assert.deepEqual(nav.comparisonLocation(['one']), { path: '/' });
 });
 
 test('authenticated comparison handler returns ordered and missing records', async () => {

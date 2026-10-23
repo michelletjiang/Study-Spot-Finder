@@ -17,17 +17,24 @@ test('comparison route exposes removal and query-watching behavior', () => {
   assert.match(source, /@click="removeSpot/);
 });
 
-test('API performs one batch lookup, preserves order, and reports missing IDs', () => {
+test('API performs one projected batch lookup, preserves order, and reports missing IDs', () => {
   const controller = fs.readFileSync('controllers/studyspot-controller.js', 'utf8');
   const model = fs.readFileSync('models/studyspot-model.js', 'utf8');
   assert.match(controller, /StudySpot\.findByIds\(ids\)/);
   assert.match(controller, /missingIds: ids\.filter/);
   assert.match(model, /StudySpot\.find\(\{ _id: \{ \$in: ids \} \}\)/);
+  assert.match(model, /\.select\('_id name buildingName floor seatCount hasPowerSocket noiseLevel'\)/);
+  assert.match(model, /\.lean\(\)/);
 });
 
 test('API parser rejects malformed, duplicate, and four-item selections', () => {
   assert.equal(parseComparisonIds('507f1f77bcf86cd799439011,507f1f77bcf86cd799439012').valid, true);
   assert.equal(parseComparisonIds('507f1f77bcf86cd799439011,507f1f77bcf86cd799439011').valid, false);
+  assert.equal(parseComparisonIds('507F1F77BCF86CD799439011,507f1f77bcf86cd799439011').valid, false);
+  assert.deepEqual(
+    parseComparisonIds('507F1F77BCF86CD799439011,507F1F77BCF86CD799439012').ids,
+    ['507f1f77bcf86cd799439011', '507f1f77bcf86cd799439012'],
+  );
   assert.equal(parseComparisonIds('507f1f77bcf86cd799439011,507f1f77bcf86cd799439012,507f1f77bcf86cd799439013,507f1f77bcf86cd799439014').valid, false);
 });
 
@@ -35,4 +42,13 @@ test('comparison layout includes a narrow-screen breakpoint', () => {
   const css = fs.readFileSync('client/src/style.css', 'utf8');
   assert.match(css, /@media \(max-width: 650px\)/);
   assert.match(css, /grid-template-columns: 1fr/);
+});
+
+test('comparison controls do not cover the map or the comparison results', () => {
+  const app = fs.readFileSync('client/src/App.vue', 'utf8');
+  const map = fs.readFileSync('client/src/components/MiniMap.vue', 'utf8');
+  const tray = fs.readFileSync('client/src/components/CompareTray.vue', 'utf8');
+  assert.match(app, /with-compare-tray/);
+  assert.match(map, /\.minimap\.with-compare-tray/);
+  assert.match(tray, /route\.path !== '\/compare'/);
 });

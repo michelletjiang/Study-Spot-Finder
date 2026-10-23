@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router'
 import { api } from '../api'
 import { auth } from '../stores/auth'
 import { favourites } from '../stores/favourites'
+import { comparison } from '../stores/compare'
 
 const router = useRouter()
 
@@ -10,6 +11,7 @@ async function logout() {
   await api('/api/logout', { method: 'POST' })
   auth.user = null
   favourites.list = [] // don't leave this user's favourites around for the next login
+  comparison.clear() // comparison choices are session-local too
   router.push('/login')
 }
 </script>

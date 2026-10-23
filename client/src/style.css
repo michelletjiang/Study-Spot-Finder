@@ -90,12 +90,23 @@ body {
 }
 .compare-tray p { margin: 4px 0 10px; }
 .compare-tray-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.comparison-limit { color: var(--text-h); font-weight: 600; }
+.compare-tray button,
+.comparison-card button,
+.compare-button {
+  padding: 7px 11px;
+  border: 1px solid var(--accent-border);
+  border-radius: 7px;
+  background: var(--accent-bg);
+  color: var(--text-h);
+  font: inherit;
+}
 button { cursor: pointer; }
 button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .secondary { margin: 6px 6px 6px 0; }
 .comparison-page { width: min(100% - 40px, 1020px); margin: 32px auto 120px; text-align: left; }
 .comparison-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 24px 0; }
-.comparison-card { border: 1px solid var(--border); padding: 18px; min-width: 0; }
+.comparison-card { border: 1px solid var(--border); border-radius: 10px; padding: 18px; min-width: 0; background: var(--bg); }
 .comparison-card h3 { overflow-wrap: anywhere; }
 .comparison-card dl { margin: 0 0 12px; }
 .comparison-card dl > div { border-top: 1px solid var(--border); padding: 10px 0; }

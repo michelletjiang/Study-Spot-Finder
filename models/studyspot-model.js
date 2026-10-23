@@ -49,8 +49,11 @@ exports.findById = function(id){
 };
 
 // One bounded query for comparison, preserving the caller's order in the controller.
+// Project only the catalogue facts exposed by the comparison API.
 exports.findByIds = function(ids){
-    return StudySpot.find({ _id: { $in: ids } });
+    return StudySpot.find({ _id: { $in: ids } })
+        .select('_id name buildingName floor seatCount hasPowerSocket noiseLevel')
+        .lean();
 };
 
 exports.findByBuilding = function(building){

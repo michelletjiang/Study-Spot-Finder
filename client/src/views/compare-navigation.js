@@ -3,5 +3,7 @@ export function idsAfterRemoval(ids, id) {
 }
 
 export function comparisonLocation(ids) {
-  return { path: '/compare', query: { ids: ids.join(',') } }
+  return ids.length >= 2
+    ? { path: '/compare', query: { ids: ids.join(',') } }
+    : { path: '/' }
 }

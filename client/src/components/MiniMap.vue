@@ -251,8 +251,12 @@ function legText(leg) {
   height: min(600px, calc(100vh - 32px));
 }
 
+/* Keep the map from covering the comparison actions at the bottom of the page. */
+.minimap.with-compare-tray { bottom: 136px; }
+
 @media (max-width: 480px) {
   .minimap { width: calc(100vw - 32px); height: 200px; }
+  .minimap.with-compare-tray { display: none !important; }
 }
 
 .map {

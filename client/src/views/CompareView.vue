@@ -54,7 +54,7 @@ function removeSpot(id) {
           <div><dt>Building</dt><dd>{{ spot.buildingName }}</dd></div>
           <div><dt>Floor</dt><dd>{{ spot.floor }}</dd></div>
           <div><dt>Seats</dt><dd>{{ spot.seatCount }}</dd></div>
-          <div><dt>Power</dt><dd>{{ spot.hasPowerSocket ? 'Available' : 'Not listed' }}</dd></div>
+          <div><dt>Power sockets</dt><dd>{{ spot.hasPowerSocket ? 'Available' : 'Not available' }}</dd></div>
           <div><dt>Noise</dt><dd>{{ spot.noiseLevel }}</dd></div>
         </dl>
         <button type="button" class="secondary" @click="removeSpot(spot._id)">Remove</button>
