@@ -7,6 +7,7 @@ import ProfileView from './views/ProfileView.vue'
 import EditProfileView from './views/EditProfileView.vue'
 import BuildingSpotsView from './views/BuildingSpotsView.vue'
 import SpotDetailView from './views/SpotDetailView.vue'
+import CompareView from './views/CompareView.vue'
 import ReviewFormView from './views/ReviewFormView.vue'
 import MyReviewsView from './views/MyReviewsView.vue'
 import ReportFormView from './views/ReportFormView.vue'
@@ -30,6 +31,7 @@ const routes = [
   { path: '/profile/edit', component: EditProfileView, meta: { requiresAuth: true } },
   { path: '/building/:name', component: BuildingSpotsView, meta: { requiresAuth: true, showMap: true } },
   { path: '/spots/:id', component: SpotDetailView, meta: { requiresAuth: true } },
+  { path: '/compare', component: CompareView, meta: { requiresAuth: true } },
   { path: '/spots/:spotId/reviews/new', component: ReviewFormView, meta: { requiresAuth: true } },
   { path: '/reviews/:id/edit', component: ReviewFormView, meta: { requiresAuth: true } },
   { path: '/reviews/:reviewId/report', component: ReportFormView, meta: { requiresAuth: true } },

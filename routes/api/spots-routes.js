@@ -6,6 +6,7 @@ const router = express.Router();
 
 // any logged-in user (the old routes were admin-only, so students couldn't see details)
 router.get('/', auth.apiLoggedIn, studySpotController.listSpots);
+router.get('/compare', auth.apiLoggedIn, studySpotController.compareSpots);
 router.get('/:id', auth.apiLoggedIn, studySpotController.getSpotJson);
 
 // admin only

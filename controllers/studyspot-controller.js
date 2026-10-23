@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const StudySpot = require('../models/studyspot-model');
 const Building = require('../models/building-model');
+const { parseComparisonIds } = require('../lib/compare');
 
 // TODO(M2): convert every handler in this file to JSON:
 //   res.render(view, data)      -> res.json(data)
@@ -169,6 +170,23 @@ exports.listSpots = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error reading database' });
+    }
+};
+
+// GET /api/spots/compare?ids=id1,id2[,id3]
+// Comparison deliberately reads server-owned facts and never accepts client-supplied spot data.
+exports.compareSpots = async (req, res) => {
+    const { ids, valid } = parseComparisonIds(req.query.ids);
+    if (!valid) {
+        return res.status(400).json({ message: 'Choose exactly two or three unique study spots.', ids });
+    }
+    try {
+        const spots = await StudySpot.findByIds(ids);
+        const byId = new Map(spots.map(spot => [String(spot._id), spot]));
+        res.json({ spots: ids.filter(id => byId.has(id)).map(id => byId.get(id)), missingIds: ids.filter(id => !byId.has(id)) });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error reading comparison data' });
     }
 };
 
