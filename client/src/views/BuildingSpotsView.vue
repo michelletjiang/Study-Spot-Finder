@@ -5,6 +5,7 @@ import { api } from '../api'
 import { favourites } from '../stores/favourites'
 import { mapStore } from '../stores/map'
 import FavouriteButton from '../components/FavouriteButton.vue'
+import { comparison } from '../stores/compare'
 
 const route = useRoute()
 const buildingName = computed(() => route.params.name)
@@ -44,6 +45,9 @@ watch(buildingName, async name => {
     <RouterLink :to="`/spots/${spot._id}`">View Details &amp; Reviews</RouterLink> |
     <RouterLink :to="`/spots/${spot._id}/reviews/new`">Add a Review</RouterLink><br>
     <FavouriteButton :spot="spot" />
+    <button type="button" class="secondary compare-button" :aria-pressed="comparison.has(spot._id)" @click="comparison.toggle(spot._id)">
+      {{ comparison.has(spot._id) ? 'Remove from comparison' : 'Compare' }}
+    </button>
     <hr>
   </div>
 </template>

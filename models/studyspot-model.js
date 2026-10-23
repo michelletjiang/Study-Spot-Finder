@@ -48,6 +48,11 @@ exports.findById = function(id){
     return StudySpot.findById(id);
 };
 
+// One bounded query for comparison, preserving the caller's order in the controller.
+exports.findByIds = function(ids){
+    return StudySpot.find({ _id: { $in: ids } });
+};
+
 exports.findByBuilding = function(building){
     return StudySpot.find({ buildingName: building})
 };
