@@ -146,11 +146,14 @@ exports.deleteAReview = async (req,res) => {
 const mongoose = require('mongoose');
 const StudySpot = require('../models/studyspot-model');
 
+const NOISE_LEVELS = ['Quiet', 'Moderate', 'Loud'];
+
 // returns an error message, or null if the review is valid
-function validateReview({ title, content, rating }) {
-    if (!String(title || '').trim() || !String(content || '').trim() || rating === undefined || rating === '')
+function validateReview({ title, content, rating, noiseLevel }) {
+    if (!String(title || '').trim() || !String(content || '').trim() || rating === undefined || rating === '' || !noiseLevel)
         return 'All fields are required.';
     if (!(Number(rating) >= 1 && Number(rating) <= 5)) return 'Rating must be between 1 and 5.';
+    if (!NOISE_LEVELS.includes(noiseLevel)) return 'Noise level must be Quiet, Moderate or Loud.';
     return null;
 }
 
@@ -195,7 +198,7 @@ exports.apiGetReview = async (req, res) => {
     }
 };
 
-// POST /api/reviews   body: { spotId, title, content, rating }
+// POST /api/reviews   body: { spotId, title, content, rating, noiseLevel }
 exports.apiCreateReview = async (req, res) => {
     const msg = validateReview(req.body);
     if (msg) return res.status(400).json({ message: msg });
@@ -210,7 +213,8 @@ exports.apiCreateReview = async (req, res) => {
             roomId:       spot.name,
             title:        req.body.title.trim(),
             content:      req.body.content.trim(),
-            rating:       Number(req.body.rating)
+            rating:       Number(req.body.rating),
+            noiseLevel:   req.body.noiseLevel
         });
         res.status(201).json(review);
     } catch (error) {
@@ -228,7 +232,7 @@ exports.apiUpdateReview = async (req, res) => {
         const msg = validateReview(req.body);
         if (msg) return res.status(400).json({ message: msg });
 
-        await Review.editReview(review._id, req.body.title.trim(), req.body.content.trim(), Number(req.body.rating));
+        await Review.editReview(review._id, req.body.title.trim(), req.body.content.trim(), Number(req.body.rating), req.body.noiseLevel);
         res.json(await Review.findByreviewId(review._id));
     } catch (error) {
         console.error(error);

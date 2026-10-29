@@ -1,7 +1,8 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { api } from '../api'
+import { formatDate, noiseSummary } from '../reviews'
 import { auth } from '../stores/auth'
 import { favourites } from '../stores/favourites'
 import FavouriteButton from '../components/FavouriteButton.vue'
@@ -22,6 +23,8 @@ onMounted(async () => {
   }
 })
 
+const noiseLevel = computed(() => noiseSummary(reviews.value))
+
 async function deleteReview(review) {
   if (!confirm(`Delete your review "${review.title}"?`)) return
   try {
@@ -41,7 +44,7 @@ async function deleteReview(review) {
     Floor: {{ spot.floor }}<br>
     Seats: {{ spot.seatCount }}<br>
     Power Socket: {{ spot.hasPowerSocket ? 'Yes' : 'No' }}<br>
-    Noise Level: {{ spot.noiseLevel }}<br>
+    Noise Level: {{ noiseLevel }}<br>
     <FavouriteButton :spot="spot" />
     <hr>
 
@@ -50,6 +53,8 @@ async function deleteReview(review) {
     <p v-if="reviews.length === 0">No reviews yet.</p>
     <div v-for="review in reviews" :key="review._id">
       <p><strong>{{ review.title }}</strong> ({{ review.rating }}/5) by {{ review.userId }}</p>
+      <small>{{ formatDate(review.createdAt) }}</small><br>
+      <template v-if="review.noiseLevel">Noise Level: {{ review.noiseLevel }}<br></template>
       {{ review.content }}<br>
       <template v-if="review.userId === auth.user?.username">
         <RouterLink :to="{ path: `/reviews/${review._id}/edit`, query: { back: route.fullPath } }">Edit</RouterLink> |

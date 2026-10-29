@@ -33,7 +33,7 @@ async function remove(spot) {
   <div v-for="spot in spots" :key="spot._id">
     <p><strong>{{ spot.buildingName }}, {{ spot.name }}</strong></p>
     Floor: {{ spot.floor }} · Seats: {{ spot.seatCount }} ·
-    Power: {{ spot.hasPowerSocket ? 'Yes' : 'No' }} · Noise: {{ spot.noiseLevel }}<br>
+    Power: {{ spot.hasPowerSocket ? 'Yes' : 'No' }}<br>
     <RouterLink :to="`/spots/${spot._id}`">View</RouterLink> |
     <RouterLink :to="`/admin/spots/${spot._id}/edit`">Edit</RouterLink> |
     <button @click="remove(spot)">Delete</button>

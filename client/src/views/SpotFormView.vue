@@ -8,7 +8,7 @@ const router = useRouter()
 const isEdit = computed(() => !!route.params.id)
 
 const buildings = ref([])
-const form = ref({ buildingName: '', name: '', floor: '', seatCount: '', hasPowerSocket: false, noiseLevel: 'Quiet' })
+const form = ref({ buildingName: '', name: '', floor: '', seatCount: '', hasPowerSocket: false })
 const error = ref('')
 const saving = ref(false)
 
@@ -58,11 +58,6 @@ async function save() {
       <select v-model="form.hasPowerSocket">
         <option :value="true">Yes</option>
         <option :value="false">No</option>
-      </select>
-    </label><br>
-    <label>Noise Level
-      <select v-model="form.noiseLevel">
-        <option>Quiet</option><option>Moderate</option><option>Loud</option>
       </select>
     </label><br>
     <p v-if="error" style="color: red">{{ error }}</p>

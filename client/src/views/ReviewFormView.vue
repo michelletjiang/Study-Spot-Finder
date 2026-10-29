@@ -9,7 +9,7 @@ const router = useRouter()
 const isEdit = computed(() => !!route.params.id)
 
 const spotLabel = ref('')
-const form = ref({ title: '', content: '', rating: 3 })
+const form = ref({ title: '', content: '', rating: 3, noiseLevel: '' })
 const error = ref('')
 const saving = ref(false)
 
@@ -17,7 +17,7 @@ onMounted(async () => {
   try {
     if (isEdit.value) {
       const review = await api(`/api/reviews/${route.params.id}`)
-      form.value = { title: review.title, content: review.content, rating: review.rating }
+      form.value = { title: review.title, content: review.content, rating: review.rating, noiseLevel: review.noiseLevel || '' }
       spotLabel.value = `${review.buildingName}, ${review.roomId}`
     } else {
       const spot = await api(`/api/spots/${route.params.spotId}`)
@@ -54,6 +54,12 @@ async function save() {
     <label>Title <input v-model="form.title" required></label><br>
     <label>Content <textarea v-model="form.content" required></textarea></label><br>
     <label>Rating <input v-model.number="form.rating" type="number" min="1" max="5" required></label><br>
+    <label>Noise Level
+      <select v-model="form.noiseLevel" required>
+        <option value="">-- How noisy was it? --</option>
+        <option>Quiet</option><option>Moderate</option><option>Loud</option>
+      </select>
+    </label><br>
     <p v-if="error" style="color: red">{{ error }}</p>
     <button :disabled="saving">{{ isEdit ? 'Update' : 'Add' }} Review</button>
     <button type="button" @click="router.back()">Cancel</button>

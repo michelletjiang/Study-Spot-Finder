@@ -39,6 +39,11 @@ const reviewSchema = new mongoose.Schema({
     rating:{
         type:Number,
         default:3.0
+    },
+
+    noiseLevel:{
+        type:String,
+        enum:['Quiet','Moderate','Loud'] // not required here so older reviews (and the old EJS form) still work; the JSON API requires it
     }
 }, {timestamps:true}); // auto gives createdAt, updatedAt
 
@@ -60,12 +65,13 @@ exports.findByreviewId = function (reviewId) {
     return Review.findById(reviewId)
 };
 
-exports.editReview = function(reviewId, title, content, rating){ // first parameter = primary key users shld input
+exports.editReview = function(reviewId, title, content, rating, noiseLevel){ // first parameter = primary key users shld input
     return Review.findByIdAndUpdate(reviewId, // primary key. this is the query object passed to updateOne. it tells mongoDB to find a review where _id=reviewId & userId=the logged-in user
         {
             title:title, 
             content:content, 
-            rating:rating
+            rating:rating,
+            ...(noiseLevel !== undefined && { noiseLevel:noiseLevel }) // the old EJS update form doesn't send it, so don't wipe it
         }
     )
 };

@@ -38,7 +38,6 @@ async function remove(fav) {
     Floor: {{ fav.floor }}<br>
     Seats: {{ fav.seatCount }}<br>
     Power Socket: {{ fav.hasPowerSocket ? 'Yes' : 'No' }}<br>
-    Noise Level: {{ fav.noiseLevel }}<br>
     <RouterLink :to="`/building/${fav.buildingName}`">View building</RouterLink> |
     <button @click="remove(fav)">Remove from Favourites</button>
     <hr>

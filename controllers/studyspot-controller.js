@@ -148,17 +148,14 @@ exports.deleteSpot = async (req, res) => {
 
 // ---------- JSON API (used by Vue) ----------
 
-const NOISE_LEVELS = ['Quiet', 'Moderate', 'Loud'];
-
 // returns an error message, or null if the spot is valid for this building
-function validateSpot({ name, floor, seatCount, noiseLevel }, building) {
-    if (!name?.trim() || !floor || seatCount === undefined || seatCount === '' || !noiseLevel)
+function validateSpot({ name, floor, seatCount }, building) {
+    if (!name?.trim() || !floor || seatCount === undefined || seatCount === '')
         return 'All fields are required.';
     const f = String(floor).toUpperCase();
     if (f !== 'B1' && !(Number.isInteger(Number(f)) && f >= 1 && f <= building.floors))
         return `Floor must be B1 or 1-${building.floors}.`;
     if (!(Number(seatCount) >= 1)) return 'Seat count must be at least 1.';
-    if (!NOISE_LEVELS.includes(noiseLevel)) return 'Noise level must be Quiet, Moderate or Loud.';
     return null;
 }
 
@@ -198,8 +195,7 @@ exports.createSpotJson = async (req, res) => {
             name:           req.body.name.trim(),
             floor:          String(req.body.floor).toUpperCase(),
             seatCount:      Number(req.body.seatCount),
-            hasPowerSocket: Boolean(req.body.hasPowerSocket), // JSON sends a real boolean now
-            noiseLevel:     req.body.noiseLevel
+            hasPowerSocket: Boolean(req.body.hasPowerSocket) // JSON sends a real boolean now
         });
         res.status(201).json(spot);
     } catch (error) {
@@ -223,8 +219,7 @@ exports.updateSpotJson = async (req, res) => {
             name:           req.body.name.trim(),
             floor:          String(req.body.floor).toUpperCase(),
             seatCount:      Number(req.body.seatCount),
-            hasPowerSocket: Boolean(req.body.hasPowerSocket),
-            noiseLevel:     req.body.noiseLevel
+            hasPowerSocket: Boolean(req.body.hasPowerSocket)
         });
         res.json(await StudySpot.findById(spot._id));
     } catch (error) {

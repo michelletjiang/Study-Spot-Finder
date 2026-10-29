@@ -6,8 +6,7 @@ const favouriteSchema = new mongoose.Schema({
     buildingName:   { type: String, required: true },
     floor:          { type: String, required: true },
     seatCount:      { type: Number, required: true },
-    hasPowerSocket: { type: Boolean, default: false },
-    noiseLevel:     { type: String, required: true }
+    hasPowerSocket: { type: Boolean, default: false }
 }, { timestamps: true });
 
 const Favourite = mongoose.model('Favourite', favouriteSchema, 'favourites');

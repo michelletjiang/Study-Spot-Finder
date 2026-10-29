@@ -83,8 +83,7 @@ exports.apiAddFavourite = async (req, res) => {
             buildingName:   spot.buildingName,
             floor:          spot.floor,
             seatCount:      spot.seatCount,
-            hasPowerSocket: spot.hasPowerSocket,
-            noiseLevel:     spot.noiseLevel
+            hasPowerSocket: spot.hasPowerSocket
         });
         res.status(201).json(favourite);
     } catch (error) {
