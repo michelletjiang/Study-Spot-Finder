@@ -24,6 +24,7 @@ const studySpotSchema = new mongoose.Schema({
     },
     noiseLevel: {
         type: String,
+        enum: ['Quiet','Moderate','Loud'],
         required: [true, 'A study spot must have a noise level']
     },
     image: {

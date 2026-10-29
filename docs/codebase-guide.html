@@ -1,0 +1,955 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Copy of https://claude.ai/artifact/7m8xgVB5WyMME8ZfhgqAn7 — open this file in a browser. -->
+<style>body{margin:0}</style>
+<title>Study Spot Finder Codebase</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: reference manual — sticky contents rail on the left, one reading column, wide tables scroll in place */
+:root {
+  --bg: #f4f7f6;
+  --surface: #ffffff;
+  --fg: #16201e;
+  --muted: #56655f;
+  --line: #d6dfdb;
+  --accent: #0d6a60;
+  --accent-soft: #e0efeb;
+  --code-bg: #ebf1ef;
+  --get: #1b67ad;
+  --post: #1c7f46;
+  --put: #9a6200;
+  --del: #ae3434;
+  --warn: #8a5a00;
+  --font-display: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1413; --surface: #141c1b; --fg: #e2ebe8; --muted: #9aaca6; --line: #27332f;
+    --accent: #52c2b2; --accent-soft: #15302b; --code-bg: #1a2523;
+    --get: #74b3ee; --post: #62cf8f; --put: #e2ab4f; --del: #f07f7f; --warn: #e2ab4f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1413; --surface: #141c1b; --fg: #e2ebe8; --muted: #9aaca6; --line: #27332f;
+  --accent: #52c2b2; --accent-soft: #15302b; --code-bg: #1a2523;
+  --get: #74b3ee; --post: #62cf8f; --put: #e2ab4f; --del: #f07f7f; --warn: #e2ab4f;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.6;
+}
+.page {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 96px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+}
+@media (min-width: 980px) {
+  .page { grid-template-columns: 230px minmax(0, 1fr); gap: 56px; }
+}
+
+/* contents rail */
+.toc { font-size: 15px; }
+.toc details { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 10px 14px; }
+.toc summary { cursor: pointer; font-family: var(--font-display); font-weight: 700; }
+.toc ol { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px; }
+.toc ol ol { margin: 2px 0 6px 12px; }
+.toc a { color: var(--muted); text-decoration: none; display: block; padding: 2px 0; }
+.toc a:hover, .toc a:focus-visible { color: var(--accent); }
+@media (min-width: 980px) {
+  .toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; max-height: calc(100vh - 48px); overflow-y: auto; }
+  .toc details { border: 0; background: none; padding: 0; }
+  .toc summary { list-style: none; pointer-events: none; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .toc summary::-webkit-details-marker { display: none; }
+}
+
+main { min-width: 0; }
+.prose { max-width: 72ch; }
+
+header.doc { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 13px; color: var(--accent); letter-spacing: .02em; margin: 0 0 10px; }
+h1, h2, h3, h4 { font-family: var(--font-display); text-wrap: balance; line-height: 1.2; }
+h1 { font-size: clamp(30px, 5vw, 44px); margin: 0 0 14px; font-weight: 700; }
+h2 { font-size: 28px; margin: 64px 0 14px; padding-top: 8px; font-weight: 700; scroll-margin-top: 20px; }
+h3 { font-size: 21px; margin: 40px 0 10px; font-weight: 700; scroll-margin-top: 20px; }
+h4 { font-size: 17px; margin: 24px 0 6px; font-weight: 700; }
+.lede { font-size: 19px; color: var(--muted); max-width: 64ch; margin: 0; }
+p, ul, ol { margin: 0 0 14px; }
+li { margin-bottom: 4px; }
+a { color: var(--accent); }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+strong { font-weight: 600; }
+
+code, pre, kbd { font-family: var(--font-mono); font-size: .86em; }
+:not(pre) > code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+pre.code {
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  line-height: 1.5;
+  margin: 0 0 18px;
+  font-size: 14px;
+}
+.c { color: var(--muted); }
+
+.meta-row { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 18px; font-size: 14px; color: var(--muted); }
+.meta-row span { font-family: var(--font-mono); }
+
+/* tables */
+.table-wrap { overflow-x: auto; margin: 0 0 22px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: 0; }
+th { font-family: var(--font-display); font-weight: 700; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); background: var(--code-bg); white-space: nowrap; }
+td code { white-space: nowrap; }
+td.wrap code { white-space: normal; }
+.group td { background: var(--accent-soft); font-family: var(--font-display); font-weight: 700; color: var(--accent); }
+
+/* badges */
+.m, .a, .tag {
+  display: inline-block; font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+  padding: 1px 7px; border-radius: 4px; white-space: nowrap; line-height: 1.6;
+}
+.m.get { color: var(--get); background: color-mix(in srgb, var(--get) 13%, transparent); }
+.m.post { color: var(--post); background: color-mix(in srgb, var(--post) 13%, transparent); }
+.m.put { color: var(--put); background: color-mix(in srgb, var(--put) 14%, transparent); }
+.m.del { color: var(--del); background: color-mix(in srgb, var(--del) 13%, transparent); }
+.a { border: 1px solid var(--line); color: var(--muted); }
+.a.login { color: var(--get); border-color: color-mix(in srgb, var(--get) 40%, transparent); }
+.a.admin { color: var(--del); border-color: color-mix(in srgb, var(--del) 40%, transparent); }
+.a.owner { color: var(--put); border-color: color-mix(in srgb, var(--put) 45%, transparent); }
+.tag.new { color: var(--post); background: color-mix(in srgb, var(--post) 13%, transparent); }
+.tag.legacy { color: var(--muted); background: var(--code-bg); }
+.tag.shared { color: var(--accent); background: var(--accent-soft); }
+
+/* callouts */
+.note {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 0 0 18px;
+  max-width: 72ch;
+}
+.note.warn { border-left-color: var(--warn); }
+.note p:last-child, .note ul:last-child { margin-bottom: 0; }
+.note .label { font-family: var(--font-display); font-weight: 700; font-size: 13px; letter-spacing: .05em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 4px; }
+.note.warn .label { color: var(--warn); }
+
+/* view cards */
+.views { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 14px; margin: 0 0 22px; }
+.view {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px;
+  display: grid; gap: 6px; align-content: start; min-width: 0;
+}
+.view h4 { margin: 0; font-size: 16px; }
+.view .route { font-family: var(--font-mono); font-size: 13px; color: var(--accent); overflow-wrap: anywhere; }
+.view p { margin: 0; font-size: 15px; }
+.view dl { margin: 4px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 14px; }
+.view dt { color: var(--muted); }
+.view dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+
+/* request walkthrough */
+.steps { counter-reset: step; list-style: none; padding: 0; max-width: 76ch; }
+.steps li { counter-increment: step; position: relative; padding-left: 40px; margin-bottom: 12px; }
+.steps li::before {
+  content: counter(step); position: absolute; left: 0; top: 1px;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent);
+  font-family: var(--font-mono); font-size: 13px; font-weight: 600;
+  display: grid; place-items: center;
+}
+.where { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); display: block; }
+
+pre.mermaid { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; overflow-x: auto; text-align: center; margin: 0 0 22px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 14px; color: var(--muted); margin: 0 0 12px; align-items: center; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <nav class="toc" aria-label="Contents">
+    <details open>
+      <summary>Contents</summary>
+      <ol>
+        <li><a href="#overview">How it fits together</a></li>
+        <li><a href="#running">Running it</a></li>
+        <li><a href="#map">Project map</a></li>
+        <li><a href="#lifecycle">One request, start to finish</a></li>
+        <li><a href="#server">Server</a>
+          <ol>
+            <li><a href="#server-js">server.js</a></li>
+            <li><a href="#auth">Sessions &amp; auth</a></li>
+            <li><a href="#models">Models</a></li>
+            <li><a href="#controllers">Controllers</a></li>
+            <li><a href="#api">API reference</a></li>
+          </ol>
+        </li>
+        <li><a href="#client">Client (Vue)</a>
+          <ol>
+            <li><a href="#bootstrap">Start-up files</a></li>
+            <li><a href="#router">router.js</a></li>
+            <li><a href="#api-js">api.js</a></li>
+            <li><a href="#stores">Stores</a></li>
+            <li><a href="#components">Components</a></li>
+            <li><a href="#views">Pages (views)</a></li>
+            <li><a href="#vue-patterns">Vue patterns used</a></li>
+          </ol>
+        </li>
+        <li><a href="#onemap">Map &amp; directions</a>
+          <ol>
+            <li><a href="#coords">Building coordinates</a></li>
+            <li><a href="#onemap-service">services/onemap.js</a></li>
+            <li><a href="#fastest">Finding the fastest route</a></li>
+            <li><a href="#minimap">The minimap</a></li>
+          </ol>
+        </li>
+        <li><a href="#legacy">Legacy EJS app</a></li>
+        <li><a href="#limits">Known limits</a></li>
+        <li><a href="#add-feature">Adding a feature</a></li>
+        <li><a href="#testing">Testing</a></li>
+      </ol>
+    </details>
+  </nav>
+
+  <main>
+    <header class="doc">
+      <p class="eyebrow">IS216 · G8 Team 1 · configure-vue branch</p>
+      <h1>Study Spot Finder Codebase</h1>
+      <p class="lede">What every file does, how a click in the browser turns into a database query and back, and what to watch out for. Written for anyone on the team picking up a part of the code they didn't write.</p>
+      <div class="meta-row">
+        <div>Describes commit <span>6f5a442</span> plus the map work on <span>onemap-implementation</span></div>
+        <div>Stack <span>Vue 3 · Vite · Express 5 · Mongoose 9 · MongoDB Atlas</span></div>
+      </div>
+    </header>
+
+    <!-- ================================================================ -->
+    <section class="prose">
+      <h2 id="overview">How it fits together</h2>
+      <p>The app is now two programs that talk over HTTP:</p>
+      <ul>
+        <li><strong>The client</strong> (<code>client/</code>) is a Vue app. It draws every page in the browser and never touches the database. When it needs data it calls a URL starting with <code>/api</code>.</li>
+        <li><strong>The server</strong> (everything else) is Express. Its <code>/api</code> routes check who you are, read or write MongoDB through Mongoose, and answer with JSON. They never send HTML.</li>
+      </ul>
+      <p>The old EJS pages are still mounted on the same Express server as a backup. They share the same database and the same login session, so you can use the old and new versions side by side while the team checks the Vue pages.</p>
+    </section>
+
+<pre class="mermaid">
+flowchart LR
+  subgraph Browser
+    VUE["Vue app<br/>localhost:5173"]
+    EJS["Old EJS pages<br/>localhost:8000"]
+  end
+  VITE["Vite dev server<br/>:5173"]
+  EXP["Express server<br/>:8000"]
+  DB[("MongoDB Atlas")]
+  VUE -- "page + JS" --> VITE
+  VUE -- "fetch /api/* + session cookie" --> VITE
+  VITE -- "proxies /api/*" --> EXP
+  EJS -- "/login, /profile, ..." --> EXP
+  EXP -- "Mongoose" --> DB
+</pre>
+
+    <div class="prose">
+      <p>In production there is no Vite server. <code>npm run build</code> turns the Vue app into plain files in <code>client/dist/</code>, and Express serves those plus the API from one address. That step is still a TODO for the M6 cut-over (see <a href="#legacy">Legacy EJS app</a>).</p>
+      <div class="note">
+        <span class="label">Vue vs Vite</span>
+        <p>Vue is the framework the pages are written in and runs in the browser. Vite is a tool on your machine: it serves the Vue files during development, reloads the page when you save, forwards <code>/api</code> calls to Express, and bundles everything for production.</p>
+      </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <section>
+      <h2 id="running">Running it</h2>
+      <div class="prose">
+        <p>From the project root:</p>
+      </div>
+<pre class="code">npm install                  <span class="c"># server packages (root)</span>
+npm --prefix client install  <span class="c"># Vue packages</span>
+npm run dev                  <span class="c"># starts Express (8000) and Vite (5173) together</span></pre>
+      <div class="prose"><p>Then open <strong>http://localhost:5173</strong>. Use <code>localhost</code>, not <code>127.0.0.1</code>; the session cookie is tied to the hostname.</p></div>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>Script (root <code>package.json</code>)</th><th>What it runs</th><th>Use it for</th></tr></thead>
+        <tbody>
+          <tr><td><code>npm run dev</code></td><td class="wrap"><code>concurrently</code> runs <code>node --watch server.js</code> and <code>npm --prefix client run dev</code></td><td>Day-to-day work. The server restarts when you save a server file; Vite hot-reloads Vue files.</td></tr>
+          <tr><td><code>npm start</code></td><td><code>node server.js</code></td><td>Production / AWS. No file watching.</td></tr>
+          <tr><td><code>npm run build</code></td><td class="wrap"><code>npm --prefix client ci</code> then <code>vite build</code></td><td>Makes <code>client/dist/</code> for production.</td></tr>
+          <tr><td><code>npm run geocode</code></td><td class="wrap"><code>node scripts/geocode-buildings.js</code></td><td>Fills in <code>lat</code>/<code>lng</code> for buildings that don't have them. Add <code>-- --all</code> to redo every building. See <a href="#coords">Building coordinates</a>.</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>Setting</th><th>Where</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>DB</code></td><td><code>config.env</code></td><td>MongoDB Atlas connection string. Ask a teammate for it; it is not in git.</td></tr>
+          <tr><td><code>SECRET</code></td><td><code>config.env</code></td><td>Signs the session cookie so it can't be forged. Any long random string.</td></tr>
+          <tr><td><code>ONEMAP_EMAIL</code><br><code>ONEMAP_PASSWORD</code></td><td><code>config.env</code></td><td>Login for a free OneMap API account (<a href="https://www.onemap.gov.sg/apidocs/register">register here</a>). The server uses it to get a OneMap token by itself and gets a new one when it expires (about every 3 days). Without these, adding buildings still works but they get no coordinates, and the map can't show routes.</td></tr>
+          <tr><td><code>PORT</code></td><td>environment (optional)</td><td>Port Express listens on. Defaults to 8000. AWS sets it for you.</td></tr>
+          <tr><td>Vite proxy</td><td><code>client/vite.config.js</code></td><td>Forwards <code>/api</code> to <code>http://127.0.0.1:8000</code>. It uses <code>127.0.0.1</code> because Node can resolve <code>localhost</code> to IPv6, which Express isn't listening on.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="note warn prose">
+        <span class="label">Secrets</span>
+        <p><code>config.env</code>, <code>node_modules/</code>, <code>client/dist/</code> and the local OneMap demo files are in <code>.gitignore</code>. <code>config.env</code> used to be committed, so the Atlas password and <code>SECRET</code> are in the git history and should be changed.</p>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <section>
+      <h2 id="map">Project map</h2>
+      <div class="legend">
+        <span><span class="tag new">new</span> written for Vue</span>
+        <span><span class="tag shared">shared</span> used by both versions</span>
+        <span><span class="tag legacy">legacy</span> old EJS version, kept as backup</span>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Path</th><th></th><th>What it is</th></tr></thead>
+        <tbody>
+          <tr class="group"><td colspan="3">Server (project root)</td></tr>
+          <tr><td><code>server.js</code></td><td><span class="tag shared">shared</span></td><td>Entry point. Sets up Express, sessions, mounts the API and the old routes, connects to MongoDB, starts listening.</td></tr>
+          <tr><td><code>config.env</code></td><td><span class="tag shared">shared</span></td><td><code>DB</code>, <code>SECRET</code>, and the OneMap login. Not in git.</td></tr>
+          <tr><td><code>middleware/auth-middleware.js</code></td><td><span class="tag shared">shared</span></td><td>Login/admin checks. <code>apiLoggedIn</code>/<code>apiAdmin</code> answer with JSON; <code>isLoggedIn</code>/<code>isAdmin</code> redirect (legacy).</td></tr>
+          <tr><td><code>models/*.js</code></td><td><span class="tag shared">shared</span></td><td>Mongoose schemas and small query helpers, one file per collection.</td></tr>
+          <tr><td><code>controllers/*.js</code></td><td><span class="tag shared">shared</span></td><td>Request handlers. The top of each file is the legacy EJS version; the <code>// ---------- JSON API ----------</code> section at the bottom is the Vue version.</td></tr>
+          <tr><td><code>routes/api/index.js</code></td><td><span class="tag new">new</span></td><td>Mounts every feature router under <code>/api</code>, plus the JSON 404 for unknown API paths.</td></tr>
+          <tr><td><code>routes/api/*-routes.js</code></td><td><span class="tag new">new</span></td><td>One file per feature: URL + HTTP method → middleware → controller function.</td></tr>
+          <tr><td><code>services/onemap.js</code></td><td><span class="tag new">new</span></td><td>Talks to OneMap: login token, place search, postal code → coordinates, and walking / public transport routes. The OneMap token never leaves the server.</td></tr>
+          <tr><td><code>scripts/geocode-buildings.js</code></td><td><span class="tag new">new</span></td><td>One-off script behind <code>npm run geocode</code>: adds coordinates to buildings that don't have them.</td></tr>
+          <tr><td><code>routes/*.js</code> (not in <code>api/</code>)</td><td><span class="tag legacy">legacy</span></td><td>The old page routes (<code>/login</code>, <code>/add-studyspot</code>, ...).</td></tr>
+          <tr><td><code>views/*.ejs</code></td><td><span class="tag legacy">legacy</span></td><td>The old HTML templates (about 25 pages).</td></tr>
+          <tr><td><code>public/styles.css</code></td><td><span class="tag legacy">legacy</span></td><td>Stylesheet for the EJS pages.</td></tr>
+          <tr class="group"><td colspan="3">Client (<code>client/</code>)</td></tr>
+          <tr><td><code>index.html</code></td><td><span class="tag new">new</span></td><td>The single HTML page. Contains an empty <code>&lt;div id="app"&gt;</code> that Vue fills in.</td></tr>
+          <tr><td><code>vite.config.js</code></td><td><span class="tag new">new</span></td><td>Enables the Vue plugin and the <code>/api</code> proxy.</td></tr>
+          <tr><td><code>src/main.js</code></td><td><span class="tag new">new</span></td><td>Creates the Vue app, plugs in the router, mounts it on <code>#app</code>.</td></tr>
+          <tr><td><code>src/App.vue</code></td><td><span class="tag new">new</span></td><td>The frame around every page: <code>&lt;NavBar /&gt;</code> above <code>&lt;RouterView /&gt;</code>, then <code>&lt;MiniMap /&gt;</code> when logged in.</td></tr>
+          <tr><td><code>src/router.js</code></td><td><span class="tag new">new</span></td><td>URL → page table and the login/admin guard.</td></tr>
+          <tr><td><code>src/api.js</code></td><td><span class="tag new">new</span></td><td>The one function every page uses to call the server.</td></tr>
+          <tr><td><code>src/stores/auth.js</code></td><td><span class="tag new">new</span></td><td>Who is logged in, shared by all components.</td></tr>
+          <tr><td><code>src/stores/favourites.js</code></td><td><span class="tag new">new</span></td><td>The logged-in user's favourites, shared by every ☆ button.</td></tr>
+          <tr><td><code>src/stores/map.js</code></td><td><span class="tag new">new</span></td><td>The minimap's state: your location, the building you're heading to, and its routes.</td></tr>
+          <tr><td><code>src/components/</code></td><td><span class="tag new">new</span></td><td>Pieces used inside pages: <code>NavBar.vue</code>, <code>FavouriteButton.vue</code>, <code>MiniMap.vue</code>.</td></tr>
+          <tr><td><code>src/views/</code></td><td><span class="tag new">new</span></td><td>One file per page the router can show (16 pages).</td></tr>
+          <tr><td><code>src/style.css</code></td><td><span class="tag new">new</span></td><td>Still Vite's starter stylesheet; replace with the team's styles.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <section>
+      <h2 id="lifecycle">One request, start to finish</h2>
+      <div class="prose"><p>Following a login from the click to the screen touches almost every layer, so it's the quickest way to see how the parts connect.</p></div>
+      <ol class="steps">
+        <li>You type your email and password and press <strong>Login</strong>. The form has <code>@submit.prevent="login"</code>, so the browser doesn't reload the page; Vue calls the <code>login()</code> function instead.
+          <span class="where">client/src/views/LoginView.vue</span></li>
+        <li><code>login()</code> calls <code>api('/api/login', { method: 'POST', body: { email, password } })</code>. <code>api()</code> turns the body into JSON and calls <code>fetch</code> with <code>credentials: 'include'</code> so cookies are sent.
+          <span class="where">client/src/api.js</span></li>
+        <li>The request goes to <code>localhost:5173/api/login</code>. Vite sees the <code>/api</code> prefix and forwards it, cookies included, to Express on port 8000.
+          <span class="where">client/vite.config.js</span></li>
+        <li>Express runs its middleware in order: <code>express.json()</code> parses the body into <code>req.body</code>, then <code>express-session</code> reads the session cookie (none yet) and attaches <code>req.session</code>.
+          <span class="where">server.js</span></li>
+        <li><code>server.use('/api', apiRoutes)</code> hands the request to the API router, which matches <code>POST /login</code> in <code>auth-routes.js</code> and calls <code>userController.apiLogin</code>.
+          <span class="where">routes/api/index.js → routes/api/auth-routes.js</span></li>
+        <li><code>apiLogin</code> lowercases the email, finds the user with <code>User.findOne({ email })</code>, and checks the password with <code>bcrypt.compare</code>. Wrong email or password → <code>401 { message: 'Invalid email or password' }</code>.
+          <span class="where">controllers/user-controller.js</span></li>
+        <li>On success it calls <code>req.session.regenerate()</code> (a fresh session ID, so an old one can't be reused), stores <code>sessionUser(user)</code> in <code>req.session.user</code>, and replies <code>200 { user }</code>. Express sends a <code>Set-Cookie: connect.sid=…</code> header with the reply.</li>
+        <li>Back in the browser, <code>api()</code> sees <code>res.ok</code> and returns the parsed JSON. <code>login()</code> sets <code>auth.user = user</code>; because <code>auth</code> is reactive, the NavBar immediately shows your name.
+          <span class="where">client/src/stores/auth.js</span></li>
+        <li><code>router.push(route.query.redirect || '/')</code> moves to the next page. The router guard runs first, calls <code>/api/me</code>, gets your user back (the cookie is sent now), and allows the page.
+          <span class="where">client/src/router.js</span></li>
+      </ol>
+      <div class="prose">
+        <p>Every other feature follows the same path. Only the page, the URL and the controller function change.</p>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <section>
+      <h2 id="server">Server</h2>
+
+      <h3 id="server-js">server.js</h3>
+      <div class="prose"><p>Read top to bottom: Express runs middleware in the order it is registered, so the order in this file matters.</p></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Block</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>dotenv.config({ path: './config.env' })</code></td><td>Loads <code>DB</code> and <code>SECRET</code> into <code>process.env</code>. Variables already set in the environment win over the file, which is how a test database can be swapped in.</td></tr>
+          <tr><td><code>require('./routes/...')</code></td><td>Loads the seven legacy routers and the new <code>routes/api</code> router.</td></tr>
+          <tr><td><code>server.set('trust proxy', 1)</code></td><td>Trusts the AWS load balancer in front of the app, so secure cookies work over HTTPS there.</td></tr>
+          <tr><td><code>express.urlencoded</code> / <code>express.json</code></td><td>Parse form posts (legacy pages) and JSON bodies (Vue) into <code>req.body</code>.</td></tr>
+          <tr><td><code>express.static('public')</code></td><td>Serves <code>public/styles.css</code> for the EJS pages.</td></tr>
+          <tr><td><code>server.set("view engine", "ejs")</code></td><td>Lets legacy controllers call <code>res.render()</code>. Delete at cut-over.</td></tr>
+          <tr><td><code>session({...})</code></td><td>Adds <code>req.session</code> to every request, backed by a cookie called <code>connect.sid</code>. Sessions are kept in server memory for now (see <a href="#limits">Known limits</a>).</td></tr>
+          <tr><td><code>GET /api/health</code></td><td>Returns <code>{ ok: true }</code>. Used to check the server is up.</td></tr>
+          <tr><td><code>GET /api/me</code></td><td>Returns <code>{ user }</code> from the session, or <code>{ user: null }</code>. The Vue router calls it on every page change.</td></tr>
+          <tr><td><code>server.use('/api', apiRoutes)</code></td><td>The JSON API. Mounted <em>before</em> the legacy routes so <code>/api/...</code> never reaches them.</td></tr>
+          <tr><td><code>server.use('/', userRoutes)</code> ...</td><td>The seven legacy page routers. Remove at cut-over.</td></tr>
+          <tr><td><code>connectDB().then(startServer)</code></td><td>Connects to MongoDB first and only then listens on <code>0.0.0.0:PORT</code>. If the connection fails the process exits.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3 id="auth">Sessions &amp; auth</h3>
+      <div class="prose">
+        <p>After login, the browser holds a cookie with a random session ID and nothing else. The user's details live on the server in <code>req.session.user</code>:</p>
+      </div>
+<pre class="code">req.session.user = {
+  id, username, email, school, role, createdAt   <span class="c">// built by sessionUser() in user-controller.js</span>
+}                                                <span class="c">// never contains the password hash</span></pre>
+      <div class="prose">
+        <p>Cookies are scoped to a hostname, not a port. That's why logging in on the old <code>localhost:8000/login</code> page also logs you in on the Vue app at <code>localhost:5173</code>.</p>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Middleware</th><th>Used by</th><th>Not logged in</th><th>Logged in, not admin</th></tr></thead>
+        <tbody>
+          <tr><td><code>apiLoggedIn</code></td><td><code>/api</code> routes</td><td><code>401 { message: 'Login required' }</code></td><td>passes</td></tr>
+          <tr><td><code>apiAdmin</code></td><td><code>/api</code> routes</td><td><code>401 { message: 'Login required' }</code></td><td><code>403 { message: 'Admins only' }</code></td></tr>
+          <tr><td><code>isLoggedIn</code></td><td>legacy routes</td><td>redirect to <code>/login</code></td><td>passes</td></tr>
+          <tr><td><code>isAdmin</code></td><td>legacy routes</td><td>redirect to <code>/login</code></td><td>redirect to <code>/profile</code></td></tr>
+        </tbody>
+      </table></div>
+      <div class="note prose">
+        <span class="label">Why two sets</span>
+        <p>A redirect is useless to Vue. <code>fetch</code> silently follows it and gets the login page's HTML back instead of JSON, so the page breaks with a confusing error. The <code>api*</code> versions answer with a status code that <code>api.js</code> turns into an error message.</p>
+      </div>
+      <div class="prose">
+        <p>Some checks need the database record, so they live in the controller instead of middleware: <em>author only</em> (edit a review), <em>reporter only</em> (edit a report), and <em>author or admin</em> (delete a review). These compare <code>req.session.user.username</code> with the stored username and return <code>403</code> on a mismatch.</p>
+      </div>
+
+      <h3 id="models">Models</h3>
+      <div class="prose"><p>Each file defines a Mongoose schema (the fields and their rules) and a few helper functions the controllers call. Several collections link to each other by <strong>name</strong> rather than by ID; those fields are marked <em>link</em>.</p></div>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>File · collection</th><th>Fields</th><th>Helpers / notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>user-model.js</code><br><code>users</code></td>
+            <td class="wrap"><code>username</code> (unique, ≥5 chars), <code>email</code> (unique, lowercased), <code>password</code> (bcrypt hash), <code>school</code> (array, max 2), <code>role</code> (<code>'Student'</code> or <code>'Admin'</code>), <code>createdAt</code></td>
+            <td>Exports the Mongoose model itself, so controllers call <code>User.findOne</code>, <code>User.findById</code> directly.</td></tr>
+          <tr><td><code>building-model.js</code><br><code>building</code></td>
+            <td class="wrap"><code>buildingname</code>, <code>floors</code> (Number), <code>postal</code> (Number, unique), <code>lat</code>, <code>lng</code> (Number, optional, filled from OneMap)</td>
+            <td><code>retrieveAll</code>, <code>findByPostal</code>, <code>findByName</code>, <code>addBuilding</code>, <code>editBuilding(postal, floors)</code>, <code>deleteBuilding(postal)</code>, <code>setCoordinates(postal, lat, lng)</code>, <code>findMissingCoordinates()</code>. Buildings are looked up by postal code, not <code>_id</code>.</td></tr>
+          <tr><td><code>studyspot-model.js</code><br><code>studyspot</code></td>
+            <td class="wrap"><code>buildingName</code> <em>link → building.buildingname</em>, <code>name</code>, <code>floor</code> (String: <code>"B1"</code> or a number), <code>seatCount</code>, <code>hasPowerSocket</code>, <code>noiseLevel</code> (enum Quiet / Moderate / Loud), <code>image</code></td>
+            <td><code>retrieveAll</code>, <code>findById</code>, <code>findByBuilding(name)</code>, <code>addSpot</code>, <code>editSpot(id, data)</code>, <code>deleteSpot(id)</code>.</td></tr>
+          <tr><td><code>reviews-model.js</code><br><code>reviews</code></td>
+            <td class="wrap"><code>buildingName</code> <em>link</em>, <code>roomId</code> <em>link → spot name</em>, <code>userId</code> <em>link → username</em> (despite the name), <code>title</code>, <code>content</code>, <code>rating</code> (default 3)</td>
+            <td><code>findbyUser</code>, <code>findByRoom(building, spotName)</code>, <code>addReview</code>, <code>findByreviewId</code>, <code>editReview</code>, <code>deleteReview</code>. Note the inconsistent capitals in the helper names.</td></tr>
+          <tr><td><code>reports.js</code><br><code>reports</code></td>
+            <td class="wrap"><code>reviewId</code> (real ObjectId ref to Review), <code>reportedBy</code> <em>link → username</em>, <code>reason</code> (enum Inaccurate / Offensive / Spam / Other), <code>description</code>, <code>status</code> (Pending / Approved / Declined, default Pending)</td>
+            <td>Exports the model with <code>Report.addReport</code> and <code>Report.editReport</code> attached. <code>reviewId</code> is a true reference, so <code>.populate('reviewId')</code> swaps the ID for the full review.</td></tr>
+          <tr><td><code>favourites-model.js</code><br><code>favourites</code></td>
+            <td class="wrap"><code>userName</code> <em>link</em>, <code>spotName</code> <em>link</em>, <code>buildingName</code> <em>link</em>, plus a <strong>copy</strong> of <code>floor</code>, <code>seatCount</code>, <code>hasPowerSocket</code>, <code>noiseLevel</code></td>
+            <td><code>getAll(userName)</code>, <code>findByUserAndSpotAndBuilding</code>, <code>addFavourite</code>, <code>removeFavourite(id)</code> (legacy), <code>removeFavouriteForUser(id, userName)</code> (new, only deletes your own).</td></tr>
+          <tr><td><code>admin-request-model.js</code><br><code>adminrequests</code></td>
+            <td class="wrap"><code>userId</code> (ObjectId ref to User), <code>username</code>, <code>status</code> (Pending / Approved / Denied)</td>
+            <td>Exports the model with <code>addRequest</code> and <code>updateRequestStatus</code> attached.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="prose"><p>Every schema has <code>timestamps</code> (or its own <code>createdAt</code>), so documents come back with <code>createdAt</code>/<code>updatedAt</code>. Every document also has <code>_id</code>, a 24-character hex string that Vue uses as the <code>:key</code> in lists and in URLs like <code>/spots/:id</code>.</p></div>
+
+      <h3 id="controllers">Controllers</h3>
+      <div class="prose">
+        <p>Each controller file has two halves. The top is the original code that renders EJS. Below the <code>// ---------- JSON API (used by Vue) ----------</code> line are the new handlers. The new handlers reuse the same model helpers, so both versions read and write identical data.</p>
+        <p>Every JSON handler follows the same shape:</p>
+      </div>
+<pre class="code"><span class="c">// METHOD /api/path   (who can call it)</span>
+exports.apiDoThing = async (req, res) => {
+  <span class="c">// 1. check the input             → 400 { message }</span>
+  <span class="c">// 2. check the id is a valid ObjectId (mongoose.isValidObjectId) → 404</span>
+  try {
+    <span class="c">// 3. load the record              → 404 if null</span>
+    <span class="c">// 4. check ownership if needed    → 403</span>
+    <span class="c">// 5. do the work, reply           → 200 / 201 / 204</span>
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error ...' });   <span class="c">// always a JSON answer, never a hung request</span>
+  }
+};</pre>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>Meaning in this app</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td><code>200</code></td><td>OK, here is the data</td><td>list of buildings, updated review</td></tr>
+          <tr><td><code>201</code></td><td>Created</td><td>new spot, new review, new account</td></tr>
+          <tr><td><code>204</code></td><td>Done, no body</td><td>any successful delete</td></tr>
+          <tr><td><code>400</code></td><td>Bad input; the message says what to fix</td><td>floor 99 in a 5-floor building, rating 9</td></tr>
+          <tr><td><code>401</code></td><td>Not logged in, or wrong email/password</td><td>calling <code>/api/spots</code> logged out</td></tr>
+          <tr><td><code>403</code></td><td>Logged in but not allowed</td><td>student creating a building, editing someone else's review</td></tr>
+          <tr><td><code>404</code></td><td>No such record (also used for malformed IDs)</td><td><code>/api/spots/abc</code></td></tr>
+          <tr><td><code>409</code></td><td>Conflicts with existing data</td><td>duplicate postal code or username, approving a request twice</td></tr>
+          <tr><td><code>500</code></td><td>Something broke on the server; check the terminal</td><td>database down</td></tr>
+        </tbody>
+      </table></div>
+      <div class="prose">
+        <p>Validation lives in small helpers next to the handlers: <code>validateBuilding</code>, <code>validateSpot(body, building)</code> (the floor limit depends on the building), <code>validateReview</code>, and <code>validateReport</code>. Each returns an error message string, or <code>null</code> if the input is fine. Register and edit profile collect several messages and return them as <code>{ message, errors: [...] }</code>.</p>
+        <p>User input is wrapped in <code>String(...)</code> before it goes into a query. That stops someone sending <code>{"email": {"$ne": null}}</code> in JSON to match the first user in the database.</p>
+      </div>
+
+      <h3 id="api">API reference</h3>
+      <div class="legend">
+        <span><span class="a">public</span> anyone</span>
+        <span><span class="a login">login</span> any logged-in user</span>
+        <span><span class="a owner">owner</span> logged in + checked in the controller</span>
+        <span><span class="a admin">admin</span> role Admin</span>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Method</th><th>Path</th><th>Access</th><th>Body / query</th><th>Success</th><th>Handler · notes</th></tr></thead>
+        <tbody>
+          <tr class="group"><td colspan="6">Health &amp; session · server.js</td></tr>
+          <tr><td><span class="m get">GET</span></td><td><code>/api/health</code></td><td><span class="a">public</span></td><td></td><td><code>{ ok: true }</code></td><td>Uptime check.</td></tr>
+          <tr><td><span class="m get">GET</span></td><td><code>/api/me</code></td><td><span class="a">public</span></td><td></td><td><code>{ user | null }</code></td><td>Who's logged in, from the session.</td></tr>
+
+          <tr class="group"><td colspan="6">Account · auth-routes.js, profile-routes.js → user-controller.js</td></tr>
+          <tr><td><span class="m post">POST</span></td><td><code>/api/register</code></td><td><span class="a">public</span></td><td class="wrap"><code>username, email, password, school[]</code></td><td>201</td><td><code>apiRegister</code>. 400 with <code>errors[]</code>; 409 if username/email taken. New users are always Student.</td></tr>
+          <tr><td><span class="m post">POST</span></td><td><code>/api/login</code></td><td><span class="a">public</span></td><td><code>email, password</code></td><td><code>{ user }</code></td><td><code>apiLogin</code>. 401 on wrong details. New session ID on success.</td></tr>
+          <tr><td><span class="m post">POST</span></td><td><code>/api/logout</code></td><td><span class="a">public</span></td><td></td><td><code>{ user: null }</code></td><td><code>apiLogout</code>. Destroys the session and clears the cookie.</td></tr>
+          <tr><td><span class="m get">GET</span></td><td><code>/api/profile</code></td><td><span class="a login">login</span></td><td></td><td><code>{ user, adminRequest }</code></td><td><code>apiGetProfile</code>. Re-reads the user from the DB and refreshes the session, so an approved admin gets their new role here.</td></tr>
+          <tr><td><span class="m put">PUT</span></td><td><code>/api/profile</code></td><td><span class="a login">login</span></td><td class="wrap"><code>username, email, password?</code></td><td><code>{ user }</code></td><td><code>apiUpdateProfile</code>. Blank password keeps the old one. 400 / 409.</td></tr>
+          <tr><td><span class="m del">DELETE</span></td><td><code>/api/profile</code></td><td><span class="a login">login</span></td><td></td><td>204</td><td><code>apiDeleteAccount</code>. Deletes the user and logs out.</td></tr>
+
+          <tr class="group"><td colspan="6">Admin requests · admin-requests-routes.js → admin-request-controller.js</td></tr>
+          <tr><td><span class="m post">POST</span></td><td><code>/api/admin-requests</code></td><td><span class="a login">login</span></td><td></td><td>201</td><td><code>apiRequestAdmin</code>. 400 if already admin; 409 if a request is already pending.</td></tr>
+          <tr><td><span class="m get">GET</span></td><td><code>/api/admin-requests</code></td><td><span class="a admin">admin</span></td><td></td><td>array</td><td><code>apiListPendingRequests</code>. Pending only, oldest first.</td></tr>
+          <tr><td><span class="m post">POST</span></td><td><code>/api/admin-requests/:id/approve</code></td><td><span class="a admin">admin</span></td><td></td><td>request</td><td><code>apiApproveRequest</code>. Sets the user's role to Admin. 409 if already processed.</td></tr>
+          <tr><td><span class="m post">POST</span></td><td><code>/api/admin-requests/:id/deny</code></td><td><span class="a admin">admin</span></td><td></td><td>request</td><td><code>apiDenyRequest</code>. 409 if already processed.</td></tr>
+
+          <tr class="group"><td colspan="6">Buildings · buildings-routes.js → building-controller.js</td></tr>
+          <tr><td><span class="m get">GET</span></td><td><code>/api/buildings</code></td><td><span class="a login">login</span></td><td></td><td>array</td><td><code>listBuildings</code>.</td></tr>
+          <tr><td><span class="m get">GET</span></td><td><code>/api/buildings/:postal</code></td><td><span class="a login">login</span></td><td></td><td>building</td><td><code>getBuildingJson</code>. 404 if no such postal.</td></tr>
+          <tr><td><span class="m get">GET</span></td><td><code>/api/buildings/:name/spots</code></td><td><span class="a login">login</span></td><td></td><td><code>{ building, studySpots }</code></td><td><code>listBuildingSpots</code>. 404 if no such building.</td></tr>
+          <tr><td><span class="m post">POST</span></td><td><code>/api/buildings</code></td><td><span class="a admin">admin</span></td><td class="wrap"><code>buildingname, postal</code> (6 digits), <code>floors</code> (1–10)</td><td>201</td><td><code>createBuildingJson</code>. Looks up <code>lat</code>/<code>lng</code> from OneMap first; if that fails the building is saved without them. 400; 409 on duplicate postal.</td></tr>
+          <tr><td><span class="m put">PUT</span></td><td><code>/api/buildings/:postal</code></td><td><span class="a admin">admin</span></td><td><code>floors</code></td><td>building</td><td><code>updateBuildingJson</code>. Only floors can change.</td></tr>
+          <tr><td><span class="m del">DELETE</span></td><td><code>/api/buildings/:postal</code></td><td><span class="a admin">admin</span></td><td></td><td>204</td><td><code>deleteBuildingJson</code>. Does not touch the building's spots.</td></tr>
+
+          <tr class="group"><td colspan="6">Study spots · spots-routes.js → studyspot-controller.js</td></tr>
+          <tr><td><span class="m get">GET</span></td><td><code>/api/spots</code></td><td><span class="a login">login</span></td><td></td><td>array</td><td><code>listSpots</code>. Every spot in every building.</td></tr>
+          <tr><td><span class="m get">GET</span></td><td><code>/api/spots/:id</code></td><td><span class="a login">login</span></td><td></td><td>spot</td><td><code>getSpotJson</code>. 404 for a missing or malformed id.</td></tr>
+          <tr><td><span class="m post">POST</span></td><td><code>/api/spots</code></td><td><span class="a admin">admin</span></td><td class="wrap"><code>buildingName, name, floor</code> (<code>B1</code> or 1…floors), <code>seatCount</code> (≥1), <code>hasPowerSocket, noiseLevel</code></td><td>201</td><td><code>createSpotJson</code>. 404 if the building doesn't exist; 400 on bad input.</td></tr>
+          <tr><td><span class="m put">PUT</span></td><td><code>/api/spots/:id</code></td><td><span class="a admin">admin</span></td><td class="wrap">same, minus <code>buildingName</code></td><td>spot</td><td><code>updateSpotJson</code>. A spot can't move to another building.</td></tr>
+          <tr><td><span class="m del">DELETE</span></td><td><code>/api/spots/:id</code></td><td><span class="a admin">admin</span></td><td></td><td>204</td><td><code>deleteSpotJson</code>.</td></tr>
+
+          <tr class="group"><td colspan="6">Reviews · reviews-routes.js → reviews-controller.js</td></tr>
+          <tr><td><span class="m get">GET</span></td><td><code>/api/reviews?spotId=</code></td><td><span class="a login">login</span></td><td><code>spotId</code> query</td><td>array</td><td><code>apiListReviews</code>. Looks up the spot, then its reviews by building + spot name. Newest first.</td></tr>
+          <tr><td><span class="m get">GET</span></td><td><code>/api/reviews/mine</code></td><td><span class="a login">login</span></td><td></td><td>array</td><td><code>apiMyReviews</code>. Registered before <code>/:id</code>, otherwise "mine" would be read as an id.</td></tr>
+          <tr><td><span class="m get">GET</span></td><td><code>/api/reviews/:id</code></td><td><span class="a login">login</span></td><td></td><td>review</td><td><code>apiGetReview</code>.</td></tr>
+          <tr><td><span class="m post">POST</span></td><td><code>/api/reviews</code></td><td><span class="a login">login</span></td><td class="wrap"><code>spotId, title, content, rating</code> (1–5)</td><td>201</td><td><code>apiCreateReview</code>. Building and spot names are taken from the database, not the request.</td></tr>
+          <tr><td><span class="m put">PUT</span></td><td><code>/api/reviews/:id</code></td><td><span class="a owner">author</span></td><td class="wrap"><code>title, content, rating</code></td><td>review</td><td><code>apiUpdateReview</code>. 403 for anyone but the author.</td></tr>
+          <tr><td><span class="m del">DELETE</span></td><td><code>/api/reviews/:id</code></td><td><span class="a owner">author / admin</span></td><td></td><td>204</td><td><code>apiDeleteReview</code>.</td></tr>
+
+          <tr class="group"><td colspan="6">Reports · reports-routes.js → report-controller.js</td></tr>
+          <tr><td><span class="m post">POST</span></td><td><code>/api/reports</code></td><td><span class="a login">login</span></td><td class="wrap"><code>reviewId, reason, description</code></td><td>201</td><td><code>apiCreateReport</code>. Status starts as Pending.</td></tr>
+          <tr><td><span class="m get">GET</span></td><td><code>/api/reports/pending</code></td><td><span class="a admin">admin</span></td><td></td><td>array</td><td><code>apiPendingReports</code>. Each report includes the full review (<code>populate</code>).</td></tr>
+          <tr><td><span class="m get">GET</span></td><td><code>/api/reports/:id</code></td><td><span class="a owner">reporter / admin</span></td><td></td><td>report</td><td><code>apiGetReport</code>. Includes the full review.</td></tr>
+          <tr><td><span class="m put">PUT</span></td><td><code>/api/reports/:id</code></td><td><span class="a owner">reporter</span></td><td><code>reason, description</code></td><td>report</td><td><code>apiUpdateReport</code>. 409 once an admin has closed it.</td></tr>
+          <tr><td><span class="m post">POST</span></td><td><code>/api/reports/:id/approve</code></td><td><span class="a admin">admin</span></td><td></td><td><code>{ message }</code></td><td><code>apiApproveReport</code>. Deletes the review and marks every pending report on it Approved.</td></tr>
+          <tr><td><span class="m post">POST</span></td><td><code>/api/reports/:id/decline</code></td><td><span class="a admin">admin</span></td><td></td><td><code>{ message }</code></td><td><code>apiDeclineReport</code>. Marks every pending report on that review Declined.</td></tr>
+
+          <tr class="group"><td colspan="6">Favourites · favourites-routes.js → favourites-controller.js</td></tr>
+          <tr><td><span class="m get">GET</span></td><td><code>/api/favourites</code></td><td><span class="a login">login</span></td><td></td><td>array</td><td><code>apiListFavourites</code>. Your favourites only.</td></tr>
+          <tr><td><span class="m post">POST</span></td><td><code>/api/favourites</code></td><td><span class="a login">login</span></td><td><code>spotId</code></td><td>201 / 200</td><td><code>apiAddFavourite</code>. Copies the spot's details from the DB. Adding again returns the existing one (200), no duplicate.</td></tr>
+          <tr><td><span class="m del">DELETE</span></td><td><code>/api/favourites/:id</code></td><td><span class="a owner">owner</span></td><td></td><td>204</td><td><code>apiRemoveFavourite</code>. 404 if it isn't yours.</td></tr>
+
+          <tr class="group"><td colspan="6">Directions · directions-routes.js → directions-controller.js</td></tr>
+          <tr><td><span class="m get">GET</span></td><td><code>/api/directions?from=&amp;to=</code></td><td><span class="a login">login</span></td><td class="wrap"><code>from</code>, <code>to</code> query, each <code>"lat,lng"</code></td><td><code>{ routes, fastest }</code></td><td><code>getDirections</code>. Walking and public transport routes, see <a href="#fastest">Finding the fastest route</a>. 400 if either point isn't <code>"lat,lng"</code>; 502 if OneMap finds no route. Makes two OneMap calls each time.</td></tr>
+
+          <tr class="group"><td colspan="6">Fallback · routes/api/index.js</td></tr>
+          <tr><td>any</td><td><code>/api/anything-else</code></td><td><span class="a">public</span></td><td></td><td>404</td><td><code>{ message: 'No API route for GET /api/...' }</code>. Stops typos falling through to the EJS routes.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <section>
+      <h2 id="client">Client (Vue)</h2>
+
+      <h3 id="bootstrap">Start-up files</h3>
+      <div class="prose">
+        <p><code>index.html</code> is the only HTML page. It loads <code>src/main.js</code>, which does three things:</p>
+      </div>
+<pre class="code">createApp(App)      <span class="c">// App.vue is the root component</span>
+  .use(router)      <span class="c">// turns on URL → page switching</span>
+  .mount('#app')    <span class="c">// draws it inside &lt;div id="app"&gt; in index.html</span></pre>
+      <div class="prose">
+        <p><code>App.vue</code> is the frame: <code>&lt;NavBar /&gt;</code> always on top, then <code>&lt;RouterView /&gt;</code>, which shows whichever page matches the URL. Moving between pages swaps only what's inside <code>RouterView</code>. The page never fully reloads, which is why the app feels fast. When you're logged in, <code>App.vue</code> also mounts <code>&lt;MiniMap /&gt;</code> after <code>RouterView</code>, so the map stays loaded while you move between pages.</p>
+      </div>
+
+      <h3 id="router">router.js</h3>
+      <div class="prose">
+        <p>A list of <code>{ path, component, meta }</code> entries. <code>:name</code> in a path is a parameter: <code>/spots/:id</code> matches <code>/spots/6712f0…</code>, and the page reads it as <code>route.params.id</code>. <code>createWebHistory()</code> gives normal-looking URLs (no <code>#</code>). <code>meta.showMap: true</code> shows the floating minimap on that page; it's set on home and on <code>/building/:name</code>.</p>
+        <p>Before every page change, <code>router.beforeEach</code> runs:</p>
+      </div>
+<pre class="code">const user = await auth.fetchMe()                       <span class="c">// GET /api/me</span>
+if ((requiresAuth || requiresAdmin) &amp;&amp; !user) → /login?redirect=&lt;where you were going&gt;
+if (requiresAdmin &amp;&amp; !auth.isAdmin)             → /           <span class="c">// home</span>
+if (going to /login or /register &amp;&amp; user)       → /           <span class="c">// already logged in</span></pre>
+      <div class="note prose">
+        <span class="label">The guard is for convenience, not security</span>
+        <p>Anyone can edit JavaScript in their own browser. The real protection is the <code>apiLoggedIn</code> / <code>apiAdmin</code> middleware on the server. The guard only stops people landing on a page that would fail anyway.</p>
+      </div>
+      <div class="prose"><p>The last route, <code>/:pathMatch(.*)*</code>, catches any unknown URL and redirects to home.</p></div>
+
+      <h3 id="api-js">api.js</h3>
+      <div class="prose">
+        <p>Every page calls the server through one function:</p>
+      </div>
+<pre class="code">const spots = await api('/api/spots')                                      <span class="c">// GET</span>
+await api('/api/spots', { method: 'POST', body: { name: 'Level 3', ... } }) <span class="c">// body is turned into JSON</span></pre>
+      <div class="prose">
+        <ul>
+          <li>Always sends the session cookie (<code>credentials: 'include'</code>) and the JSON header.</li>
+          <li>Returns the parsed JSON on success. A 204 has no body, so it returns <code>null</code>.</li>
+          <li>On any non-2xx status it <strong>throws</strong> an <code>Error</code> whose <code>message</code> is the server's <code>message</code>, with <code>.status</code> (the code) and <code>.data</code> (the whole body, e.g. register's <code>errors</code> list).</li>
+        </ul>
+        <p>So every page uses the same pattern:</p>
+      </div>
+<pre class="code">try {
+  spot.value = await api(`/api/spots/${id}`)
+} catch (e) {
+  error.value = e.message     <span class="c">// e.g. "Study spot not found" — shown in the template</span>
+}</pre>
+
+      <h3 id="stores">Stores</h3>
+      <div class="prose">
+        <p>A store is a <code>reactive({...})</code> object exported from a file. Every component that imports it sees the same object, and when a value changes, every template that uses it updates. The team uses plain stores instead of a library like Pinia.</p>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Store</th><th>Holds</th><th>Methods</th><th>Used by</th></tr></thead>
+        <tbody>
+          <tr><td><code>stores/auth.js</code></td><td><code>user</code> (the session user, or null)</td><td class="wrap"><code>isAdmin</code> (getter: <code>user.role === 'Admin'</code>), <code>fetchMe()</code> (calls <code>/api/me</code>)</td><td>router guard, NavBar, LoginView, ProfileView, EditProfileView, SpotDetailView</td></tr>
+          <tr><td><code>stores/favourites.js</code></td><td><code>list</code> (your favourites)</td><td class="wrap"><code>load()</code>, <code>find(spot)</code> (matches by spot name + building name), <code>toggle(spot)</code> (add or remove)</td><td>FavouriteButton, FavouritesView, NavBar (clears it on logout)</td></tr>
+          <tr><td><code>stores/map.js</code></td><td class="wrap"><code>userPos</code>, <code>destination</code> (a building), <code>routes</code>, <code>fastest</code>, <code>activeMode</code>, <code>expanded</code>, plus loading / error flags</td><td class="wrap"><code>locate()</code> / <code>stopLocating()</code> (follow your location), <code>showBuilding(building)</code>, <code>clearDestination()</code>, <code>fetchRoutes()</code>, <code>activeRoute</code> (getter: the route being drawn)</td><td>MiniMap, HomeView, BuildingSpotsView</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3 id="components">Components</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Component</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>NavBar.vue</code></td><td>Links that depend on <code>auth.user</code> and <code>auth.isAdmin</code>: Login/Register when logged out, Profile/Favourites/Reviews plus the five admin links for admins. <code>logout()</code> calls <code>POST /api/logout</code>, clears both stores, and goes to <code>/login</code>.</td></tr>
+          <tr><td><code>FavouriteButton.vue</code></td><td>Takes a <code>spot</code> prop. Shows ☆ or ★ from <code>favourites.find(spot)</code> and calls <code>favourites.toggle(spot)</code> on click. The page that uses it must call <code>favourites.load()</code> once when it mounts.</td></tr>
+          <tr><td><code>MiniMap.vue</code></td><td>The floating map in the bottom-right corner. Shows your location, every building, and the route to the current building; expands to show step-by-step directions. Mounted once in <code>App.vue</code>, not inside pages. See <a href="#minimap">The minimap</a>.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3 id="views">Pages (views)</h3>
+      <div class="prose"><p>Each page follows the same pattern: <code>ref()</code>s for its data, an <code>onMounted</code> that calls the API, a template with loading / error / empty / data states, and handler functions for buttons and forms. Add and edit share one page: if the URL has an id, it's edit mode.</p></div>
+      <div class="views">
+        <article class="view">
+          <h4>LoginView</h4>
+          <div class="route">/login · public</div>
+          <p>Email + password form. On success sets <code>auth.user</code> and goes to <code>?redirect</code> or home. Shows "Account created" after registering.</p>
+          <dl><dt>Calls</dt><dd><code>POST /api/login</code></dd><dt>Replaces</dt><dd>login.ejs</dd></dl>
+        </article>
+        <article class="view">
+          <h4>RegisterView</h4>
+          <div class="route">/register · public</div>
+          <p>Username, email, password and up to two school checkboxes (<code>v-model</code> on an array). Shows every validation message as a list.</p>
+          <dl><dt>Calls</dt><dd><code>POST /api/register</code></dd><dt>Replaces</dt><dd>register.ejs</dd></dl>
+        </article>
+        <article class="view">
+          <h4>HomeView</h4>
+          <div class="route">/ · login</div>
+          <p>Lists every building with a link to its spots. Clears the minimap's destination, so the map goes back to showing just your location.</p>
+          <dl><dt>Calls</dt><dd><code>GET /api/buildings</code></dd><dt>Replaces</dt><dd>home.ejs</dd></dl>
+        </article>
+        <article class="view">
+          <h4>ProfileView</h4>
+          <div class="route">/profile · login</div>
+          <p>Your details. Students can request admin access and see its status. Admins see and approve/deny pending requests. Also delete account. Refreshes <code>auth.user</code>, so a newly approved admin sees admin links straight away.</p>
+          <dl><dt>Calls</dt><dd><code>GET /api/profile</code>, <code>GET/POST /api/admin-requests</code>, <code>POST …/approve|deny</code>, <code>DELETE /api/profile</code></dd><dt>Replaces</dt><dd>profile.ejs, admin-profile.ejs</dd></dl>
+        </article>
+        <article class="view">
+          <h4>EditProfileView</h4>
+          <div class="route">/profile/edit · login</div>
+          <p>Change username, email, or password (blank keeps it). Updates the NavBar name on save.</p>
+          <dl><dt>Calls</dt><dd><code>GET</code> + <code>PUT /api/profile</code></dd><dt>Replaces</dt><dd>edit-profile.ejs</dd></dl>
+        </article>
+        <article class="view">
+          <h4>BuildingSpotsView</h4>
+          <div class="route">/building/:name · login</div>
+          <p>The spots in one building, each with links to details and to add a review, plus a favourite button. Sends the building to the minimap (<code>mapStore.showBuilding</code>) to show the fastest route there. Reloads when the name in the URL changes, because clicking another building on the map reuses this page.</p>
+          <dl><dt>Calls</dt><dd><code>GET /api/buildings/:name/spots</code>, <code>GET /api/favourites</code></dd><dt>Replaces</dt><dd>building-spots.ejs</dd></dl>
+        </article>
+        <article class="view">
+          <h4>SpotDetailView</h4>
+          <div class="route">/spots/:id · login</div>
+          <p>One spot's details, favourite button, and all its reviews. Edit/Delete appear only on your own reviews; everyone sees Report.</p>
+          <dl><dt>Calls</dt><dd><code>GET /api/spots/:id</code>, <code>GET /api/reviews?spotId=</code>, <code>DELETE /api/reviews/:id</code></dd><dt>Replaces</dt><dd>studyspot-details.ejs, display-reviews.ejs</dd></dl>
+        </article>
+        <article class="view">
+          <h4>ReviewFormView</h4>
+          <div class="route">/spots/:spotId/reviews/new · /reviews/:id/edit</div>
+          <p>Title, content, rating 1–5. After editing it returns to <code>?back</code> (the spot page) or My Reviews.</p>
+          <dl><dt>Calls</dt><dd><code>POST /api/reviews</code> or <code>GET</code> + <code>PUT /api/reviews/:id</code></dd><dt>Replaces</dt><dd>add-review.ejs, update-review.ejs</dd></dl>
+        </article>
+        <article class="view">
+          <h4>MyReviewsView</h4>
+          <div class="route">/my-reviews · login</div>
+          <p>Your reviews across all spots, with Edit and Delete.</p>
+          <dl><dt>Calls</dt><dd><code>GET /api/reviews/mine</code>, <code>DELETE /api/reviews/:id</code></dd><dt>Replaces</dt><dd>user-reviews.ejs, show-marked-review.ejs</dd></dl>
+        </article>
+        <article class="view">
+          <h4>ReportFormView</h4>
+          <div class="route">/reviews/:reviewId/report · /reports/:id/edit</div>
+          <p>Reason + description for a review. After submitting, shows a "Report sent" summary with an Edit link.</p>
+          <dl><dt>Calls</dt><dd><code>GET /api/reviews/:id</code> + <code>POST /api/reports</code>, or <code>GET</code> + <code>PUT /api/reports/:id</code></dd><dt>Replaces</dt><dd>new-report.ejs, report-outcome.ejs, edit-report.ejs</dd></dl>
+        </article>
+        <article class="view">
+          <h4>FavouritesView</h4>
+          <div class="route">/favourites · login</div>
+          <p>Your saved spots with a Remove button.</p>
+          <dl><dt>Calls</dt><dd><code>GET /api/favourites</code>, <code>DELETE /api/favourites/:id</code></dd><dt>Replaces</dt><dd>favourites.ejs</dd></dl>
+        </article>
+        <article class="view">
+          <h4>AdminBuildingsView</h4>
+          <div class="route">/admin/buildings · admin</div>
+          <p>All buildings with Edit and Delete.</p>
+          <dl><dt>Calls</dt><dd><code>GET /api/buildings</code>, <code>DELETE /api/buildings/:postal</code></dd><dt>Replaces</dt><dd>edit-building.ejs, delete-building.ejs</dd></dl>
+        </article>
+        <article class="view">
+          <h4>BuildingFormView</h4>
+          <div class="route">/admin/buildings/new · /admin/buildings/:postal/edit</div>
+          <p>Add a building, or change an existing building's floors (name and postal are locked in edit mode).</p>
+          <dl><dt>Calls</dt><dd><code>POST /api/buildings</code> or <code>GET</code> + <code>PUT /api/buildings/:postal</code></dd><dt>Replaces</dt><dd>add-building.ejs, update-building.ejs</dd></dl>
+        </article>
+        <article class="view">
+          <h4>AdminSpotsView</h4>
+          <div class="route">/admin/spots · admin</div>
+          <p>All spots with View, Edit and Delete.</p>
+          <dl><dt>Calls</dt><dd><code>GET /api/spots</code>, <code>DELETE /api/spots/:id</code></dd><dt>Replaces</dt><dd>studyspot-list.ejs, delete-studyspot.ejs</dd></dl>
+        </article>
+        <article class="view">
+          <h4>SpotFormView</h4>
+          <div class="route">/admin/spots/new · /admin/spots/:id/edit</div>
+          <p>Add a spot (pick its building) or edit one (building locked). Shows the server's validation message, e.g. "Floor must be B1 or 1-5."</p>
+          <dl><dt>Calls</dt><dd><code>GET /api/buildings</code> + <code>POST /api/spots</code>, or <code>GET</code> + <code>PUT /api/spots/:id</code></dd><dt>Replaces</dt><dd>add-studyspot.ejs, edit-studyspot.ejs</dd></dl>
+        </article>
+        <article class="view">
+          <h4>AdminReportsView</h4>
+          <div class="route">/admin/reports · admin</div>
+          <p>Table of pending reports. Approve (asks first, deletes the review) or Decline, then reloads the list.</p>
+          <dl><dt>Calls</dt><dd><code>GET /api/reports/pending</code>, <code>POST …/approve|decline</code></dd><dt>Replaces</dt><dd>admin-reports.ejs</dd></dl>
+        </article>
+      </div>
+
+      <h3 id="vue-patterns">Vue patterns used</h3>
+      <div class="prose"><p>A cheat sheet for the syntax that appears across the pages, with the EJS equivalent where there is one.</p></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>In the code</th><th>What it means</th><th>EJS equivalent</th></tr></thead>
+        <tbody>
+          <tr><td><code>&lt;script setup&gt;</code></td><td>Everything declared here is usable in the template. Runs once when the page is created.</td><td></td></tr>
+          <tr><td><code>const spots = ref([])</code></td><td>A value the template watches. Read and write it as <code>spots.value</code> in script; just <code>spots</code> in the template.</td><td>the data passed to <code>res.render</code></td></tr>
+          <tr><td><code>computed(() =&gt; ...)</code></td><td>A value worked out from other values; recalculates when they change (e.g. <code>isEdit</code>).</td><td></td></tr>
+          <tr><td><code>onMounted(async () =&gt; ...)</code></td><td>Runs when the page appears. This is where data is fetched.</td><td>the controller code before <code>res.render</code></td></tr>
+          <tr><td><code>{{ spot.name }}</code></td><td>Print a value (HTML-escaped).</td><td><code>&lt;%= spot.name %&gt;</code></td></tr>
+          <tr><td><code>v-if</code> / <code>v-else-if</code> / <code>v-else</code></td><td>Show the element only when true.</td><td><code>&lt;% if () { %&gt;</code></td></tr>
+          <tr><td><code>v-for="s in spots" :key="s._id"</code></td><td>Repeat the element for each item. <code>:key</code> lets Vue track rows.</td><td><code>&lt;% spots.forEach() %&gt;</code></td></tr>
+          <tr><td><code>v-model="form.name"</code></td><td>Two-way link between an input and a value. <code>v-model.number</code> stores a number instead of text.</td><td><code>value="&lt;%= %&gt;"</code> + <code>req.body</code></td></tr>
+          <tr><td><code>:to="`/spots/${id}`"</code>, <code>:value="true"</code></td><td>A leading <code>:</code> means the attribute is JavaScript, not text. <code>:value="true"</code> sends a real boolean.</td><td></td></tr>
+          <tr><td><code>@click="remove(spot)"</code></td><td>Run a function on an event.</td><td></td></tr>
+          <tr><td><code>@submit.prevent="save"</code></td><td>Run <code>save</code> on submit and stop the browser's own form post / page reload.</td><td><code>&lt;form action method="POST"&gt;</code></td></tr>
+          <tr><td><code>&lt;RouterLink to="/x"&gt;</code></td><td>A link that switches pages without reloading.</td><td><code>&lt;a href="/x"&gt;</code></td></tr>
+          <tr><td><code>useRoute()</code> / <code>useRouter()</code></td><td>Read the current URL (<code>route.params</code>, <code>route.query</code>) / move to another page (<code>router.push</code>, <code>router.back</code>).</td><td><code>req.params</code> / <code>res.redirect</code></td></tr>
+          <tr><td><code>defineProps({ spot: Object })</code></td><td>Values a parent passes into a component: <code>&lt;FavouriteButton :spot="spot" /&gt;</code>.</td><td><code>&lt;%- include() %&gt;</code></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <section>
+      <h2 id="onemap">Map &amp; directions</h2>
+      <div class="prose">
+        <p>This part is on the <code>onemap-implementation</code> branch and isn't merged into <code>configure-vue</code> yet. It uses <a href="https://www.onemap.gov.sg/apidocs/">OneMap</a>, the Singapore Land Authority's free map service, for three things: the map pictures (tiles), turning a postal code into coordinates, and routes.</p>
+        <p>The browser loads map tiles from OneMap directly, because tiles need no login. Search and routing need a OneMap token, so the browser asks our server, and only the server talks to OneMap.</p>
+      </div>
+
+<pre class="mermaid">
+flowchart LR
+  MM["MiniMap.vue<br/>(Leaflet)"]
+  FORM["BuildingFormView"]
+  EXP["Express<br/>services/onemap.js"]
+  TILES["OneMap tiles"]
+  OMA["OneMap API"]
+  DB[("MongoDB")]
+  MM -- "map tiles, no token" --> TILES
+  MM -- "GET /api/directions" --> EXP
+  FORM -- "POST /api/buildings" --> EXP
+  EXP -- "token + search / route" --> OMA
+  EXP -- "building with lat, lng" --> DB
+</pre>
+
+      <h3 id="coords">Building coordinates</h3>
+      <div class="prose">
+        <p>To put a building on the map, we need its latitude and longitude. Admins only type a postal code, so the server looks the coordinates up:</p>
+        <ul>
+          <li><strong>New buildings:</strong> <code>createBuildingJson</code> calls <code>onemap.geocodePostal(postal)</code> and saves <code>lat</code>/<code>lng</code> with the rest of the building. If OneMap fails, the building is still saved, just without coordinates, and the error is logged.</li>
+          <li><strong>Existing buildings:</strong> <code>npm run geocode</code> finds every building without coordinates and fills them in, printing ✓ or ✗ for each. A ✗ usually means a wrong postal code. Run it again after fixing; it only retries the ones still missing.</li>
+        </ul>
+        <p>The old EJS add-building page doesn't look up coordinates. Buildings added there need <code>npm run geocode</code>. Postal codes can't be edited, so saved coordinates never go out of date.</p>
+      </div>
+
+      <h3 id="onemap-service">services/onemap.js</h3>
+      <div class="prose"><p>The only file that talks to OneMap. A <code>services/</code> file holds code that isn't a route handler or a model, so controllers and scripts can both use it.</p></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Function</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>getToken()</code> (private)</td><td>Logs in with <code>ONEMAP_EMAIL</code>/<code>ONEMAP_PASSWORD</code> and keeps the token in memory until a minute before it expires (tokens last about 3 days), then gets a new one.</td></tr>
+          <tr><td><code>search(text)</code></td><td>OneMap place search by name, address or postal code. Returns <code>[{ name, address, postal, lat, lng }]</code>.</td></tr>
+          <tr><td><code>geocodePostal(postal)</code></td><td>Returns <code>{ lat, lng }</code> for a postal code, or <code>null</code>. Prefers the result whose postal code matches exactly.</td></tr>
+          <tr><td><code>routes(from, to)</code></td><td>Walking and public transport routes between two <code>"lat,lng"</code> points, and which is faster. Used by <code>GET /api/directions</code>.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3 id="fastest">Finding the fastest route</h3>
+      <ol class="steps">
+        <li>Opening a building page loads the building (which now includes <code>lat</code>/<code>lng</code>) and calls <code>mapStore.showBuilding(building)</code>.
+          <span class="where">client/src/views/BuildingSpotsView.vue</span></li>
+        <li>The store waits until the browser has given your location, then calls <code>GET /api/directions?from=&lt;you&gt;&amp;to=&lt;building&gt;</code>.
+          <span class="where">client/src/stores/map.js</span></li>
+        <li>The controller checks that both points really are <code>"lat,lng"</code> numbers (400 otherwise), so nothing else can be slipped into the OneMap URL.
+          <span class="where">controllers/directions-controller.js</span></li>
+        <li>The service asks OneMap for a walking route and a public transport route at the same time. Public transport uses the current Singapore date and time and asks for 3 options, keeping the quickest. If one mode fails, the other is still returned; if both fail, the endpoint answers 502.
+          <span class="where">services/onemap.js</span></li>
+        <li>Both answers are converted to the same shape. OneMap sends each line as an "encoded polyline" (a compressed string); the server decodes it into a list of points so the browser can draw it straight away.</li>
+        <li>The store selects the faster route. MiniMap draws it, colouring each part by how you travel, and zooms to fit it. The other route is one tap away.
+          <span class="where">client/src/components/MiniMap.vue</span></li>
+      </ol>
+<pre class="code">{
+  routes: [{
+    mode: 'walk' | 'pt',      <span class="c">// pt = public transport</span>
+    duration, distance,        <span class="c">// seconds, metres</span>
+    legs: [{ mode: 'WALK' | 'BUS' | 'SUBWAY' | 'TRAM' | ...,   <span class="c">// SUBWAY = MRT, TRAM = LRT</span>
+             route: '74', from, to, duration, distance,
+             points: [[lat, lng], ...] }]
+  }],
+  fastest: 'pt'
+}</pre>
+
+      <h3 id="minimap">The minimap</h3>
+      <div class="prose">
+        <p>Drawn with <a href="https://leafletjs.com/">Leaflet</a> (<code>leaflet</code> in <code>client/package.json</code>) on top of OneMap's tiles.</p>
+        <ul>
+          <li><strong>Where it lives.</strong> <code>App.vue</code> mounts it once, after <code>RouterView</code>, when someone is logged in. It shows itself only on pages with <code>meta.showMap</code> and hides with <code>v-show</code> elsewhere, so the map isn't rebuilt on every page change. Logging out unmounts it, which stops location tracking and clears its state.</li>
+          <li><strong>What's on it.</strong> A blue dot for you, purple dots for every building with coordinates (clicking one opens that building's page), a red dot with a label for the building you're heading to, and the route: grey dots for walking, green for bus, red for MRT, teal for LRT. Dark mode switches to OneMap's Night tiles.</li>
+          <li><strong>Buttons.</strong> ◎ re-centres on the route, building or you. ⤢ expands the map and lists the steps ("Bus 74 to Blk 306 · 2 min").</li>
+        </ul>
+      </div>
+      <div class="note prose">
+        <span class="label">Two Leaflet gotchas</span>
+        <p>Keep the Leaflet <code>map</code> in a plain <code>let</code>, never in <code>ref()</code> or <code>reactive()</code>: Vue's wrapper breaks Leaflet's internals. And Leaflet doesn't notice when its box changes size, so after expanding (and after being hidden) the component calls <code>map.invalidateSize()</code>. Without it, part of the map stays grey.</p>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <section>
+      <h2 id="legacy">Legacy EJS app</h2>
+      <div class="prose">
+        <p>Nothing from the original app was deleted. The old routers in <code>routes/*.js</code>, the EJS-rendering functions at the top of each controller, and <code>views/*.ejs</code> all still run at <code>localhost:8000</code>. Both versions use the same database and login, so data written in one shows up in the other.</p>
+        <p>The old URLs, for reference: <code>/</code>, <code>/login</code>, <code>/register</code>, <code>/logout</code>, <code>/profile</code>, <code>/admin-profile</code>, <code>/edit-profile</code>, <code>/delete</code>, <code>/building/:name</code>, <code>/add-building</code>, <code>/edit-buildings</code>, <code>/update-building</code>, <code>/delete-building</code>, <code>/studyspot-list</code>, <code>/studyspot-details</code>, <code>/add-studyspot</code>, <code>/edit-studyspot</code>, <code>/delete-studyspot</code>, <code>/review-list/:b/:s</code>, <code>/add-review/:b/:s</code>, <code>/reviews/:user</code>, <code>/update-review/:id</code>, <code>/delete-review</code>, <code>/reports/new/:id</code>, <code>/reports/edit/:id</code>, <code>/admin/reports</code>, <code>/admin-request</code>, <code>/admin/requests/process</code>, <code>/favourites</code>, <code>/favourites/add</code>, <code>/favourites/remove</code>.</p>
+      </div>
+      <div class="note warn prose">
+        <span class="label">The backup keeps its old bugs</span>
+        <p>The legacy routes have none of the fixes in the JSON versions. Anyone logged in can edit any review or remove anyone's favourite, <code>/delete</code> has no login check, and unknown emails crash login. Remove the legacy routes before the app goes public.</p>
+      </div>
+      <h4>Cut-over checklist (milestone M6)</h4>
+      <ol class="prose">
+        <li>The team signs off that every Vue page matches the old one.</li>
+        <li>Remove the seven <code>server.use('/', ...Routes)</code> lines and <code>server.set("view engine", "ejs")</code> from <code>server.js</code>; delete <code>routes/*.js</code> (not <code>routes/api/</code>), <code>views/</code>, <code>public/styles.css</code>, and the legacy half of each controller; <code>npm uninstall ejs</code>.</li>
+        <li>Add the production block from the TODO in <code>server.js</code>: serve <code>client/dist</code>, then <code>server.get('/{*splat}', ...)</code> sending <code>index.html</code>, after the API.</li>
+        <li>Check that <code>grep -rn "res.render" controllers</code> finds nothing, and that refreshing on a deep link such as <code>/spots/&lt;id&gt;</code> still loads.</li>
+      </ol>
+      <div class="note prose">
+        <span class="label">Order matters</span>
+        <p>Do step 2 before step 3. Several Vue pages share URLs with old pages (<code>/favourites</code>, <code>/profile</code>, <code>/register</code>, <code>/building/:name</code>, <code>/admin/reports</code>). If both are mounted in production, refreshing one of those pages would show the old EJS version.</p>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <section>
+      <h2 id="limits">Known limits</h2>
+      <div class="prose">
+        <p>These are carried over from the original data design or left for the team to decide. None of them break the app today.</p>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Limit</th><th>Why it happens</th><th>Possible fix</th></tr></thead>
+        <tbody>
+          <tr><td>Renaming your username hides your reviews, favourites and reports</td><td>They store the username as text, not your user <code>_id</code>.</td><td>Store <code>userId</code> ObjectIds, or update those collections when a username changes.</td></tr>
+          <tr><td>Renaming a building or spot orphans its spots / reviews / favourites</td><td>Same reason: links by name.</td><td>Reference by <code>_id</code>.</td></tr>
+          <tr><td>Deleting a building leaves its spots; deleting a spot leaves its reviews and favourites</td><td>No cascading deletes.</td><td>Block the delete with 409 while children exist, or delete them too.</td></tr>
+          <tr><td>Favourites show old details after an admin edits the spot</td><td>Favourites keep a copy of the spot's fields.</td><td>Store only the spot reference and look it up.</td></tr>
+          <tr><td>Saving a server file logs everyone out</td><td>Sessions live in server memory, and <code>node --watch</code> restarts the server.</td><td><code>connect-mongo</code> session store (TODO in <code>server.js</code>).</td></tr>
+          <tr><td>A newly approved admin keeps Student access until they open Profile or log in again</td><td><code>/api/me</code> reads the session, which only refreshes in <code>GET /api/profile</code> and at login.</td><td>Re-read the role in <code>/api/me</code>, at the cost of one query per page change.</td></tr>
+          <tr><td>Postal codes starting with 0 lose the 0</td><td><code>postal</code> is a Number.</td><td>Change it to a String.</td></tr>
+          <tr><td>The map can't find your location when the site is opened over Wi-Fi by IP (e.g. from a phone)</td><td>Browsers only share location with <code>https</code> pages or <code>localhost</code>.</td><td>Test on <code>localhost</code>; the AWS deployment is served over HTTPS.</td></tr>
+          <tr><td>Some buildings are missing from the map and have no route</td><td>They have no <code>lat</code>/<code>lng</code>: added on the old EJS page, or OneMap was down when they were added.</td><td>Run <code>npm run geocode</code>.</td></tr>
+          <tr><td>The route doesn't change as you walk</td><td>Routes are fetched once per building; only the blue dot follows you.</td><td>Fetch again once you've moved more than a few hundred metres.</td></tr>
+          <tr><td>Every route costs two OneMap calls</td><td>Walking and public transport are asked for separately. OneMap allows about 250 calls a minute per account.</td><td>Cache routes per building for a few minutes.</td></tr>
+          <tr><td>Pages are unstyled; deletes use the browser's <code>confirm()</code></td><td>The conversion focused on behaviour.</td><td>Bootstrap / team styles; a <code>ConfirmModal</code> component.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <section>
+      <h2 id="add-feature">Adding a feature</h2>
+      <div class="prose"><p>The order the existing features were built in. Test the API with curl before writing the page; when something breaks, you'll know which half it's in.</p></div>
+      <ol class="steps">
+        <li><strong>Model.</strong> Add or change the schema and helper functions in <code>models/</code>.</li>
+        <li><strong>Controller.</strong> Add handlers below the JSON API line in the matching controller, following the shape in <a href="#controllers">Controllers</a>: validate → load → check ownership → reply with a status code.</li>
+        <li><strong>Routes.</strong> Create <code>routes/api/&lt;feature&gt;-routes.js</code> with <code>apiLoggedIn</code> or <code>apiAdmin</code> on each route. Put fixed paths like <code>/mine</code> before <code>/:id</code>.</li>
+        <li><strong>Mount.</strong> Add <code>router.use('/&lt;feature&gt;', require('./&lt;feature&gt;-routes'))</code> in <code>routes/api/index.js</code>, above the 404 handler. Check the file name matches exactly.</li>
+        <li><strong>Test the API.</strong> <code>curl -c cookies.txt</code> to log in, then <code>curl -b cookies.txt</code> for each endpoint, including the 400 / 403 / 404 cases.</li>
+        <li><strong>Page.</strong> Create <code>client/src/views/&lt;Name&gt;View.vue</code> (PascalCase: AWS runs Linux, which is case-sensitive). Fetch in <code>onMounted</code> with <code>api()</code>, and show loading, error and empty states.</li>
+        <li><strong>Route.</strong> <code>import</code> the page in <code>router.js</code> and add it to <code>routes</code> with the right <code>meta</code>. A missing import gives a blank page.</li>
+        <li><strong>Link.</strong> Add a <code>RouterLink</code> in <code>NavBar.vue</code> or the page that leads to it.</li>
+      </ol>
+      <div class="note prose">
+        <span class="label">Blank page?</span>
+        <p>Open the browser console (Cmd+Option+J / Ctrl+Shift+J). The red error names the file and line. The usual causes are a missing import in <code>router.js</code> or a guard that redirects in a loop.</p>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <section>
+      <h2 id="testing">Testing</h2>
+      <div class="prose">
+        <p>The conversion was checked with an end-to-end API script (76 checks, all passing). It starts the server against a throwaway database on the same Atlas cluster by setting <code>DB</code> before launch (dotenv doesn't override variables that are already set), runs through every endpoint as three users (student, second student, admin), and drops the database at the end.</p>
+        <p>It covers the permission rules (student vs. author vs. admin), validation (400s), missing and malformed IDs (404s), duplicates (409s), and the bugs fixed during the conversion. The script isn't in the repo yet. It is a good starting point for the M7 test suite next to the Playwright browser tests.</p>
+        <p>A quick manual check of a single endpoint:</p>
+      </div>
+<pre class="code">curl -c cookies.txt -X POST -H "Content-Type: application/json" \
+  -d '{"email":"you@smu.edu.sg","password":"..."}' localhost:8000/api/login
+curl -b cookies.txt localhost:8000/api/spots
+curl -i -b cookies.txt localhost:8000/api/spots/abc      <span class="c"># expect 404</span></pre>
+    </section>
+  </main>
+</div>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default' });
+</script>
+</body>
+</html>

@@ -17,7 +17,7 @@ const reportSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        default: "pending",
+        default: "Pending",
         enum: ["Pending","Approved","Declined"]
     },
     reason: {

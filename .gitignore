@@ -1,0 +1,8 @@
+node_modules/
+config.env
+.env
+client/dist/
+.DS_Store
+# local OneMap demos (contain a real token)
+onemap_map.html
+onemap_search.js

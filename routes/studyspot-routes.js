@@ -5,6 +5,11 @@ const authentication = require('../middleware/auth-middleware');
 const router = express.Router();
 
 
+// TODO(M2): these are all admin-only EJS routes. Add a new routes/api/spots.js with REST routes:
+//   GET    /api/spots, GET /api/spots/:id      -> apiLoggedIn (students need these)
+//   POST   /api/spots, PUT /api/spots/:id, DELETE /api/spots/:id -> apiAdmin
+// Delete this file at the M6 cut-over.
+
 // Define GET route to show all spots in one building
 router.get("/studyspot-list",authentication.isAdmin, studySpotController.showStudySpots);
 

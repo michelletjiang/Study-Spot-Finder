@@ -10,6 +10,15 @@ StudySpot Finder allows students to browse study spots organized by building, le
 
 ---
 
+## Codebase Guide
+
+A full walkthrough of the Vue + Express structure (every file, every `/api` endpoint, every page, the legacy EJS backup, and known limits):
+
+- **In the repo:** [docs/codebase-guide.html](docs/codebase-guide.html) (download or clone, then open it in a browser)
+- **Live version:** https://claude.ai/artifact/7m8xgVB5WyMME8ZfhgqAn7 (only opens for people it has been shared with)
+
+---
+
 ## Features
 
 **Student Features:**
