@@ -1,9 +1,9 @@
 // Floorplans shown on the building and floor pages, keyed by building name, then floor (normalised: 'B1', '2', ...).
 // Each room is a polygon in the image's pixel coordinates, linked to a study spot by name
-// (the same building + name that reviews use). Spots for LKS levels 2-5 are created by `npm run seed:lks`.
+// (the same building + name that reviews use). The spots themselves are created by `npm run seed:spots`.
 //
 // To add a floor: put the image in client/public/floorplans/, then trace each room's corners in pixels
-// (any image editor shows the cursor position) and list them as "x,y x,y ...".
+// (any image editor shows the cursor position) and list them as "x,y x,y ...". Add its spots to scripts/seed-floorplan-spots.js.
 export const floorplans = {
   'Li Ka Shing Library': {
     '2': {
@@ -83,6 +83,50 @@ export const floorplans = {
         { spotName: 'RM5-10', points: '819,184 903,184 903,258 819,258' },
         { spotName: 'Quiet Area', points: '243,221 423,221 423,341 403,341 403,381 347,381 347,697 413,697 413,867 120,867 150,705 197,455' },
         { spotName: 'Learning Labs', points: '348,575 552,575 552,540 767,540 767,695 348,695' },
+      ],
+    },
+  },
+  'SCIS 1': {
+    // SVGs: the room shapes below come straight from their <path>s (shifted by the SVG's translate(-150,-105));
+    // the seminar rooms' curved roofs are approximated with 10 straight segments
+    '2': {
+      image: '/floorplans/scis1-L2.svg',
+      width: 1060,
+      height: 790,
+      rooms: [
+        { spotName: 'GSR 2-1', points: '145,365 190,365 190,411 145,411' },
+        { spotName: 'GSR 2-2', points: '125,271 195,271 195,300 150,300 128,287' },
+        { spotName: 'GSR 2-3', points: '118,229 210,229 210,267 118,267' },
+        { spotName: 'GSR 2-4', points: '212,229 252,229 252,267 212,267' },
+        { spotName: 'GSR 2-5', points: '637,237 685,237 685,291 637,291' },
+        { spotName: 'GSR 2-6', points: '588,237 635,237 635,291 588,291' },
+        { spotName: 'GSR 2-7', points: '538,237 586,237 586,291 538,291' },
+        { spotName: 'SIS Learning Way 2.1', points: '252,435 495,445 495,477 375,475 320,625 170,597 170,463 252,457' },
+        { spotName: 'Seminar Room 2-1', points: '168,193 168,145 186,132 204,123 223,116 241,112 259,110 277,112 295,116 314,123 332,132 350,145 350,193' },
+        { spotName: 'Seminar Room 2-2', points: '390,195 390,140 405,129 420,120 435,114 450,110 466,109 481,110 496,114 511,120 526,129 541,140 541,195' },
+        { spotName: 'Seminar Room 2-3', points: '543,197 543,140 558,129 573,120 589,114 604,110 619,109 634,110 649,114 665,120 680,129 695,140 695,197' },
+        { spotName: 'Seminar Room 2-4', points: '732,230 732,155 752,141 773,130 793,122 813,118 834,116 854,118 874,122 894,130 915,141 935,155 935,230' },
+      ],
+    },
+    '3': {
+      image: '/floorplans/scis1-L3.svg',
+      width: 1060,
+      height: 790,
+      rooms: [
+        { spotName: 'GSR 3-1', points: '140,410 220,410 220,445 140,445' },
+        { spotName: 'GSR 3-2', points: '100,295 162,295 162,321 100,321' },
+        { spotName: 'GSR 3-3', points: '90,247 150,247 150,291 90,291' },
+        { spotName: 'GSR 3-4', points: '187,252 240,252 240,300 187,300' },
+        { spotName: 'GSR 3-5', points: '742,285 805,285 805,321 742,321' },
+        { spotName: 'GSR 3-6', points: '742,247 805,247 805,282 742,282' },
+        { spotName: 'SIS Project Way', points: '370,410 450,410 550,413 620,440 655,495 645,535 590,585 540,610 465,640 430,595 370,520' },
+        { spotName: 'SIS Research Way 3', points: '115,525 370,520 430,595 465,640 440,665 370,690 315,717 230,675 150,610 115,565' },
+        { spotName: 'Seminar Room 3-1', points: '168,213 168,157 185,146 202,137 219,131 236,127 253,126 270,127 287,131 304,137 321,146 338,157 338,213' },
+        { spotName: 'Seminar Room 3-2', points: '413,210 413,149 427,140 441,133 455,128 469,125 483,124 497,125 511,128 525,133 539,140 553,149 553,210' },
+        { spotName: 'Seminar Room 3-3', points: '555,215 555,145 569,136 583,129 596,124 610,121 624,120 638,121 652,124 665,129 679,136 693,145 693,215' },
+        { spotName: 'Seminar Room 3-4', points: '775,135 850,117 930,120 980,155 980,215 925,217 925,250 865,250 865,220 775,220' },
+        { spotName: 'Classroom 3.2', points: '470,237 607,237 607,311 470,311' },
+        { spotName: 'Classroom 3.1', points: '609,240 740,240 740,315 609,315' },
       ],
     },
   },
