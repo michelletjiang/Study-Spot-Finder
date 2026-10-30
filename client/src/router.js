@@ -5,7 +5,8 @@ import LoginView from './views/LoginView.vue'
 import RegisterView from './views/RegisterView.vue'
 import ProfileView from './views/ProfileView.vue'
 import EditProfileView from './views/EditProfileView.vue'
-import BuildingSpotsView from './views/BuildingSpotsView.vue'
+import BuildingView from './views/BuildingView.vue'
+import FloorView from './views/FloorView.vue'
 import SpotDetailView from './views/SpotDetailView.vue'
 import ReviewFormView from './views/ReviewFormView.vue'
 import MyReviewsView from './views/MyReviewsView.vue'
@@ -28,7 +29,8 @@ const routes = [
   { path: '/', name: 'home', component: HomeView, meta: { requiresAuth: true, showMap: true } },
   { path: '/profile', component: ProfileView, meta: { requiresAuth: true } },
   { path: '/profile/edit', component: EditProfileView, meta: { requiresAuth: true } },
-  { path: '/building/:name', component: BuildingSpotsView, meta: { requiresAuth: true, showMap: true } },
+  { path: '/building/:name', component: BuildingView, meta: { requiresAuth: true, showMap: true } },
+  { path: '/building/:name/floor/:floor', component: FloorView, meta: { requiresAuth: true, showMap: true } },
   { path: '/spots/:id', component: SpotDetailView, meta: { requiresAuth: true } },
   { path: '/spots/:spotId/reviews/new', component: ReviewFormView, meta: { requiresAuth: true } },
   { path: '/reviews/:id/edit', component: ReviewFormView, meta: { requiresAuth: true } },

@@ -58,6 +58,8 @@ export const mapStore = reactive({
       this.routeError = `${building.buildingname} has no coordinates yet.`
       return
     }
+    // building page -> floor page is the same building: keep the route already shown
+    if (this.destination?.postal === building.postal && (this.routes.length || this.loadingRoute)) return
     this.destination = building
     this.fetchRoutes()
   },

@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { api } from '../api'
 import { formatDate, noiseSummary } from '../reviews'
+import { normalizeFloor, floorLabel } from '../floors'
 import { auth } from '../stores/auth'
 import { favourites } from '../stores/favourites'
 import FavouriteButton from '../components/FavouriteButton.vue'
@@ -64,7 +65,7 @@ async function deleteReview(review) {
       <hr>
     </div>
 
-    <RouterLink :to="`/building/${spot.buildingName}`">Back to {{ spot.buildingName }}</RouterLink>
+    <RouterLink :to="`/building/${spot.buildingName}/floor/${normalizeFloor(spot.floor)}`">Back to {{ spot.buildingName }} {{ floorLabel(normalizeFloor(spot.floor)) }}</RouterLink>
   </template>
   <p v-else-if="!error">Loading...</p>
 </template>

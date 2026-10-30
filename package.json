@@ -6,7 +6,7 @@
     "dev": "concurrently -n server,client -c blue,green \"node --watch server.js\" \"npm --prefix client run dev\"",
     "build": "npm --prefix client ci && npm --prefix client run build",
     "geocode": "node scripts/geocode-buildings.js",
-    "seed:lks": "node scripts/seed-lks-level2.js"
+    "seed:lks": "node scripts/seed-lks.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
