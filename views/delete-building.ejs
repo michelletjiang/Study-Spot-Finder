@@ -1,3 +1,4 @@
+<%# LEGACY - not used by the Vue demo: confirmation page before deleting a building. Rendered by getMarkedBuilding in controllers/building-controller.js. The Vue page AdminBuildingsView.vue replaces it. %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,9 +7,11 @@
     <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+    <%# Navigation bar repeated on each legacy page. The role check below needs the user variable, which each handler must pass in. %>
     <nav>
         <a href ='/'><h2>Study Spots📚</h2></a>
         <a href='/profile'>Your Profile</a> |
+        <%# Admins see the management links. %>
         <% if (user.role == 'Admin'){ %>
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
@@ -17,10 +20,12 @@
             <a href="/admin/reports">Pending Reports</a> |
         <% } %> 
         <a href="/favourites">Favourites</a> |
+         <%# Legacy logout is a GET link to /logout. %>
          <a href='/logout'>Logout</a>
     </nav>
     <br>
     <p><strong>Building Marked for Deletion.</strong></p>
+    <%# Show the building that is about to be deleted. %>
     <%if(result){ %>
         Building Name: <%= result.buildingname %><br>
         Number of Floors:  <%= result.floors %><br>
@@ -29,8 +34,10 @@
     <% }else if(result===null){%>
         <p>Building not found</p>
     <%} %>
+    <%# The form posts to the legacy /delete-building route. %>
     <form action="/delete-building" method="POST">
     <p>Click the Confirm button to delete this building.</p>
+       <%# A hidden field sends the postal code back. %>
        <input type="hidden" name="postal" value="<%= result.postal %>">
        <button type="submit" >Confirm</button>
     </form>

@@ -1,12 +1,15 @@
+<%# LEGACY - not used by the Vue demo: student profile page. Rendered by profile in controllers/user-controller.js. The Vue page ProfileView.vue replaces it. %>
 <html>
     <head>
         <title>Profile</title>
         <link rel="stylesheet" href="/styles.css">
 </head>
     <body>
+        <%# Navigation bar repeated on each legacy page. The role check below needs the user variable, which each handler must pass in. %>
         <nav>
         <a href ='/'><h2>Study Spots📚</h2></a>
         <a href='/profile'>Your Profile</a> |
+        <%# Admins see the management links. %>
         <% if (user.role == 'Admin'){ %>
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
@@ -15,25 +18,30 @@
             <a href="/admin/reports">Pending Reports</a> |
         <% } %> 
         <a href="/favourites">Favourites</a> |
+         <%# Legacy logout is a GET link to /logout. %>
          <a href='/logout'>Logout</a>
     </nav>
     <br>
 
+        <%# Heading with the student's name. %>
         <h1>Welcome to your Student Profile, <%= user.username %>!🤓</h1>
         <p><strong>Username:</strong> <%= user.username %></p>
         <p><strong>Email:</strong> <%= user.email %></p>
         <p><strong>Your school(s):</strong></p>
         <ul>
+            <%# Show the schools as a list. %>
             <% user.school.forEach(sch => { %>
             <li><%=sch%></li>
             <% }) %>
         </ul>
         <p><strong>Type of account:</strong> <%= user.role %></p>
         <p><strong>Member since: </strong><%= new Date(user.createdAt).toDateString() %></p>
+       <%# A GET form that opens the legacy edit-profile page. %>
        <form action="/edit-profile" method="GET">
         <button type="submit">Edit Profile</button>
         </form>
 
+        <%# A POST form that deletes the account. %>
         <form action="/delete" method="POST">
             <button type="submit"> Delete Account</button>
         </form>
@@ -42,6 +50,7 @@
         <a href="/reviews/<%= user.username %>">Your Reviews</a>
         <br><br>
 
+        <%# Show the admin-request button, or the status of an earlier request. %>
         <% if (!adminRequest || adminRequest.status === 'Denied') { %>
             <% if (adminRequest && adminRequest.status === 'Denied') { %>
                 <p>Your admin request was <strong>denied</strong>.</p>
