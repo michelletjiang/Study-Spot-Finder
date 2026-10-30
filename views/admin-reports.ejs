@@ -1,12 +1,15 @@
+<%# LEGACY - not used by the Vue demo: admin table of pending reports. Rendered by adminDisplayReports in controllers/report-controller.js. The Vue page AdminReportsView.vue replaces it. %>
 <html>
     <head>
     <title>Pending Reports</title>
     <link rel="stylesheet" href="/styles.css">
 </head>
     <body>
+        <%# Navigation bar repeated on each legacy page. The role check below needs the user variable, which each handler must pass in. %>
         <nav>
         <a href ='/'><h2>Study Spots📚</h2></a>
         <a href='/profile'>Your Profile</a> |
+        <%# Admins see the management links. %>
         <% if (user.role == 'Admin'){ %>
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
@@ -15,9 +18,11 @@
             <a href="/admin/reports">Pending Reports</a> |
         <% } %> 
         <a href="/favourites">Favourites</a> |
+         <%# Legacy logout is a GET link to /logout. %>
          <a href='/logout'>Logout</a>
     </nav>
     <br>
+    <%# No reports: show a message. %>
     <% if (!reports || reports.length === 0){ %>
         No pending reports
     <% } else { %>
@@ -30,6 +35,7 @@
                 <td> Status </td>
                 <td>  </td>
                 <tr>
+                    <%# Loop over the reports. %>
                     <% reports.forEach(report => { %>
                     <tr>
                         <td><%= report.reviewId ? report.reviewId.content : '(review deleted)' %></td>
@@ -37,6 +43,7 @@
                         <td> <%= report.reason %> </td>
                         <td> <%= report.description %> </td>
                         <td> <%= report.reportedBy %> </td>
+                        <%# Each row has a form that posts the chosen action to the legacy /admin/reports route. %>
                         <form action="/admin/reports" method="POST">
                         <td> <input type="hidden" name="reportId" value="<%= report._id %>">
                         <input type="radio" name="action" value="approve"> Approve

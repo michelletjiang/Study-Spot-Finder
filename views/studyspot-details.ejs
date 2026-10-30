@@ -1,3 +1,4 @@
+<%# LEGACY - not used by the Vue demo: admin page with one study spot's details. Rendered by showSpotDetail in controllers/studyspot-controller.js. The Vue page SpotDetailView.vue replaces it. %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,9 +6,11 @@
     <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+    <%# Navigation bar repeated on each legacy page. The role check below needs the user variable, which each handler must pass in. %>
     <nav>
         <a href ='/'><h2>Study Spots📚</h2></a>
         <a href='/profile'>Your Profile</a> |
+        <%# Admins see the management links. %>
         <% if (user.role == 'Admin'){ %>
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
@@ -16,8 +19,10 @@
             <a href="/admin/reports">Pending Reports</a> |
         <% } %> 
         <a href="/favourites">Favourites</a> |
+         <%# Legacy logout is a GET link to /logout. %>
          <a href='/logout'>Logout</a>
     </nav>
+    <%# Show the spot if one was found. %>
     <% if (result) { %>
         <h2><%= result.name %></h2>
         Building: <%= result.buildingName %><br>
