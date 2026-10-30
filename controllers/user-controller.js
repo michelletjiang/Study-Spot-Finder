@@ -223,7 +223,7 @@ exports.editProfilePost = async (req, res) => {
     }
 };
 
-// LEGACY - not used by the Vue demo (the route /favourites is handled elsewhere): no route uses goToFavourites. The comment above it is an old reminder.
+// LEGACY - not used by the Vue demo: no route uses goToFavourites. The comment above it is an old reminder.
 //NEED TO CHECK ROUTE NAMES
 // Redirect to the legacy favourites page when logged in.
 exports.goToFavourites = (req, res) => {
