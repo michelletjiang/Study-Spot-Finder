@@ -1,53 +1,79 @@
 <script setup>
+// ACTIVE: the profile page for students and admins. Admins also see the pending admin requests here.
+// ref makes a changing value, onMounted runs code when the page appears.
 import { ref, onMounted } from 'vue'
+// useRouter navigates.
 import { useRouter } from 'vue-router'
+// The shared JSON helper.
 import { api } from '../api'
+// The shared login state.
 import { auth } from '../stores/auth'
 
+// Existing note: one page for both roles.
 // One page for both students and admins (replaces profile.ejs and admin-profile.ejs)
+// The router.
 const router = useRouter()
 
+// The profile from the server.
 const user = ref(null)
+// The user's latest admin request, if any.
 const adminRequest = ref(null)
+// For admins: the requests waiting for a decision.
 const pendingRequests = ref([])
+// A message to show on failure.
 const error = ref('')
 
+// Load the profile.
 async function load() {
   try {
+    // GET /api/profile returns the user and their latest admin request.
     const data = await api('/api/profile')
     user.value = data.user
     adminRequest.value = data.adminRequest
+    // Refresh the shared user, since an admin may have changed the role.
     auth.user = data.user // the role may have changed since login (an admin approved the request)
+    // Admins also load the pending requests (GET /api/admin-requests).
     if (auth.isAdmin) pendingRequests.value = await api('/api/admin-requests')
   } catch (e) {
     error.value = e.message
   }
 }
 
+// Load when the page appears.
 onMounted(load)
 
+// A student asks to become an admin.
 async function requestAdmin() {
   try {
+    // POST /api/admin-requests.
     adminRequest.value = await api('/api/admin-requests', { method: 'POST' })
   } catch (e) {
     error.value = e.message
   }
 }
 
+// An admin approves or denies a request.
 async function processRequest(req, action) {
   try {
+    // POST /api/admin-requests/:id/approve or /deny.
     await api(`/api/admin-requests/${req._id}/${action}`, { method: 'POST' })
+    // Remove it from the list.
     pendingRequests.value = pendingRequests.value.filter(r => r._id !== req._id)
   } catch (e) {
     error.value = e.message
   }
 }
 
+// Delete the logged-in account.
 async function deleteAccount() {
+  // Ask first.
   if (!confirm('Delete your account? This cannot be undone.')) return
   try {
+    // DELETE /api/profile.
     await api('/api/profile', { method: 'DELETE' })
+    // Forget the user.
     auth.user = null
+    // Go to the login page.
     router.push('/login')
   } catch (e) {
     error.value = e.message
@@ -56,10 +82,14 @@ async function deleteAccount() {
 </script>
 
 <template>
+  <!-- Error message. -->
   <p v-if="error" style="color: red">{{ error }}</p>
+  <!-- Everything below shows once the profile has loaded. -->
   <template v-if="user">
+    <!-- Different heading for admins and students. -->
     <h1 v-if="auth.isAdmin">Welcome, Admin {{ user.username }}!🤩</h1>
     <h1 v-else>Welcome to your Student Profile, {{ user.username }}!🤓</h1>
+    <!-- The account details from the server. -->
     <p><strong>Username:</strong> {{ user.username }}</p>
     <p><strong>Email:</strong> {{ user.email }}</p>
     <p><strong>Your school(s):</strong></p>
@@ -69,9 +99,11 @@ async function deleteAccount() {
     <p><strong>Type of account:</strong> {{ user.role }}</p>
     <p><strong>Member since:</strong> {{ new Date(user.createdAt).toDateString() }}</p>
 
+    <!-- Edit and delete buttons. -->
     <button @click="router.push('/profile/edit')">Edit Profile</button>
     <button @click="deleteAccount">Delete Account</button>
     <br>
+    <!-- Shortcuts to favourites and reviews. -->
     <RouterLink to="/favourites">Your Favourite Study Spots</RouterLink><br>
     <RouterLink to="/my-reviews">Your Reviews</RouterLink>
     <br><br>
