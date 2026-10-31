@@ -1,5 +1,5 @@
 import { reactive } from 'vue'
-import { api } from '../api'
+import { api } from '../api.js'
 
 // A module-level promise lets multiple guards share one bootstrap request.
 let pendingFetch = null
