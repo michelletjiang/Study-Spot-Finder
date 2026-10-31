@@ -1,5 +1,6 @@
 import { reactive } from 'vue'
 import { api } from '../api.js'
+import { comparison } from './compare.js'
 
 // A module-level promise lets multiple guards share one bootstrap request.
 let pendingFetch = null
@@ -47,6 +48,8 @@ export const auth = reactive({
     } finally {
       // Clearing this copy also handles an already-expired network session safely.
       this.user = null
+      // Comparison choices belong to the old account and must not leak to the next login.
+      comparison.clear()
     }
   }
 })

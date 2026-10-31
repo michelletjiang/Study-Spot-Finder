@@ -1,6 +1,9 @@
+// ACTIVE: model for user accounts. Used by controllers/user-controller.js. Exports the model itself, not a set of helper functions.
 const mongoose = require('mongoose');
 
+// Schema: the fields of each user.
 const userSchema = new mongoose.Schema({
+    // The login name must be unique, trimmed and at least 5 characters.
     username: {
         type: String,
         required: true,
@@ -8,6 +11,7 @@ const userSchema = new mongoose.Schema({
         trim: true,
         minlength: 5
     },
+    // Email must be unique and is stored in lower case.
     email:{
         type: String,
         required: true,
@@ -15,14 +19,17 @@ const userSchema = new mongoose.Schema({
         lowercase: true,
         trim:true
     },
+    // Password field. The controller stores a hash here, never the plain text.
     password: {
         type: String,
         required: true,
         minlength: 8
     },
+    // School is a list so a student can have up to two.
     school: {
         type: [String],
         required: true,
+        // Custom check: reject more than two schools.
         validate: {
             validator: function(arr) {
                 return arr.length <= 2;
@@ -30,16 +37,20 @@ const userSchema = new mongoose.Schema({
             message: 'You can only select up to 2 schools'
         }
     },
+    // Role decides what the user can do: Admin gets the admin pages.
     role:{
         type: String,
         required: true
     },
+    // Sign-up date, set automatically.
     createdAt: {
         type: Date,
         default: Date.now
     }
 });
 
+// Register the model: name User, collection users (Mongoose default).
 const User = mongoose.model('User', userSchema);
 
+// Export the model.
 module.exports = User;
