@@ -58,10 +58,16 @@ const router = createRouter({
 // The guard only improves UX (no flash of pages you can't use).
 // The real protection is the Express middleware on each /api route.
 router.beforeEach(async (to) => {
+  // Resolve the server session before every navigation, including a hard refresh.
   const user = await auth.fetchMe()
-  if ((to.meta.requiresAuth || to.meta.requiresAdmin) && !user) return { name: 'login', query: { redirect: to.fullPath } }
+  // Client guards provide navigation UX only; every API route still checks the session server-side.
+  if ((to.meta.requiresAuth || to.meta.requiresAdmin) && !user) {
+    // Preserve the requested deep link so a successful login can return the student there.
+    return { name: 'login', query: { redirect: to.fullPath } }
+  }
+  // A student must not enter an admin screen even if they type its URL directly.
   if (to.meta.requiresAdmin && !auth.isAdmin) return { name: 'home' }
-  // already logged in: skip the login/register pages
+  // Authenticated users do not need to see public sign-in screens again.
   if ((to.name === 'login' || to.name === 'register') && user) return { name: 'home' }
 })
 
