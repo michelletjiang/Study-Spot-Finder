@@ -29,8 +29,9 @@ const routes = [
   { path: '/', name: 'home', component: HomeView, meta: { requiresAuth: true, showMap: true } },
   { path: '/profile', component: ProfileView, meta: { requiresAuth: true } },
   { path: '/profile/edit', component: EditProfileView, meta: { requiresAuth: true } },
-  { path: '/building/:name', component: BuildingView, meta: { requiresAuth: true, showMap: true } },
-  { path: '/building/:name/floor/:floor', component: FloorView, meta: { requiresAuth: true, showMap: true } },
+  // (.*) lets a building name contain a slash, e.g. "School of Social Sciences / College of Integrative Studies"
+  { path: '/building/:name(.*)/floor/:floor', component: FloorView, meta: { requiresAuth: true, showMap: true } },
+  { path: '/building/:name(.*)', component: BuildingView, meta: { requiresAuth: true, showMap: true } },
   { path: '/spots/:id', component: SpotDetailView, meta: { requiresAuth: true } },
   { path: '/spots/:spotId/reviews/new', component: ReviewFormView, meta: { requiresAuth: true } },
   { path: '/reviews/:id/edit', component: ReviewFormView, meta: { requiresAuth: true } },

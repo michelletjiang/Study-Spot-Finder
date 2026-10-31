@@ -103,6 +103,119 @@ const buildings = {
     { floor: '3', name: 'Classroom 3.2', seatCount: 20, hasPowerSocket: true },
     { floor: '3', name: 'Classroom 3.1', seatCount: 20, hasPowerSocket: true },
   ],
+
+
+  'Yong Pung How School of Law': [
+    // basement 2
+    { floor: 'B2', name: 'Seminar Room B2-01', seatCount: 45, hasPowerSocket: true },
+    { floor: 'B2', name: 'Classroom B2-03', seatCount: 40, hasPowerSocket: true },
+    // basement 1
+    { floor: 'B1', name: 'Seminar Room B1-01', seatCount: 45, hasPowerSocket: true },
+    { floor: 'B1', name: 'GSR B1-02', seatCount: 6, hasPowerSocket: true },
+    { floor: 'B1', name: 'GSR B1-03', seatCount: 6, hasPowerSocket: true },
+    { floor: 'B1', name: 'GSR B1-04', seatCount: 6, hasPowerSocket: true },
+    { floor: 'B1', name: 'GSR B1-05', seatCount: 6, hasPowerSocket: true },
+    { floor: 'B1', name: 'GSR B1-06', seatCount: 6, hasPowerSocket: true },
+    { floor: 'B1', name: 'GSR B1-07', seatCount: 6, hasPowerSocket: true },
+    { floor: 'B1', name: 'GSR B1-08', seatCount: 6, hasPowerSocket: true },
+    { floor: 'B1', name: 'Classroom B1-09', seatCount: 40, hasPowerSocket: true },
+    { floor: 'B1', name: 'GSR B1-10', seatCount: 6, hasPowerSocket: true },
+    { floor: 'B1', name: 'GSR B1-11', seatCount: 6, hasPowerSocket: true },
+    { floor: 'B1', name: 'GSR B1-12', seatCount: 6, hasPowerSocket: true },
+    { floor: 'B1', name: 'Classroom B1-13', seatCount: 40, hasPowerSocket: true },
+    // level 1
+    { floor: '1', name: 'Classroom 1-02', seatCount: 40, hasPowerSocket: true },
+    // level 2
+    { floor: '2', name: 'GSR 2-07', seatCount: 6, hasPowerSocket: true },
+    { floor: '2', name: 'GSR 2-08', seatCount: 6, hasPowerSocket: true },
+    { floor: '2', name: 'GSR 2-12', seatCount: 6, hasPowerSocket: true },
+    { floor: '2', name: 'GSR 2-13', seatCount: 6, hasPowerSocket: true },
+    { floor: '2', name: 'GSR 2-14', seatCount: 6, hasPowerSocket: true },
+    { floor: '2', name: 'Seminar Room 2-01', seatCount: 45, hasPowerSocket: true },
+    { floor: '2', name: 'Seminar Room 2-02', seatCount: 45, hasPowerSocket: true },
+    { floor: '2', name: 'Seminar Room 2-03', seatCount: 45, hasPowerSocket: true },
+    { floor: '2', name: 'Seminar Room 2-04', seatCount: 45, hasPowerSocket: true },
+    { floor: '2', name: 'Seminar Room 2-05', seatCount: 45, hasPowerSocket: true },
+    { floor: '2', name: 'Seminar Room 2-15', seatCount: 45, hasPowerSocket: true },
+    { floor: '2', name: 'Seminar Room 2-16', seatCount: 45, hasPowerSocket: true },
+    { floor: '2', name: 'Social Terrace', seatCount: 30, hasPowerSocket: false },
+    // level 3
+    { floor: '3', name: 'GSR 3-03', seatCount: 6, hasPowerSocket: true },
+    { floor: '3', name: 'GSR 3-04', seatCount: 6, hasPowerSocket: true },
+    { floor: '3', name: 'GSR 3-05', seatCount: 6, hasPowerSocket: true },
+    { floor: '3', name: 'GSR 3-06', seatCount: 6, hasPowerSocket: true },
+    { floor: '3', name: 'GSR 3-07', seatCount: 6, hasPowerSocket: true },
+    { floor: '3', name: 'GSR 3-08', seatCount: 6, hasPowerSocket: true },
+    { floor: '3', name: 'Seminar Room 3-01', seatCount: 45, hasPowerSocket: true },
+    { floor: '3', name: 'Seminar Room 3-02', seatCount: 45, hasPowerSocket: true },
+    { floor: '3', name: 'Seminar Room 3-09', seatCount: 45, hasPowerSocket: true },
+    { floor: '3', name: 'Seminar Room 3-10', seatCount: 45, hasPowerSocket: true },
+    { floor: '3', name: 'Seminar Room 3-11', seatCount: 45, hasPowerSocket: true },
+    { floor: '3', name: 'Seminar Room 3-12', seatCount: 45, hasPowerSocket: true },
+    { floor: '3', name: 'Learning Common', seatCount: 30, hasPowerSocket: true },
+    { floor: '3', name: 'Kwa Geok Choo Law Library (Level 3)', seatCount: 100, hasPowerSocket: true },
+  ],
+
+  // the auditorium and Onalu (cafe) are drawn on the plan but aren't study spots
+  'School of Accountancy': [
+    // level 1
+    { floor: '1', name: 'Seminar Room 1.1', seatCount: 45, hasPowerSocket: true },
+    { floor: '1', name: 'Seminar Room 1.2', seatCount: 45, hasPowerSocket: true },
+    { floor: '1', name: 'Seminar Room 1.3', seatCount: 45, hasPowerSocket: true },
+    // level 2
+    { floor: '2', name: 'GSR 2.1', seatCount: 6, hasPowerSocket: true },
+    { floor: '2', name: 'GSR 2.2', seatCount: 6, hasPowerSocket: true },
+    { floor: '2', name: 'GSR 2.3', seatCount: 6, hasPowerSocket: true },
+    { floor: '2', name: 'GSR 2.4', seatCount: 6, hasPowerSocket: true },
+    { floor: '2', name: 'GSR 2.5', seatCount: 6, hasPowerSocket: true },
+    { floor: '2', name: 'GSR 2.6', seatCount: 6, hasPowerSocket: true },
+    { floor: '2', name: 'GSR 2.7', seatCount: 6, hasPowerSocket: true },
+    { floor: '2', name: 'GSR 2.8', seatCount: 6, hasPowerSocket: true },
+    { floor: '2', name: 'GSR 2.9', seatCount: 6, hasPowerSocket: true },
+    { floor: '2', name: 'Seminar Room 2.1', seatCount: 45, hasPowerSocket: true },
+    { floor: '2', name: 'Seminar Room 2.2', seatCount: 45, hasPowerSocket: true },
+    { floor: '2', name: 'Seminar Room 2.3', seatCount: 45, hasPowerSocket: true },
+    { floor: '2', name: 'Seminar Room 2.4', seatCount: 45, hasPowerSocket: true },
+    { floor: '2', name: 'Seminar Room 2.5', seatCount: 45, hasPowerSocket: true },
+    { floor: '2', name: 'Classroom 2.1', seatCount: 30, hasPowerSocket: true },
+    // level 3
+    { floor: '3', name: 'GSR 3.1', seatCount: 6, hasPowerSocket: true },
+    { floor: '3', name: 'GSR 3.2', seatCount: 6, hasPowerSocket: true },
+    { floor: '3', name: 'GSR 3.3', seatCount: 6, hasPowerSocket: true },
+    { floor: '3', name: 'GSR 3.4', seatCount: 6, hasPowerSocket: true },
+    { floor: '3', name: 'GSR 3.5', seatCount: 6, hasPowerSocket: true },
+    { floor: '3', name: 'GSR 3.6', seatCount: 6, hasPowerSocket: true },
+    { floor: '3', name: 'GSR 3.7', seatCount: 6, hasPowerSocket: true },
+    { floor: '3', name: 'GSR 3.8', seatCount: 6, hasPowerSocket: true },
+    { floor: '3', name: 'GSR 3.9', seatCount: 6, hasPowerSocket: true },
+    { floor: '3', name: 'GSR 3.10', seatCount: 6, hasPowerSocket: true },
+    { floor: '3', name: 'Seminar Room 3.1', seatCount: 45, hasPowerSocket: true },
+    { floor: '3', name: 'Seminar Room 3.2', seatCount: 45, hasPowerSocket: true },
+    { floor: '3', name: 'Seminar Room 3.3', seatCount: 45, hasPowerSocket: true },
+    { floor: '3', name: 'Seminar Room 3.4', seatCount: 45, hasPowerSocket: true },
+    { floor: '3', name: 'Seminar Room 3.5', seatCount: 45, hasPowerSocket: true },
+  ],
+
+  // the labs, club rooms and Wee Kim Wee Centre are drawn on the plan but aren't study spots
+  'School of Social Sciences / College of Integrative Studies': [
+    // basement 1
+    { floor: 'B1', name: 'Seminar Room B1-1', seatCount: 45, hasPowerSocket: true },
+    // level 1
+    { floor: '1', name: 'Seminar Room 1-1', seatCount: 45, hasPowerSocket: true },
+    { floor: '1', name: 'Seminar Room 1-2', seatCount: 45, hasPowerSocket: true },
+    { floor: '1', name: 'Classroom 1-2', seatCount: 30, hasPowerSocket: true },
+    { floor: '1', name: 'Student Lounge', seatCount: 60, hasPowerSocket: true },
+    // level 2
+    { floor: '2', name: 'Seminar Room 2-1', seatCount: 45, hasPowerSocket: true },
+    { floor: '2', name: 'Seminar Room 2-2', seatCount: 45, hasPowerSocket: true },
+    // level 3
+    { floor: '3', name: 'Seminar Room 3-1', seatCount: 45, hasPowerSocket: true },
+    { floor: '3', name: 'Seminar Room 3-3', seatCount: 45, hasPowerSocket: true },
+    { floor: '3', name: 'Classroom 3-2', seatCount: 30, hasPowerSocket: true },
+    { floor: '3', name: 'Classroom 3-4', seatCount: 30, hasPowerSocket: true },
+    { floor: '3', name: 'Classroom 3-5', seatCount: 30, hasPowerSocket: true },
+    { floor: '3', name: 'Study Area', seatCount: 20, hasPowerSocket: true },
+  ],
 };
 
 async function seedBuilding(buildingName, spots) {
