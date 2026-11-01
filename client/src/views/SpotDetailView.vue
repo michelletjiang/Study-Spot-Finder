@@ -95,8 +95,8 @@ async function deleteReview(review) {
         </div>
 
         <p v-if="!reviews.length" class="nb-state">No reviews yet. Be the first to say what this room is like.</p>
-        <article v-for="review in reviews" :key="review._id" class="nb-sheet review">
-          <h3>{{ review.title }} <StarRating :rating="review.rating" /></h3>
+        <article v-for="review in reviews" :key="review._id" class="nb-sheet nb-review review">
+          <h3 class="nb-review-title">{{ review.title }} <StarRating :rating="review.rating" /></h3>
           <p>{{ review.content }}</p>
           <footer>
             <span class="author">{{ review.userId }} <span v-if="isMine(review)" class="you">You</span></span>
@@ -145,10 +145,7 @@ async function deleteReview(review) {
 .reviews-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
 .reviews-head h2 { margin: 0; font: 700 2.4rem/1.1 var(--nb-heading); color: var(--nb-ink); }
 
-.review { max-width: 720px; margin-bottom: 22px; padding: 18px 22px 16px; }
-.review h3 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 0 0 6px; font: 700 1.7rem/1.15 var(--nb-heading); color: var(--nb-ink); }
-.review h3 .stars { font: 1.2rem/1 system-ui, sans-serif; }
-.review > p { margin: 0 0 12px; white-space: pre-line; }
+.review { max-width: 720px; margin-bottom: 22px; }
 .review footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding-top: 10px; border-top: 1px solid var(--nb-rule-light); }
 .author { font-weight: 700; }
 .you { margin-left: 4px; padding: 0 8px; border: 1.5px solid #28263f; border-radius: 999px; background: var(--nb-highlight); color: #28263f; font-size: 0.78rem; }

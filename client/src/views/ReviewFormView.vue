@@ -71,9 +71,9 @@ async function save() {
   <div class="nb-page">
     <RouterLink :to="backTo" class="nb-back">‹ {{ backLabel }}</RouterLink>
     <h1 class="nb-title">{{ isEdit ? 'Edit your review' : 'Write a review' }}</h1>
-    <p v-if="spotLabel" class="for">for <span class="tab">{{ spotLabel }}</span></p>
+    <p v-if="spotLabel" class="for">for <span class="nb-folder-tab">{{ spotLabel }}</span></p>
 
-    <form class="nb-sheet sheet" novalidate @submit.prevent="save">
+    <form class="nb-sheet nb-form-sheet sheet" novalidate @submit.prevent="save">
       <div class="nb-tape" aria-hidden="true"></div>
 
       <fieldset class="rating">
@@ -108,11 +108,11 @@ async function save() {
 
       <p v-if="error" class="nb-errors single" role="alert">{{ error }}</p>
 
-      <div class="actions">
+      <div class="nb-form-actions">
         <button type="submit" class="nb-btn nb-btn--primary" :disabled="saving">
           {{ saving ? 'Saving…' : isEdit ? 'Save review' : 'Post review' }}
         </button>
-        <RouterLink :to="backTo" class="cancel">Cancel</RouterLink>
+        <RouterLink :to="backTo" class="nb-cancel">Cancel</RouterLink>
       </div>
     </form>
   </div>
@@ -120,21 +120,8 @@ async function save() {
 
 <style scoped>
 .for { display: flex; align-items: flex-end; gap: 10px; margin: 6px 0 0 0; color: var(--nb-ink); }
-/* the room's name on a folder tab, sitting on the sheet below */
-.tab {
-  position: relative;
-  bottom: -2px;
-  z-index: 1;
-  padding: 6px 18px;
-  border: 2px solid #28263f;
-  border-bottom: none;
-  border-radius: 10px 10px 0 0;
-  background: var(--nb-manila-dark);
-  color: #28263f;
-  font-weight: 700;
-}
 
-.sheet { max-width: 680px; padding: 26px 30px 26px; transform: rotate(-0.3deg); }
+.sheet { max-width: 680px; transform: rotate(-0.3deg); }
 
 .rating { margin: 0 0 18px; padding: 0; border: none; }
 .rating legend { float: none; margin-bottom: 6px; font-size: 1rem; }
@@ -146,7 +133,6 @@ async function save() {
 .star:hover svg { transform: scale(1.1); }
 .star:has(input:focus-visible) { outline: 3px solid var(--nb-focus); outline-offset: 2px; border-radius: 6px; }
 .rating-word { margin-left: 14px; font: 700 1.7rem/1 var(--nb-heading); }
-.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* notebook lines inside the review box, lined up with the text */
 .lined {
@@ -159,12 +145,9 @@ async function save() {
 }
 .hint-row { display: flex; justify-content: space-between; gap: 12px; }
 
-.actions { display: flex; align-items: center; gap: 22px; margin-top: 6px; }
-.cancel { color: var(--nb-ink); font-weight: 700; text-underline-offset: 3px; }
-.cancel:focus-visible { outline: 3px solid var(--nb-focus); outline-offset: 3px; }
 
 @media (max-width: 600px) {
-  .sheet { transform: none; padding: 22px 18px; }
+  .sheet { transform: none; }
   .rating-word { flex-basis: 100%; margin-left: 0; }
 }
 </style>

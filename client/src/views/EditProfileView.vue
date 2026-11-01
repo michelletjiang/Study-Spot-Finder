@@ -60,12 +60,12 @@ async function save() {
 </script>
 
 <template>
-  <div class="edit-page">
-    <RouterLink to="/profile" class="back">‹ Back to profile</RouterLink>
-    <h1>Edit profile</h1>
+  <div class="nb-page">
+    <RouterLink to="/profile" class="nb-back">‹ Back to profile</RouterLink>
+    <h1 class="nb-title">Edit profile</h1>
 
     <div class="layout">
-      <form class="details" novalidate @submit.prevent="save">
+      <form class="nb-sheet details" novalidate @submit.prevent="save">
         <div class="nb-tape" aria-hidden="true"></div>
         <header>
           <span class="nb-avatar" aria-hidden="true">{{ initial }}</span>
@@ -74,46 +74,46 @@ async function save() {
 
         <p v-if="!loaded && !errors.length" class="muted">Loading your details…</p>
         <template v-else>
-          <div class="field">
+          <div class="nb-field">
             <label for="username">Username</label>
-            <input id="username" v-model="form.username" autocomplete="username" aria-describedby="username-hint">
-            <small id="username-hint">Shown on your reviews. At least 5 characters.</small>
+            <input id="username" v-model="form.username" class="nb-input" autocomplete="username" aria-describedby="username-hint">
+            <small id="username-hint" class="nb-hint">Shown on your reviews. At least 5 characters.</small>
           </div>
 
-          <div class="field">
+          <div class="nb-field">
             <label for="email">Email</label>
-            <input id="email" v-model="form.email" type="email" autocomplete="email" aria-describedby="email-hint">
-            <small id="email-hint">You’ll log in with this email.</small>
+            <input id="email" v-model="form.email" class="nb-input" type="email" autocomplete="email" aria-describedby="email-hint">
+            <small id="email-hint" class="nb-hint">You’ll log in with this email.</small>
           </div>
 
           <fieldset>
             <legend>Change password <span class="muted">(optional)</span></legend>
             <p class="muted">Leave these blank to keep your current password.</p>
-            <div class="field">
+            <div class="nb-field">
               <label for="password">New password</label>
-              <div class="with-button">
-                <input id="password" v-model="form.password" :type="showPassword ? 'text' : 'password'"
+              <div class="nb-with-button">
+                <input id="password" v-model="form.password" class="nb-input" :type="showPassword ? 'text' : 'password'"
                        autocomplete="new-password" aria-describedby="password-hint">
                 <button type="button" class="nb-btn" :aria-pressed="showPassword" @click="showPassword = !showPassword">
                   {{ showPassword ? 'Hide' : 'Show' }}
                 </button>
               </div>
-              <small id="password-hint">At least 8 characters.</small>
+              <small id="password-hint" class="nb-hint">At least 8 characters.</small>
             </div>
-            <div class="field">
+            <div class="nb-field">
               <label for="confirm">Confirm new password</label>
-              <input id="confirm" v-model="form.confirm" :type="showPassword ? 'text' : 'password'" autocomplete="new-password">
+              <input id="confirm" v-model="form.confirm" class="nb-input" :type="showPassword ? 'text' : 'password'" autocomplete="new-password">
             </div>
           </fieldset>
         </template>
 
-        <ul v-if="errors.length" class="errors" role="alert">
+        <ul v-if="errors.length" class="nb-errors" :class="{ single: errors.length === 1 }" role="alert">
           <li v-for="err in errors" :key="err">{{ err }}</li>
         </ul>
 
-        <div class="actions">
+        <div class="nb-form-actions">
           <button type="submit" class="nb-btn nb-btn--primary" :disabled="saving || !loaded">{{ saving ? 'Saving…' : 'Save changes' }}</button>
-          <RouterLink to="/profile" class="cancel">Cancel</RouterLink>
+          <RouterLink to="/profile" class="nb-cancel">Cancel</RouterLink>
         </div>
       </form>
 
@@ -137,22 +137,8 @@ async function save() {
 </template>
 
 <style scoped>
-/* colours, buttons, sticky notes, tape and the initial circle come from the notebook section of style.css */
-.edit-page {
-  max-width: 1240px;
-  padding: 18px 24px 140px 48px; /* left clears the pink margin line, bottom clears the minimap */
-  color: var(--nb-ink);
-  text-align: left;
-}
-
-.back { color: var(--nb-ink); font-weight: 700; text-decoration: none; }
-.back:hover { text-decoration: underline; }
-
-h1 {
-  margin: 20px 0 28px;
-  font: 700 clamp(2.6rem, 6vw, 3.6rem)/1.05 var(--nb-heading);
-  color: var(--nb-ink);
-}
+/* page, title, sheet, fields, buttons, notes, tape and the initial circle come from the notebook section of style.css */
+.nb-title { margin: 20px 0 28px; } /* no subtitle under it on this page */
 .details h2 { margin: 0; font: 700 2rem/1.1 var(--nb-heading); color: inherit; }
 
 .layout {
@@ -163,15 +149,7 @@ h1 {
 }
 
 /* ---------- the form card ---------- */
-.details {
-  position: relative;
-  padding: 20px 26px 26px;
-  background: var(--nb-sheet);
-  border: 2px solid var(--nb-ink);
-  border-radius: 3px;
-  box-shadow: 6px 6px 0 var(--nb-ink);
-  transform: rotate(-0.4deg);
-}
+.details { padding: 20px 26px 26px; transform: rotate(-0.4deg); }
 .details header {
   display: flex;
   align-items: center;
@@ -180,21 +158,6 @@ h1 {
   padding: 0 26px 12px;
   border-bottom: 2px solid var(--nb-pink);
 }
-
-.field { display: grid; gap: 6px; margin-bottom: 18px; }
-label { font-weight: 700; }
-input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 10px 14px;
-  border: 2px solid var(--nb-ink);
-  border-radius: 10px;
-  background: var(--nb-input);
-  color: var(--nb-ink);
-  font: inherit;
-}
-input:focus-visible { outline: 3px solid var(--nb-focus); outline-offset: 2px; }
-small { color: var(--nb-muted); font-size: 0.85rem; }
 .muted { color: var(--nb-muted); font-weight: 400; }
 
 fieldset {
@@ -205,26 +168,10 @@ fieldset {
 }
 legend { float: none; width: auto; margin: 0; padding: 0 6px; font-size: 1rem; font-weight: 700; }
 fieldset > p { margin: 0 0 14px; font-size: 0.92rem; }
-.with-button { display: flex; gap: 10px; }
-.with-button input { flex: 1; min-width: 0; }
-.with-button .nb-btn { flex: none; }
-
-.back:focus-visible, .cancel:focus-visible { outline: 3px solid var(--nb-focus); outline-offset: 3px; }
-.actions { display: flex; align-items: center; gap: 22px; }
-.cancel { color: var(--nb-ink); font-weight: 700; text-underline-offset: 3px; }
-
-.errors {
-  margin: 0 0 18px;
-  padding: 10px 14px 10px 32px;
-  border: 2px solid var(--nb-error);
-  border-radius: 8px;
-  color: var(--nb-error);
-}
 
 .notes { display: grid; gap: 36px; }
 
 @media (max-width: 820px) {
-  .edit-page { padding-left: 16px; padding-right: 16px; }
   .layout { grid-template-columns: 1fr; gap: 36px; }
   .details { transform: none; padding: 18px 18px 22px; }
   .details header { margin: 0 -18px 18px; padding: 0 18px 12px; }
