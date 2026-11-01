@@ -41,6 +41,17 @@ onMounted(async () => {
 })
 
 // Delete one of your reviews.
+// Send a vote. Clicking the arrow you already chose takes the vote back.
+async function vote(review, direction) {
+  const next = review.myVote === direction ? 'none' : direction
+  try {
+    const updated = await api(`/api/reviews/${review._id}/vote`, { method: 'POST', body: { vote: next } })
+    Object.assign(review, updated)
+  } catch (e) {
+    error.value = e.message
+  }
+}
+
 async function deleteReview(review) {
   // Ask first.
   if (!confirm(`Delete your review "${review.title}"?`)) return
@@ -84,6 +95,14 @@ async function deleteReview(review) {
     <div v-for="review in reviews" :key="review._id">
       <!-- Title, rating and author. -->
       <p><strong>{{ review.title }}</strong> ({{ review.rating }}/5) by {{ review.userId }}<template v-if="review.noiseLevel"> · Noise: {{ review.noiseLevel }}</template></p>
+      <!-- Helpful votes. Authors see the score but cannot vote on their own review. -->
+      <div class="review-votes" role="group" :aria-label="`Votes for ${review.title}`">
+        <template v-if="review.userId !== auth.user?.username">
+          <button type="button" class="secondary" :aria-pressed="review.myVote === 'up'" aria-label="Upvote" @click="vote(review, 'up')">▲ {{ review.upvoteCount }}</button>
+          <button type="button" class="secondary" :aria-pressed="review.myVote === 'down'" aria-label="Downvote" @click="vote(review, 'down')">▼ {{ review.downvoteCount }}</button>
+        </template>
+        <span v-else>▲ {{ review.upvoteCount }} ▼ {{ review.downvoteCount }}</span>
+      </div>
       {{ review.content }}<br>
       <!-- Edit and delete are shown only for your own reviews. -->
       <template v-if="review.userId === auth.user?.username">
@@ -101,3 +120,22 @@ async function deleteReview(review) {
   <!-- Loading message. -->
   <p v-else-if="!error">Loading...</p>
 </template>
+
+<style scoped>
+/* Vote buttons under each review, styled like the Compare buttons. */
+.review-votes button {
+  min-width: 52px;
+  padding: 5px 10px;
+  border: 1px solid var(--accent-border);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-h);
+  font: inherit;
+}
+/* The arrow the viewer chose is filled in. */
+.review-votes button[aria-pressed="true"] {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+</style>

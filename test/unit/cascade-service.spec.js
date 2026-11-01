@@ -151,6 +151,7 @@ describe('TestSuite4: deleteUserData', () => {
     const find = stub(Review, 'Review', 'findbyUser', twoReviews)
     const reports = stub(Report, 'Report', 'deleteByReviews')
     const reviews = stub(Review, 'Review', 'deleteByUser')
+    const reviewVotes = stub(Review, 'Review', 'removeVotesByUser')
     const favs = stub(Favourite, 'Favourite', 'deleteByUser')
     const requests = stub(AdminRequest, 'AdminRequest', 'deleteByUser')
     const crowd = stub(CrowdReport, 'CrowdReport', 'deleteMany')
@@ -163,6 +164,8 @@ describe('TestSuite4: deleteUserData', () => {
     expect(find).toHaveBeenCalledWith('ziyuzhang')
     expect(reports).toHaveBeenCalledWith(['rev1', 'rev2'])
     expect(reviews).toHaveBeenCalledWith('ziyuzhang')
+    // Their up/downvotes on other people's reviews are removed too.
+    expect(reviewVotes).toHaveBeenCalledWith('ziyuzhang')
     expect(favs).toHaveBeenCalledWith('ziyuzhang')
     expect(requests).toHaveBeenCalledWith('user1')
     expect(crowd).toHaveBeenCalledWith({ userId: 'user1' })

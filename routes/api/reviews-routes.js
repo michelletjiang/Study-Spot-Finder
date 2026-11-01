@@ -18,6 +18,7 @@ router.post('/', auth.apiLoggedIn, reviewsController.apiCreateReview);
 router.put('/:id', auth.apiLoggedIn, reviewsController.apiUpdateReview);
 // DELETE /:id removes a review.
 router.delete('/:id', auth.apiLoggedIn, reviewsController.apiDeleteReview);
+router.post('/:id/vote', auth.apiLoggedIn, reviewsController.apiVoteReview);   // body: { vote: 'up' | 'down' | 'none' }
 
 // Export for routes/api/index.js.
 module.exports = router;

@@ -56,6 +56,7 @@ async function deleteUserData(user) {
     const reviews = await Review.findbyUser(user.username);
     await Report.deleteByReviews(reviews.map(r => r._id));
     await Review.deleteByUser(user.username);
+    await Review.removeVotesByUser(user.username);
     await Favourite.deleteByUser(user.username);
     await AdminRequest.deleteByUser(user.id);
     await CrowdReport.deleteMany({ userId: user.id });

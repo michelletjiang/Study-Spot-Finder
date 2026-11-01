@@ -54,7 +54,10 @@ const reviewSchema = new mongoose.Schema({
     noiseLevel:{
         type:String,
         enum:['Quiet', 'Moderate', 'Loud']
-    }
+    },
+    // Usernames of students who found the review helpful / unhelpful. A user is in at most one list.
+    upvotes:   { type:[String], default:[] },
+    downvotes: { type:[String], default:[] }
 // timestamps adds createdAt and updatedAt.
 }, {timestamps:true}); // auto gives createdAt, updatedAt
 
@@ -132,6 +135,21 @@ exports.renameRoom = function(buildingName, oldRoomId, newRoomId){
     return Review.updateMany({ buildingName: buildingName, roomId: oldRoomId }, { roomId: newRoomId });
 };
 // Keep a user's reviews when they change their username.
-exports.renameUser = function(oldUsername, newUsername){
-    return Review.updateMany({ userId: oldUsername }, { userId: newUsername });
+exports.renameUser = async function(oldUsername, newUsername){
+    await Review.updateMany({ userId: oldUsername }, { userId: newUsername });
+    // Votes are stored by username too.
+    await Review.updateMany({ upvotes: oldUsername }, { $set: { 'upvotes.$': newUsername } });
+    await Review.updateMany({ downvotes: oldUsername }, { $set: { 'downvotes.$': newUsername } });
+};
+// Record a user's vote: 'up', 'down' or 'none' (take the vote back). Returns the updated review.
+// Pull the user from both lists first, so changing a vote never counts twice.
+exports.voteReview = async function(reviewId, username, vote){
+    await Review.updateOne({ _id: reviewId }, { $pull: { upvotes: username, downvotes: username } });
+    if (vote === 'up')   await Review.updateOne({ _id: reviewId }, { $addToSet: { upvotes: username } });
+    if (vote === 'down') await Review.updateOne({ _id: reviewId }, { $addToSet: { downvotes: username } });
+    return Review.findById(reviewId);
+};
+// Remove a deleted account's votes from every review.
+exports.removeVotesByUser = function(username){
+    return Review.updateMany({}, { $pull: { upvotes: username, downvotes: username } });
 };

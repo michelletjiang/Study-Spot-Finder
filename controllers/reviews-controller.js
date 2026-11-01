@@ -181,7 +181,7 @@ const StudySpot = require('../models/studyspot-model');
 
 // Checks title, content, a rating from 1 to 5 and a noise level. Returns an error message or null.
 // validateReview now lives in lib/reviews.js so it can be unit tested (test/unit/reviews.spec.js).
-const { validateReview } = require('../lib/reviews');
+const { validateReview, validateVote, withVotes, sortByScore } = require('../lib/reviews');
 
 // finds a review by :id, or sends 404 and returns null
 // Helper: load a review by :id, or send a 404 and return null.
@@ -201,7 +201,9 @@ exports.apiListReviews = async (req, res) => {
         const spot = await StudySpot.findById(req.query.spotId);
         if (!spot) return res.status(404).json({ message: 'Study spot not found' });
         // Reviews are matched by building name and spot name. sort puts the newest first.
-        res.json(await Review.findByRoom(spot.buildingName, spot.name).sort({ createdAt: -1 }));
+        const reviews = await Review.findByRoom(spot.buildingName, spot.name);
+        // Add vote counts and the viewer's own vote, then show the most helpful first.
+        res.json(sortByScore(reviews.map(r => withVotes(r, req.session.user.username))));
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error reading database' });
@@ -212,7 +214,8 @@ exports.apiListReviews = async (req, res) => {
 // GET /api/reviews/mine
 exports.apiMyReviews = async (req, res) => {
     try {
-        res.json(await Review.findbyUser(req.session.user.username).sort({ createdAt: -1 }));
+        const reviews = await Review.findbyUser(req.session.user.username).sort({ createdAt: -1 });
+        res.json(reviews.map(r => withVotes(r, req.session.user.username)));
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error reading database' });
@@ -224,7 +227,7 @@ exports.apiMyReviews = async (req, res) => {
 exports.apiGetReview = async (req, res) => {
     try {
         const review = await findReviewOr404(req, res);
-        if (review) res.json(review);
+        if (review) res.json(withVotes(review, req.session.user.username));
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error retrieving review' });
@@ -252,7 +255,7 @@ exports.apiCreateReview = async (req, res) => {
             noiseLevel:   req.body.noiseLevel
         });
         // 201 means created.
-        res.status(201).json(review);
+        res.status(201).json(withVotes(review, req.session.user.username));
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error adding review' });
@@ -272,7 +275,7 @@ exports.apiUpdateReview = async (req, res) => {
 
         // Write the new values.
         await Review.editReview(review._id, req.body.title.trim(), req.body.content.trim(), Number(req.body.rating), req.body.noiseLevel);
-        res.json(await Review.findByreviewId(review._id));
+        res.json(withVotes(await Review.findByreviewId(review._id), req.session.user.username));
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error updating review' });
@@ -296,5 +299,23 @@ exports.apiDeleteReview = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Failed to delete review' });
+    }
+};
+
+
+// POST /api/reviews/:id/vote  body: { vote: 'up' | 'down' | 'none' }
+// One vote per user per review; voting the other way switches it, 'none' removes it.
+exports.apiVoteReview = async (req, res) => {
+    try {
+        const review = await findReviewOr404(req, res);
+        if (!review) return;
+        const username = req.session.user.username;
+        const msg = validateVote(review, username, req.body.vote);
+        if (msg) return res.status(msg.startsWith('You cannot') ? 403 : 400).json({ message: msg });
+        const updated = await Review.voteReview(review._id, username, req.body.vote);
+        res.json(withVotes(updated, username));
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error saving vote' });
     }
 };
