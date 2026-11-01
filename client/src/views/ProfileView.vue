@@ -168,9 +168,9 @@ async function deleteAccount() {
           </section>
 
           <div class="folders">
-            <RouterLink to="/favourites" class="folder">
-              <span class="paper" aria-hidden="true">{{ favouritesPeek }}</span>
-              <span class="front">
+            <RouterLink to="/favourites" class="nb-folder folder">
+              <span class="nb-folder-paper" aria-hidden="true">{{ favouritesPeek }}</span>
+              <span class="nb-folder-front">
                 <svg class="icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
                   <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" fill="#f5a0a6" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
                 </svg>
@@ -179,9 +179,9 @@ async function deleteAccount() {
                 <span class="open">Open folder →</span>
               </span>
             </RouterLink>
-            <RouterLink to="/my-reviews" class="folder">
-              <span class="paper" aria-hidden="true">{{ reviewsPeek }}</span>
-              <span class="front">
+            <RouterLink to="/my-reviews" class="nb-folder folder">
+              <span class="nb-folder-paper" aria-hidden="true">{{ reviewsPeek }}</span>
+              <span class="nb-folder-front">
                 <svg class="icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
                   <path d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8Z" fill="#ffe58a" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
                 </svg>
@@ -296,70 +296,9 @@ dd { margin: 0; min-width: 0; }
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 30px;
 }
-.folder {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  min-height: 250px;
-  padding-top: 40px; /* room for the tab and the paper peeking out */
-  color: #28263f;
-  text-decoration: none;
-}
+/* the folder look comes from style.css (nb-folder) */
+.folder { min-height: 250px; }
 .folder:focus-visible { outline: 3px solid var(--nb-focus); outline-offset: 3px; }
-/* the back of the folder, with its tab */
-.folder::before {
-  content: '';
-  position: absolute;
-  inset: 20px 0 0;
-  background: var(--nb-manila-dark);
-  border: 2px solid #28263f;
-  border-radius: 4px 12px 12px 12px;
-  box-shadow: 6px 6px 0 var(--nb-ink);
-}
-.folder::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 42%;
-  height: 22px;
-  background: var(--nb-manila-dark);
-  border: 2px solid #28263f;
-  border-bottom: none;
-  border-radius: 10px 10px 0 0;
-}
-.paper {
-  position: absolute;
-  top: 18px;
-  left: 12px;
-  right: 12px;
-  height: 60px;
-  overflow: hidden;
-  padding: 4px 10px;
-  background: #fffef9;
-  border: 2px solid #28263f;
-  font-size: 0.82rem;
-  font-weight: 700;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  transform: rotate(-0.8deg);
-  transition: transform 0.25s ease;
-}
-.paper:empty { display: none; }
-.front {
-  position: relative;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  padding: 20px 20px 18px;
-  background: var(--nb-manila);
-  border: 2px solid #28263f;
-  border-radius: 4px 4px 12px 12px;
-  box-shadow: 6px 6px 0 var(--nb-ink);
-}
-.folder:hover .paper, .folder:focus-visible .paper { transform: translateY(-14px) rotate(-1.5deg); }
 .folder-title { margin-top: 8px; font: 700 2rem/1.1 var(--nb-heading); }
 .count { color: #5e5a73; }
 .open { margin-top: auto; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
