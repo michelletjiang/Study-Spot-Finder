@@ -6,11 +6,14 @@ import { openStatus } from '../buildingHours'
 
 // One building on the home page, drawn as a manila folder.
 // The floorplan "paper" inside slides up on hover/focus to show a tab for each floor that has a plan.
+// Clicking the folder emits 'select' (the home page then shows the route on its map); selected highlights it.
 const props = defineProps({
   building: { type: Object, required: true },
   spotCount: { type: Number, default: null }, // null while unknown
   now: { type: Date, required: true },         // passed in so every card ticks over together
+  selected: { type: Boolean, default: false },
 })
+const emit = defineEmits(['select'])
 
 const path = computed(() => '/building/' + props.building.buildingname)
 const planFloors = computed(() =>
@@ -19,7 +22,7 @@ const status = computed(() => openStatus(props.building.buildingname, props.now)
 </script>
 
 <template>
-  <article class="folder" :class="{ 'has-plans': planFloors.length }">
+  <article class="folder" :class="{ 'has-plans': planFloors.length, selected }" @click="emit('select')">
     <div class="back" aria-hidden="true"></div>
 
     <div v-if="planFloors.length" class="paper">
@@ -35,7 +38,8 @@ const status = computed(() => openStatus(props.building.buildingname, props.now)
     </div>
 
     <div class="front">
-      <h3>{{ building.buildingname }}</h3>
+      <!-- the name is the keyboard way to pick the folder (a click anywhere on it works too) -->
+      <h3><button type="button" class="name" :aria-pressed="selected">{{ building.buildingname }}</button></h3>
       <span v-if="status" class="status" :class="status.state">
         <span class="dot" aria-hidden="true"></span>{{ status.text }}
       </span>
@@ -46,6 +50,7 @@ const status = computed(() => openStatus(props.building.buildingname, props.now)
           <span>{{ spotCount }} study spot{{ spotCount === 1 ? '' : 's' }}</span>
         </template>
       </p>
+      <span v-if="selected" class="on-map">Route shown on the map</span>
       <RouterLink :to="path" class="open">{{ planFloors.length ? 'Open floor plans' : 'View study spots' }} →</RouterLink>
     </div>
   </article>
@@ -155,6 +160,25 @@ h3 {
   text-wrap: balance;
 }
 
+h3 .name {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.folder { cursor: pointer; }
+
+/* picked: the front turns highlighter yellow, with a note pointing at the map */
+.folder.selected .front { background: var(--highlight); }
+.on-map {
+  font: 700 0.8rem Arial, sans-serif;
+  color: #4b3fb5;
+}
+
 .status {
   display: inline-flex;
   align-items: center;
@@ -197,7 +221,8 @@ h3 {
 }
 
 .tabs a:focus-visible,
-.open:focus-visible {
+.open:focus-visible,
+h3 .name:focus-visible {
   outline: 3px solid #4b3fb5;
   outline-offset: 2px;
 }

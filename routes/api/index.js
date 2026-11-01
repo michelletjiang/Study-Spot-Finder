@@ -24,6 +24,7 @@ router.use('/reports', require('./reports-routes'));
 router.use('/favourites', require('./favourites-routes'));
 // /api/directions: OneMap walking directions for the minimap.
 router.use('/directions', require('./directions-routes'));
+router.use('/nearby', require('./nearby-routes'));
 router.use('/crowd', require('./crowd-routes'));   
 router.use('/alerts', require('./alerts-routes'));   
 
