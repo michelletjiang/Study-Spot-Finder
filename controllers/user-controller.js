@@ -3,6 +3,7 @@
 const User = require('../models/user-model');
 // AdminRequest model: shows a user's request to become an admin.
 const AdminRequest = require('../models/admin-request-model');
+const cascade = require('../services/cascade-service'); // deletes child records with their parent
 // bcrypt hashes passwords, so the database never holds the real password.
 const bcrypt = require('bcrypt');
 
@@ -371,12 +372,15 @@ exports.apiUpdateProfile = async (req, res) => {
         // Load the user and apply the changes.
         const user = await User.findById(myId);
         if (!user) return res.status(401).json({ message: 'Account no longer exists' });
+        const oldUsername = user.username;
         user.username = username;
         user.email = email;
         // A blank password keeps the old one.
         if (password) user.password = await bcrypt.hash(password, 10);
         // Save to the database.
         await user.save();
+        // Reviews, reports and favourites store the username, so move them to the new one.
+        if (oldUsername !== username) await cascade.renameUser(oldUsername, username);
 
         // Refresh the session copy.
         req.session.user = sessionUser(user);
@@ -391,6 +395,8 @@ exports.apiUpdateProfile = async (req, res) => {
 // DELETE /api/profile
 exports.apiDeleteAccount = async (req, res) => {
     try {
+        // Remove what the account owns first: reviews (and reports on them), favourites, admin requests.
+        await cascade.deleteUserData(req.session.user);
         // Remove the user.
         await User.deleteOne({ _id: req.session.user.id });
         // End the session, clear its cookie and answer with no body.

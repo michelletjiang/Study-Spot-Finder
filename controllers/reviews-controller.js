@@ -1,6 +1,7 @@
 // MIXED file: lines 1 to 137 are LEGACY EJS handlers used only by routes/reviews-route.js. The "JSON API" section from line 142 is ACTIVE and used by routes/api/reviews-routes.js.
 // Review model: the reviews collection.
 const Review = require('../models/reviews-model'); // path to model
+const cascade = require('../services/cascade-service'); // deletes child records with their parent
 
 // LEGACY - not used by the Vue demo: shows all reviews for one spot.
 exports.showReview = async (req,res) => {
@@ -292,8 +293,8 @@ exports.apiDeleteReview = async (req, res) => {
         if (review.userId !== req.session.user.username && req.session.user.role !== 'Admin')
             return res.status(403).json({ message: 'You can only delete your own reviews' });
 
-        // Delete the review.
-        await Review.deleteReview(review._id);
+        // Delete the review and every report filed against it.
+        await cascade.deleteReview(review._id);
         // 204 means success with no body.
         res.status(204).end();
     } catch (error) {

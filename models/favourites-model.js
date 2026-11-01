@@ -51,3 +51,23 @@ exports.removeFavourite = function(favId) {
 exports.removeFavouriteForUser = function(favId, userName) {
     return Favourite.deleteOne({ _id: favId, userName: userName });
 };
+
+
+// Cascade helpers: favourites store a copy of the spot (by name), so they must be cleaned up or updated with it.
+exports.deleteBySpot = function(buildingName, spotName) {
+    return Favourite.deleteMany({ buildingName: buildingName, spotName: spotName });
+};
+exports.deleteByBuilding = function(buildingName) {
+    return Favourite.deleteMany({ buildingName: buildingName });
+};
+exports.deleteByUser = function(userName) {
+    return Favourite.deleteMany({ userName: userName });
+};
+// Refresh the copied spot details after an admin edits the spot.
+exports.updateSpotDetails = function(buildingName, oldSpotName, details) {
+    return Favourite.updateMany({ buildingName: buildingName, spotName: oldSpotName }, details);
+};
+// Keep a user's favourites when they change their username.
+exports.renameUser = function(oldUserName, newUserName) {
+    return Favourite.updateMany({ userName: oldUserName }, { userName: newUserName });
+};

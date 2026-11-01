@@ -46,5 +46,10 @@ AdminRequest.updateRequestStatus = function(_id, status) {
     );
 };
 
+// Cascade helper: remove a deleted account's admin requests.
+AdminRequest.deleteByUser = function(userId) {
+    return AdminRequest.deleteMany({ userId: userId });
+};
+
 // Export the model with its helper functions.
 module.exports = AdminRequest;
