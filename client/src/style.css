@@ -538,3 +538,115 @@ code {
   color: var(--nb-error);
 }
 .nb-errors.single { padding-left: 14px; list-style: none; }
+
+/* ---------- page basics ---------- */
+/* <div class="nb-page"> … <h1 class="nb-title"> … <p class="nb-subtitle"> */
+.nb-page {
+  max-width: 1240px;
+  padding: 18px 24px 140px 48px; /* left clears the pink margin line, bottom clears the minimap */
+  color: var(--nb-ink);
+  text-align: left;
+}
+.nb-title { margin: 24px 0 4px; font: 700 clamp(2.6rem, 6vw, 3.6rem)/1.05 var(--nb-heading); color: var(--nb-ink); }
+.nb-subtitle { margin: 0 0 28px; color: var(--nb-muted); }
+.nb-back { color: var(--nb-ink); font-weight: 700; text-decoration: none; }
+.nb-back:hover { color: var(--nb-ink); text-decoration: underline; }
+.nb-back:focus-visible { outline: 3px solid var(--nb-focus); outline-offset: 3px; }
+@media (max-width: 820px) {
+  .nb-page { padding-left: 16px; padding-right: 16px; }
+}
+
+/* a sheet of paper: ink outline and a hard shadow */
+.nb-sheet {
+  position: relative;
+  background: var(--nb-sheet);
+  border: 2px solid var(--nb-ink);
+  border-radius: 3px;
+  box-shadow: 6px 6px 0 var(--nb-ink);
+}
+
+/* small rounded labels: "30 seats", "Power sockets", noise levels */
+.nb-tag {
+  display: inline-block;
+  padding: 1px 12px;
+  border: 1.5px solid #28263f;
+  border-radius: 999px;
+  background: #fffef9;
+  color: #28263f;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+.nb-tag--quiet { background: var(--nb-note-blue); }
+.nb-tag--moderate { background: var(--nb-highlight); }
+.nb-tag--loud { background: var(--nb-note-pink); }
+
+/* ---------- folders ---------- */
+/* <div class="nb-folder"><span class="nb-folder-paper">peeking text</span><div class="nb-folder-front">…</div></div> */
+.nb-folder {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding-top: 40px; /* room for the tab and the paper peeking out */
+  color: #28263f; /* manila stays light, so its text stays dark */
+  text-decoration: none;
+  isolation: isolate; /* keeps the layering below inside the folder */
+}
+/* layers, bottom to top: the back and its tab, the paper, the front.
+   (Without z-index the tab would be drawn last and cover the paper as it slides up.) */
+.nb-folder::before, .nb-folder::after { z-index: 0; }
+.nb-folder-paper { z-index: 1; }
+.nb-folder-front { z-index: 2; }
+/* the back of the folder, with its tab */
+.nb-folder::before {
+  content: '';
+  position: absolute;
+  inset: 20px 0 0;
+  background: var(--nb-manila-dark);
+  border: 2px solid #28263f;
+  border-radius: 4px 12px 12px 12px;
+  box-shadow: 6px 6px 0 var(--nb-ink);
+}
+.nb-folder::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 42%;
+  height: 22px;
+  background: var(--nb-manila-dark);
+  border: 2px solid #28263f;
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+}
+.nb-folder-paper {
+  position: absolute;
+  top: 18px;
+  left: 12px;
+  right: 12px;
+  height: 60px;
+  overflow: hidden;
+  padding: 4px 10px;
+  background: #fffef9;
+  border: 2px solid #28263f;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  transform: rotate(-0.8deg);
+  transition: transform 0.25s ease;
+}
+.nb-folder-paper:empty { display: none; }
+.nb-folder-front {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 20px 20px 18px;
+  background: var(--nb-manila);
+  border: 2px solid #28263f;
+  border-radius: 4px 4px 12px 12px;
+  box-shadow: 6px 6px 0 var(--nb-ink);
+}
+.nb-folder:hover .nb-folder-paper, .nb-folder:focus-within .nb-folder-paper { transform: translateY(-14px) rotate(-1.5deg); }
