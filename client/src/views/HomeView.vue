@@ -1,9 +1,11 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { api } from '../api'
+// The shared minimap state.
 import { mapStore } from '../stores/map'
 import BuildingFolder from '../components/BuildingFolder.vue'
 
+// The buildings from the server.
 const buildings = ref([])
 const spotCounts = ref(null) // { buildingName: count }, null until loaded (or if loading failed)
 const loading = ref(true)
@@ -26,8 +28,10 @@ async function loadBuildings() {
   loading.value = true
   error.value = ''
   try {
+    // GET /api/buildings.
     buildings.value = await api('/api/buildings')
   } catch (e) {
+    // Show the error text.
     error.value = e.message
   } finally {
     loading.value = false

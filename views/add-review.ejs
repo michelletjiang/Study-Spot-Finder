@@ -1,3 +1,4 @@
+<%# LEGACY - not used by the Vue demo: form to add a review. Rendered by showAddReview and createReview in controllers/reviews-controller.js. The Vue page ReviewFormView.vue replaces it. %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,9 +6,11 @@
     <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+    <%# Navigation bar repeated on each legacy page. The role check below needs the user variable, which each handler must pass in. %>
     <nav>
         <a href ='/'><h2>Study Spots📚</h2></a>
         <a href='/profile'>Your Profile</a> |
+        <%# Admins see the management links. %>
         <% if (user.role == 'Admin'){ %>
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
@@ -16,10 +19,12 @@
             <a href="/admin/reports">Pending Reports</a> |
         <% } %> 
         <a href="/favourites">Favourites</a> |
+         <%# Legacy logout is a GET link to /logout. %>
          <a href='/logout'>Logout</a>
     </nav>
     <br>
     <h3>Add a Review</h3>
+    <%# The form posts to the legacy add-review route for this building and spot. %>
     <form action="/add-review/<%= building %>/<%= spotName %>" method="POST">
         <table border="1">
             <tr>
@@ -34,6 +39,7 @@
             
             <tr>
                 <th>Rating:</th>
+                <%# Rating from 1 to 5. %>
                 <td><input type="number" name="rating" min="1" max="5" required></td>
             </tr>
             
@@ -46,6 +52,7 @@
                 <th>Room ID:</th>
                 <td>
                     <%= spotName %>
+                    <%# A hidden field sends the spot name back. %>
                     <input type="hidden" name="spotName" value="<%= spotName %>">
                 </td>
             </tr>
@@ -58,9 +65,11 @@
         </table>
     </form>
     
+    <%# Show a message from the controller. %>
     <% if (msg) { %>
         <p><%= msg %></p>
     <% } %>
+     <%# Link back to the legacy building page. %>
      <a href="/building/<%= building %>">Back to Study Spots List</a>
 </body>
 </html>

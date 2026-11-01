@@ -1,3 +1,4 @@
+<%# LEGACY - not used by the Vue demo: form to edit a review. Rendered by getReview and updateReview in controllers/reviews-controller.js. The Vue page ReviewFormView.vue replaces it. %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,9 +6,11 @@
     <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+    <%# Navigation bar repeated on each legacy page. The role check below needs the user variable, which each handler must pass in. %>
     <nav>
         <a href ='/'><h2>Study Spots📚</h2></a>
         <a href='/profile'>Your Profile</a> |
+        <%# Admins see the management links. %>
         <% if (user.role == 'Admin'){ %>
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
@@ -16,15 +19,19 @@
             <a href="/admin/reports">Pending Reports</a> |
         <% } %> 
         <a href="/favourites">Favourites</a> |
+         <%# Legacy logout is a GET link to /logout. %>
          <a href='/logout'>Logout</a>
     </nav>
 
+      <%# Only show the form when a review was found. %>
       <%  if(result){ %>
       <h3>Update Review </h3>
 
+      <%# The form posts to the legacy update-review route. %>
       <form action="/update-review/<%= result._id %>" method="POST">
         <table border="1">
             
+            <%# A hidden field sends the review id back. %>
             <input type="hidden" name="reviewId" value="<%= result._id %>">
             
             <tr>
@@ -54,6 +61,7 @@
 
   </table>
 </form>
+<%# Shows a message from the controller. %>
 <%= msg %>
 <% } else { %>
   <p>Review not found.</p>

@@ -1,3 +1,4 @@
+<%# LEGACY - not used by the Vue demo: confirmation page before deleting a review. Rendered by getMarkedReview in controllers/reviews-controller.js. The Vue pages SpotDetailView.vue and MyReviewsView.vue replace it. %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,9 +7,11 @@
     <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+    <%# Navigation bar repeated on each legacy page. The role check below needs the user variable, which each handler must pass in. %>
     <nav>
         <a href ='/'><h2>Study Spots📚</h2></a>
         <a href='/profile'>Your Profile</a> |
+        <%# Admins see the management links. %>
         <% if (user.role == 'Admin'){ %>
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
@@ -17,9 +20,11 @@
             <a href="/admin/reports">Pending Reports</a> |
         <% } %> 
         <a href="/favourites">Favourites</a> |
+         <%# Legacy logout is a GET link to /logout. %>
          <a href='/logout'>Logout</a>
     </nav>
     <p><strong>Review Marked for Deletion.</strong></p>
+    <%# Show the review that is about to be deleted. %>
     <%if(result && result._id){ %>
         Title: <%= result.title %><br>
         Content:  <%= result.content %><br>
@@ -29,8 +34,10 @@
         <p>Review not found</p>
     <%} %>
     <% if (result && result._id) { %>
+    <%# The form posts to the legacy /delete-review route. %>
     <form action="/delete-review" method="POST">
     <p>Click the Confirm button to delete this review.</p>
+       <%# Hidden fields send the review id, building and spot name back. %>
        <input type="hidden" name="id" value="<%= result._id %>">
        <input type="hidden" name="building" value="<%= result.buildingName %>">
        <input type="hidden" name="spotName" value="<%= result.roomId %>">

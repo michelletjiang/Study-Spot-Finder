@@ -1,12 +1,15 @@
+<%# LEGACY - not used by the Vue demo: list of reviews for a spot. Rendered by showReview in controllers/reviews-controller.js. The Vue page SpotDetailView.vue replaces it. %>
 <html>
 <head>
   <title>Review on Study Spots</title> <!-- Title displayed in the browser tab -->
     <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+  <%# Navigation bar repeated on each legacy page. The role check below needs the user variable, which each handler must pass in. %>
   <nav>
         <a href ='/'><h2>Study Spots📚</h2></a>
         <a href='/profile'>Your Profile</a> |
+        <%# Admins see the management links. %>
         <% if (user.role == 'Admin'){ %>
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
@@ -15,26 +18,31 @@
             <a href="/admin/reports">Pending Reports</a> |
         <% } %> 
         <a href="/favourites">Favourites</a> |
+         <%# Legacy logout is a GET link to /logout. %>
          <a href='/logout'>Logout</a>
     </nav>
     <br>
 
   <!-- EJS conditional block: Check if there are any book list -->
+  <%# No reviews: show a message. %>
   <% if (!reviewList || reviewList.length === 0) { %>
     <p>No reviews yet.</p> <!-- Message when there is no books -->
   <% } else { %>
     <h2>Reviews List</h2>
     <!-- EJS loop to render each book -->
      
+    <%# Loop over the reviews. %>
     <% reviewList.forEach(review => { %>
 
         <p><strong>Title: <%= review.title %></strong></p>      <!-- Display the book title -->
         Content: <%= review.content %><br>             <!-- Display the isbn number -->
         Rating:<%=review.rating %><br> 
+        <%# Edit and Delete links appear only for the review's author. %>
         <% if(user == review.userId){ %>
             <a href="/update-review/<%=review._id %>">Edit</a> |
             <a href="/delete-review?id=<%=review._id %>">Delete</a> |
         <% } %>
+        <%# Link to the legacy report form. %>
         <a href="/reports/new/<%= review._id %>">Report Review</a>
         
         <!-- Display the rating -->         
@@ -42,6 +50,7 @@
     <% }); %>
     
   <% } %>
+  <%# Link back to the legacy building page. %>
   <a href="/building/<%= building %>">Back to Study Spots List</a>
      
 </body>

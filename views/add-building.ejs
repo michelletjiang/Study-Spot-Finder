@@ -1,3 +1,4 @@
+<%# LEGACY - not used by the Vue demo: admin form to add a building. Rendered by showAddForm and createBuilding in controllers/building-controller.js. The Vue page BuildingFormView.vue replaces it. %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,9 +6,11 @@
     <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+    <%# Navigation bar repeated on each legacy page. The role check below needs the user variable, which each handler must pass in. %>
     <nav>
         <a href ='/'><h2>Study Spots📚</h2></a>
         <a href='/profile'>Your Profile</a> |
+        <%# Admins see the management links. %>
         <% if (user.role == 'Admin'){ %>
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
@@ -16,10 +19,12 @@
             <a href="/admin/reports">Pending Reports</a> |
         <% } %> 
         <a href="/favourites">Favourites</a> |
+         <%# Legacy logout is a GET link to /logout. %>
          <a href='/logout'>Logout</a>
     </nav>
     <br>
     <h1>Add a New Building</h1>
+    <%# The form posts to the legacy /add-building route. %>
     <form action="/add-building" method="POST">
         <table border="1">
             <tr>
@@ -39,9 +44,11 @@
         
     </form>
 <br><br>
+    <%# Show a validation message if there is one. %>
     <% if (msg !== "") { %>
     <p><%= msg %></p>
 <% } %>
+    <%# Show the result of the last save attempt. %>
     <% if(result==="fail"){%>
         <p>Error adding Building</p>
     <%} else if(result.buildingname){ %>

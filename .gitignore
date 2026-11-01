@@ -6,3 +6,4 @@ client/dist/
 # local OneMap demos (contain a real token)
 onemap_map.html
 onemap_search.js
+client/package-lock.json
