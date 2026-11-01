@@ -12,6 +12,10 @@ router.use('/reviews', require('./reviews-routes'));
 router.use('/reports', require('./reports-routes'));
 router.use('/favourites', require('./favourites-routes'));
 router.use('/directions', require('./directions-routes'));
+router.use('/crowd', require('./crowd-routes'));   
+router.use('/alerts', require('./alerts-routes'));   
+
+
 
 // Any /api path that no router handled gets a JSON 404 instead of falling through to the EJS routes
 router.use((req, res) => {
