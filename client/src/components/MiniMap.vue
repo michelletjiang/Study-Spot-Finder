@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -9,16 +9,21 @@ import { mapStore } from '../stores/map'
 // Floating map in the bottom-right corner (mounted once in App.vue).
 // Shows the user's location and every building; on a building page it also draws the route there.
 // Only visible on routes with meta.showMap, but kept mounted so the map isn't rebuilt on every page change.
+// On the home page it moves into that page's map box instead (HomeView puts the box in mapStore.dockEl),
+// filling it rather than floating - the same map, so the route and location carry over between pages.
 
 const route = useRoute()
 const router = useRouter()
 const visible = computed(() => !!route.meta.showMap)
+const docked = computed(() => !!mapStore.dockEl)
 
 const mapEl = ref(null)
+const boxEl = ref(null)  // the .minimap box, moved into mapStore.dockEl while docked
+const homeEl = ref(null) // where the box normally lives (this component's root)
 const buildings = ref([])
 
 // Leaflet objects stay out of Vue's reactivity (its proxies break Leaflet internals)
-let map, userMarker
+let map, userMarker, resizeObserver
 const buildingLayer = L.layerGroup()
 const routeLayer = L.layerGroup()
 
@@ -45,9 +50,15 @@ onMounted(() => {
   buildingLayer.addTo(map)
   routeLayer.addTo(map)
 
+  if (mapStore.dockEl) mapStore.dockEl.appendChild(boxEl.value) // the home page registered its box before we mounted
+
   mapStore.locate()
   loadBuildings()
   if (mapStore.userPos) drawUser(true)
+
+  // the box changes size when it docks/undocks, expands or the window resizes - Leaflet has to re-measure
+  resizeObserver = new ResizeObserver(() => map.invalidateSize())
+  resizeObserver.observe(mapEl.value)
 })
 
 // unmounted on logout, so forget everything about this user's map
@@ -56,7 +67,9 @@ onUnmounted(() => {
   mapStore.clearDestination()
   mapStore.userPos = null
   mapStore.expanded = false
+  resizeObserver.disconnect()
   map.remove()
+  homeEl.value?.appendChild(boxEl.value) // put it back so Vue removes it along with this component
 })
 
 // ---------- buildings ----------
@@ -81,7 +94,8 @@ function drawBuildings() {
       fillOpacity: 1,
     })
       .bindTooltip(b.buildingname, { permanent: isDestination, direction: 'top', offset: [0, -8] })
-      .on('click', () => router.push('/building/' + encodeURIComponent(b.buildingname)))
+      // docked on the home page: show the route, like clicking the building's card; elsewhere: open the building
+      .on('click', () => docked.value ? mapStore.showBuilding(b) : router.push('/building/' + encodeURIComponent(b.buildingname)))
       .addTo(buildingLayer)
   }
 }
@@ -93,6 +107,19 @@ watch(visible, isVisible => {
   if (!isVisible) return
   loadBuildings()
   setTimeout(() => map.invalidateSize(), 0) // Leaflet measured a hidden (0×0) container
+})
+
+// move the box into the home page's map box and back. 'sync' so it moves out before that page's DOM is removed
+watch(() => mapStore.dockEl, dockEl => {
+  if (!boxEl.value) return
+  ;(dockEl || homeEl.value).appendChild(boxEl.value)
+}, { flush: 'sync' })
+
+// moving between the floating corner and the home page box: re-centre on whatever is shown
+watch(docked, async () => {
+  await nextTick()
+  map.invalidateSize()
+  recentre()
 })
 
 // ---------- user location ----------
@@ -183,12 +210,13 @@ function legText(leg) {
 </script>
 
 <template>
-  <div v-show="visible" class="minimap" :class="{ expanded: mapStore.expanded }" @transitionend="onResized">
+  <div ref="homeEl">
+  <div ref="boxEl" v-show="visible" class="minimap" :class="{ expanded: mapStore.expanded && !docked, docked }" @transitionend="onResized">
     <div ref="mapEl" class="map"></div>
 
     <div class="controls">
       <button type="button" title="Recentre" @click="recentre">◎</button>
-      <button type="button" :title="mapStore.expanded ? 'Shrink map' : 'Expand map'"
+      <button v-if="!docked" type="button" :title="mapStore.expanded ? 'Shrink map' : 'Expand map'"
               @click="mapStore.expanded = !mapStore.expanded">
         {{ mapStore.expanded ? '✕' : '⤢' }}
       </button>
@@ -212,7 +240,7 @@ function legText(leg) {
             </button>
           </div>
 
-          <ol v-if="mapStore.expanded" class="legs">
+          <ol v-if="mapStore.expanded || docked" class="legs">
             <li v-for="(leg, i) in mapStore.activeRoute.legs" :key="i">
               <span class="dot" :style="{ background: MODE_COLOURS[leg.mode] || '#aa3bff' }"></span>
               <span class="leg-text">{{ legText(leg) }}</span>
@@ -223,6 +251,7 @@ function legText(leg) {
       </template>
       <p v-else-if="mapStore.routeError" class="note">{{ mapStore.routeError }}</p>
     </div>
+  </div>
   </div>
 </template>
 
@@ -253,6 +282,17 @@ function legText(leg) {
 
 @media (max-width: 480px) {
   .minimap { width: calc(100vw - 32px); height: 200px; }
+}
+
+/* in the home page's #home-map box: fill it instead of floating in the corner */
+.minimap.docked {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  z-index: 0; /* keep Leaflet's panes under the navbar's dropdown */
+  width: 100%;
+  height: 100%;
+  transition: none;
 }
 
 .map {

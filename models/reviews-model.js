@@ -57,6 +57,22 @@ exports.findByRoom = function(buildingName, roomId){ // retrieve all reviews for
     return Review.find({buildingName:buildingName, roomId : roomId})
 };
 
+// one row per room: { _id: { buildingName, roomId }, count, avgRating, avgNoise } (avgNoise: Quiet 1 .. Loud 5, null if no review gave one)
+exports.summariseAll = function(){
+    return Review.aggregate([
+        { $group: {
+            _id: { buildingName: '$buildingName', roomId: '$roomId' },
+            count: { $sum: 1 },
+            avgRating: { $avg: '$rating' },
+            avgNoise: { $avg: { $switch: { branches: [
+                { case: { $eq: ['$noiseLevel', 'Quiet'] }, then: 1 },
+                { case: { $eq: ['$noiseLevel', 'Moderate'] }, then: 3 },
+                { case: { $eq: ['$noiseLevel', 'Loud'] }, then: 5 },
+            ], default: null } } } // $avg skips nulls
+        } }
+    ])
+};
+
 exports.addReview = function(newReview) {
     return Review.create(newReview)
 };

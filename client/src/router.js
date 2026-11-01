@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { auth } from './stores/auth'
 import HomeView from './views/HomeView.vue'
+import FindSpotView from './views/FindSpotView.vue'
 import LoginView from './views/LoginView.vue'
 import RegisterView from './views/RegisterView.vue'
 import ProfileView from './views/ProfileView.vue'
@@ -27,6 +28,7 @@ const routes = [
 
   // any logged-in user
   { path: '/', name: 'home', component: HomeView, meta: { requiresAuth: true, showMap: true } },
+  { path: '/find', component: FindSpotView, meta: { requiresAuth: true } },
   { path: '/profile', component: ProfileView, meta: { requiresAuth: true } },
   { path: '/profile/edit', component: EditProfileView, meta: { requiresAuth: true } },
   { path: '/building/:name', component: BuildingView, meta: { requiresAuth: true, showMap: true } },

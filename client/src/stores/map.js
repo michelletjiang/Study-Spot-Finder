@@ -8,6 +8,7 @@ let watchId = null // from navigator.geolocation.watchPosition
 //        mapStore.clearDestination()       → back to just showing the user's location
 export const mapStore = reactive({
   expanded: false,
+  dockEl: null,       // the home page's map box while it's showing; the minimap moves into it (see MiniMap.vue)
 
   userPos: null,      // [lat, lng] from the browser's geolocation
   locationError: '',
