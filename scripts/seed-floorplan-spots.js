@@ -312,6 +312,48 @@ const buildings = {
     { floor: '5', name: 'CTE Scape', seatCount: 30, hasPowerSocket: true },
     { floor: '5', name: 'Interactive Learning Space', seatCount: 20, hasPowerSocket: true },
   ],
+
+  // SMU Connexion: only rooms named meeting / study / classroom (the Pods are the plan's "meeting pods"),
+  // plus each level's Collaboration Zone (one per level, hence the level in its name).
+  // Spots now need a noise level (models/studyspot-model.js): booths start Quiet, everything else Moderate.
+  'CONNEX': [
+    // level 2
+    { floor: '2', name: 'Collaboration Zone (Level 2)', seatCount: 30, hasPowerSocket: true, noiseLevel: 'Moderate' },
+    // level 3
+    { floor: '3', name: 'Collaboration Zone (Level 3)', seatCount: 30, hasPowerSocket: true, noiseLevel: 'Moderate' },
+    { floor: '3', name: 'Study Booth 3-1', seatCount: 2, hasPowerSocket: true, noiseLevel: 'Quiet' },
+    { floor: '3', name: 'Study Booth 3-2', seatCount: 2, hasPowerSocket: true, noiseLevel: 'Quiet' },
+    { floor: '3', name: 'Study Booth 3-3', seatCount: 2, hasPowerSocket: true, noiseLevel: 'Quiet' },
+    { floor: '3', name: 'Study Booth 3-4', seatCount: 2, hasPowerSocket: true, noiseLevel: 'Quiet' },
+    { floor: '3', name: 'Study Booth 3-5', seatCount: 2, hasPowerSocket: true, noiseLevel: 'Quiet' },
+    { floor: '3', name: 'Study Booth 3-6', seatCount: 2, hasPowerSocket: true, noiseLevel: 'Quiet' },
+    { floor: '3', name: 'Study Booth 3-7', seatCount: 2, hasPowerSocket: true, noiseLevel: 'Quiet' },
+    { floor: '3', name: 'Active Learning Classroom 3-1', seatCount: 40, hasPowerSocket: true, noiseLevel: 'Moderate' },
+    { floor: '3', name: 'Active Learning Classroom 3-2', seatCount: 40, hasPowerSocket: true, noiseLevel: 'Moderate' },
+    { floor: '3', name: 'Active Learning Classroom 3-3', seatCount: 40, hasPowerSocket: true, noiseLevel: 'Moderate' },
+    // level 4
+    { floor: '4', name: 'Collaboration Zone (Level 4)', seatCount: 50, hasPowerSocket: true, noiseLevel: 'Moderate' },
+    { floor: '4', name: 'Study Booth 4-1', seatCount: 2, hasPowerSocket: true, noiseLevel: 'Quiet' },
+    { floor: '4', name: 'Study Booth 4-2', seatCount: 2, hasPowerSocket: true, noiseLevel: 'Quiet' },
+    { floor: '4', name: 'Study Booth 4-3', seatCount: 2, hasPowerSocket: true, noiseLevel: 'Quiet' },
+    { floor: '4', name: 'Study Booth 4-4', seatCount: 2, hasPowerSocket: true, noiseLevel: 'Quiet' },
+    { floor: '4', name: 'Study Booth 4-5', seatCount: 2, hasPowerSocket: true, noiseLevel: 'Quiet' },
+    { floor: '4', name: 'Study Booth 4-6', seatCount: 2, hasPowerSocket: true, noiseLevel: 'Quiet' },
+    { floor: '4', name: 'Study Booth 4-7', seatCount: 2, hasPowerSocket: true, noiseLevel: 'Quiet' },
+    { floor: '4', name: 'Study Booth 4-8', seatCount: 2, hasPowerSocket: true, noiseLevel: 'Quiet' },
+    { floor: '4', name: 'Study Booth 4-9', seatCount: 2, hasPowerSocket: true, noiseLevel: 'Quiet' },
+    { floor: '4', name: 'Study Booth 4-10', seatCount: 2, hasPowerSocket: true, noiseLevel: 'Quiet' },
+    { floor: '4', name: 'Meeting Pod 4-1', seatCount: 4, hasPowerSocket: true, noiseLevel: 'Moderate' },
+    { floor: '4', name: 'Meeting Pod 4-2', seatCount: 4, hasPowerSocket: true, noiseLevel: 'Moderate' },
+    { floor: '4', name: 'Meeting Pod 4-3', seatCount: 4, hasPowerSocket: true, noiseLevel: 'Moderate' },
+    { floor: '4', name: 'Meeting Pod 4-4', seatCount: 4, hasPowerSocket: true, noiseLevel: 'Moderate' },
+    { floor: '4', name: 'Meeting Pod 4-5', seatCount: 4, hasPowerSocket: true, noiseLevel: 'Moderate' },
+    { floor: '4', name: 'Meeting Pod 4-6', seatCount: 4, hasPowerSocket: true, noiseLevel: 'Moderate' },
+    { floor: '4', name: 'Meeting Pod 4-7', seatCount: 4, hasPowerSocket: true, noiseLevel: 'Moderate' },
+    { floor: '4', name: 'Meeting Lounge 4-1', seatCount: 10, hasPowerSocket: true, noiseLevel: 'Moderate' },
+    { floor: '4', name: 'Active Learning Classroom 4-1', seatCount: 40, hasPowerSocket: true, noiseLevel: 'Moderate' },
+    { floor: '4', name: 'Active Learning Classroom 4-2', seatCount: 40, hasPowerSocket: true, noiseLevel: 'Moderate' },
+  ],
 };
 
 async function seedBuilding(buildingName, spots) {
