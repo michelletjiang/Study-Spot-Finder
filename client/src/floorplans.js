@@ -131,7 +131,6 @@ export const floorplans = {
       ],
     },
   },
-
   
   'Yong Pung How School of Law': {
     // SVGs: the room shapes below come straight from their <path>s (no translate);
@@ -320,6 +319,7 @@ export const floorplans = {
       ],
     },
   },
+
   'SCIS 2': {
     // SVGs, like SCIS 1, but drawn inside translate(40,100) scale(0.52632): points are already converted.
     // Curves and arcs are approximated with straight segments, and rooms drawn as one shape with a divider line

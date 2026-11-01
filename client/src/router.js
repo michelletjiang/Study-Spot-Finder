@@ -40,6 +40,9 @@ const routes = [
   { path: '/', name: 'home', component: HomeView, meta: { requiresAuth: true, showMap: true } },
   { path: '/profile', component: ProfileView, meta: { requiresAuth: true } },
   { path: '/profile/edit', component: EditProfileView, meta: { requiresAuth: true } },
+  // (.*) lets a building name contain a slash, e.g. "School of Social Sciences / College of Integrative Studies"
+  { path: '/building/:name(.*)/floor/:floor', component: FloorView, meta: { requiresAuth: true, showMap: true } },
+  { path: '/building/:name(.*)', component: BuildingView, meta: { requiresAuth: true, showMap: true } },
   // A building's spots, with the Compare buttons. :name is the building name.
   { path: '/building/:name', component: BuildingView, meta: { requiresAuth: true, showMap: true } },
   // The legacy comparison list remains available as an explicit compatibility route.
