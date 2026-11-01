@@ -20,6 +20,8 @@ const Review = require('../../models/reviews-model')
 const Report = require('../../models/reports')
 const Favourite = require('../../models/favourites-model')
 const AdminRequest = require('../../models/admin-request-model')
+const CrowdReport = require('../../models/crowd-report-model')
+const StudySpotAlert = require('../../models/studyspot-alert-model')
 const cascade = require('../../services/cascade-service')
 
 // Every call made to a spied model function is pushed here as "Model.function",
@@ -69,10 +71,15 @@ describe('TestSuite2: deleteSpot', () => {
     const reports = stub(Report, 'Report', 'deleteByReviews')
     const reviews = stub(Review, 'Review', 'deleteByRoom')
     const favs = stub(Favourite, 'Favourite', 'deleteBySpot')
+    const crowd = stub(CrowdReport, 'CrowdReport', 'deleteMany')
+    const alerts = stub(StudySpotAlert, 'StudySpotAlert', 'deleteMany')
     const del = stub(StudySpot, 'StudySpot', 'deleteSpot')
 
     await cascade.deleteSpot(spot)
 
+    // Crowd check-ins and alerts are matched by the spot's ObjectId.
+    expect(crowd).toHaveBeenCalledWith({ spot: { $in: ['spot1'] } })
+    expect(alerts).toHaveBeenCalledWith({ spot: { $in: ['spot1'] } })
     // Reviews and favourites are matched by building + spot name.
     expect(find).toHaveBeenCalledWith('SCIS1', 'Pod A')
     expect(reports).toHaveBeenCalledWith(['rev1', 'rev2'])
@@ -86,6 +93,8 @@ describe('TestSuite2: deleteSpot', () => {
     stub(Report, 'Report', 'deleteByReviews')
     stub(Review, 'Review', 'deleteByRoom')
     stub(Favourite, 'Favourite', 'deleteBySpot')
+    stub(CrowdReport, 'CrowdReport', 'deleteMany')
+    stub(StudySpotAlert, 'StudySpotAlert', 'deleteMany')
     stub(StudySpot, 'StudySpot', 'deleteSpot')
 
     await cascade.deleteSpot(spot)
@@ -100,6 +109,8 @@ describe('TestSuite2: deleteSpot', () => {
     const reports = stub(Report, 'Report', 'deleteByReviews')
     stub(Review, 'Review', 'deleteByRoom')
     stub(Favourite, 'Favourite', 'deleteBySpot')
+    stub(CrowdReport, 'CrowdReport', 'deleteMany')
+    stub(StudySpotAlert, 'StudySpotAlert', 'deleteMany')
     const del = stub(StudySpot, 'StudySpot', 'deleteSpot')
 
     await cascade.deleteSpot(spot)
@@ -115,6 +126,9 @@ describe('TestSuite3: deleteBuilding', () => {
     const reports = stub(Report, 'Report', 'deleteByReviews')
     const reviews = stub(Review, 'Review', 'deleteByBuilding')
     const favs = stub(Favourite, 'Favourite', 'deleteByBuilding')
+    stub(StudySpot, 'StudySpot', 'findByBuilding', [{ _id: 'spot1' }, { _id: 'spot2' }])
+    const crowd = stub(CrowdReport, 'CrowdReport', 'deleteMany')
+    const alerts = stub(StudySpotAlert, 'StudySpotAlert', 'deleteMany')
     const spots = stub(StudySpot, 'StudySpot', 'deleteByBuilding')
     const del = stub(Building, 'Building', 'deleteBuilding')
 
@@ -124,6 +138,8 @@ describe('TestSuite3: deleteBuilding', () => {
     expect(reports).toHaveBeenCalledWith(['rev1', 'rev2'])
     expect(reviews).toHaveBeenCalledWith('SCIS1')
     expect(favs).toHaveBeenCalledWith('SCIS1')
+    expect(crowd).toHaveBeenCalledWith({ spot: { $in: ['spot1', 'spot2'] } })
+    expect(alerts).toHaveBeenCalledWith({ spot: { $in: ['spot1', 'spot2'] } })
     expect(spots).toHaveBeenCalledWith('SCIS1')
     expect(del).toHaveBeenCalledWith('178902')
     expect(calls.at(-1)).toBe('Building.deleteBuilding')
@@ -131,12 +147,15 @@ describe('TestSuite3: deleteBuilding', () => {
 })
 
 describe('TestSuite4: deleteUserData', () => {
-  it('Test1: removes the user\'s reviews (and reports on them), favourites and admin requests', async () => {
+  it('Test1: removes the user\'s reviews (and reports on them), favourites, admin requests, check-ins and alerts', async () => {
     const find = stub(Review, 'Review', 'findbyUser', twoReviews)
     const reports = stub(Report, 'Report', 'deleteByReviews')
     const reviews = stub(Review, 'Review', 'deleteByUser')
     const favs = stub(Favourite, 'Favourite', 'deleteByUser')
     const requests = stub(AdminRequest, 'AdminRequest', 'deleteByUser')
+    const crowd = stub(CrowdReport, 'CrowdReport', 'deleteMany')
+    const alerts = stub(StudySpotAlert, 'StudySpotAlert', 'deleteMany')
+    const votes = stub(StudySpotAlert, 'StudySpotAlert', 'updateMany')
 
     await cascade.deleteUserData(user)
 
@@ -146,6 +165,10 @@ describe('TestSuite4: deleteUserData', () => {
     expect(reviews).toHaveBeenCalledWith('ziyuzhang')
     expect(favs).toHaveBeenCalledWith('ziyuzhang')
     expect(requests).toHaveBeenCalledWith('user1')
+    expect(crowd).toHaveBeenCalledWith({ userId: 'user1' })
+    expect(alerts).toHaveBeenCalledWith({ userId: 'user1' })
+    // Their confirm/dispute votes on other people's alerts are removed too.
+    expect(votes).toHaveBeenCalledWith({}, { $pull: { confirms: 'user1', disputes: 'user1' } })
   })
 })
 
