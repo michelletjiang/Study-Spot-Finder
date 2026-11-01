@@ -1,3 +1,4 @@
+// This route keeps location search behind the same session guard as other student APIs.
 const express = require('express');
 
 const nearbyController = require('../../controllers/nearby-controller');

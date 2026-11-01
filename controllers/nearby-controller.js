@@ -1,3 +1,4 @@
+// Nearby search combines building coordinates, spot attributes, and review summaries.
 const Building = require('../models/building-model');
 const StudySpot = require('../models/studyspot-model');
 const Review = require('../models/reviews-model');
@@ -17,6 +18,7 @@ const NOISE_SCALE = { Quiet: 1, Moderate: 3, Loud: 5 };
 // Every study spot whose building has coordinates, with its distance from the user and its review summary.
 // The client does the ranking, so changing a preference doesn't need another request.
 exports.nearby = async (req, res) => {
+    // Coerce JSON values once so the range check and distance formula use numbers.
     const latitude = Number(req.body.latitude);
     const longitude = Number(req.body.longitude);
     if (!(Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180)) {
@@ -27,6 +29,7 @@ exports.nearby = async (req, res) => {
         const byName = new Map(buildings.filter(b => b.lat != null && b.lng != null).map(b => [b.buildingname, b]));
         const reviews = new Map(summaries.map(r => [`${r._id.buildingName}|${r._id.roomId}`, r]));
 
+        // Return only the fields the client needs for ranking and explanation cards.
         const results = [];
         for (const spot of spots) {
             const building = byName.get(spot.buildingName);

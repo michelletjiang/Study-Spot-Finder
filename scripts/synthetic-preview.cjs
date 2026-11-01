@@ -71,7 +71,13 @@ const query = value => ({ sort: async () => value, then: (ok, fail) => Promise.r
 
 User.findOne = async q => users.find(candidate => q.email === candidate.email || q.username === candidate.username) || null;
 User.findById = async id => users.find(candidate => String(id) === candidate._id) || null;
-User.create = async data => { const created = { _id: newId(), createdAt: new Date(), ...data }; users.push(created); return created; };
+// Hash newly registered demo passwords so the synthetic flow matches production login behavior.
+User.create = async data => {
+  const created = { _id: newId(), createdAt: new Date(), ...data };
+  if (created.password && !created.password.startsWith('$2')) created.password = bcrypt.hashSync(created.password, 4);
+  users.push(created);
+  return created;
+};
 AdminRequest.findOne = () => query(null);
 AdminRequest.find = () => query([]);
 Report.find = () => query([]);
