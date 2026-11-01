@@ -11,6 +11,7 @@ function distanceMeters(lat1, lng1, lat2, lng2) {
 }
 
 const WALK_METRES_PER_MINUTE = 80; // about 5 km/h
+const NOISE_SCALE = { Quiet: 1, Moderate: 3, Loud: 5 };
 
 // POST /api/nearby   body: { latitude, longitude }
 // Every study spot whose building has coordinates, with its distance from the user and its review summary.
@@ -39,7 +40,8 @@ exports.nearby = async (req, res) => {
                 floor: spot.floor,
                 seats: spot.seatCount,
                 hasPower: spot.hasPowerSocket,
-                noiseLevel: summary?.avgNoise ?? null,  // 1 (quiet) .. 5 (loud), null = no noise reports yet
+                // 1 (quiet) .. 5 (loud): the spot's own noise level if it has one, else what reviews reported; null = unknown
+                noiseLevel: NOISE_SCALE[spot.noiseLevel] ?? summary?.avgNoise ?? null,
                 avgRating: summary?.avgRating ?? null,  // 1 .. 5, null = no reviews yet
                 reviewCount: summary?.count ?? 0,
                 distanceMeters: meters,

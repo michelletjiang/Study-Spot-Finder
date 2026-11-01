@@ -1,3 +1,4 @@
+<%# LEGACY - not used by the Vue demo: server-rendered login form. Rendered by loginGet in controllers/user-controller.js. The Vue page LoginView.vue replaces it. %>
 <html>
     <head>
         <title>Login - Study Spot</title>
@@ -7,6 +8,7 @@
         <h1>SMU STUDY SPOT FINDER 📚 </h1>
         <h2>Login to Your Account</h2>
 
+        <%# The form posts email and password to the legacy /login route. %>
         <form action="/login" method="POST">
             <table>
                 <tr>
@@ -21,8 +23,10 @@
             <br>
             <button type="submit">Login</button>
 
+            <%# Show login error messages when the controller passed any. %>
             <% if (error && error.length > 0) { %>
                 <ul>
+                    <%# One list item per message. %>
                     <% error.forEach(err => { %>
                         <li><%= err %></li>
                     <% }) %>
@@ -30,6 +34,7 @@
             <% } %>
         </form>
 
+        <%# Link to the legacy register page. %>
         <p>Don't have an account? <a href="/register">Register here</a></p>
     </body>
 </html>

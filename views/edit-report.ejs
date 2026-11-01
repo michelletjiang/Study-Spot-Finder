@@ -1,11 +1,14 @@
+<%# LEGACY - not used by the Vue demo: form to edit a report. Rendered by editReport in controllers/report-controller.js. The Vue page ReportFormView.vue replaces it. %>
 <head>
     <title>Edit Report</title>
     <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+<%# Navigation bar repeated on each legacy page. The role check below needs the user variable, which each handler must pass in. %>
 <nav>
         <a href ='/'><h2>Study Spots📚</h2></a>
         <a href='/profile'>Your Profile</a> |
+        <%# Admins see the management links. %>
         <% if (user.role == 'Admin'){ %>
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
@@ -14,11 +17,13 @@
             <a href="/admin/reports">Pending Reports</a> |
         <% } %> 
         <a href="/favourites">Favourites</a> |
+         <%# Legacy logout is a GET link to /logout. %>
          <a href='/logout'>Logout</a>
     </nav>
     <br>
 <h1>Edit Report</h1>
 
+<%# The form posts to the legacy report edit route. %>
 <form action="/reports/edit/<%=report._id%>" method="POST">
   <label>Reason:</label>
   <select name="reason">
@@ -33,6 +38,7 @@
   <textarea name="description"><%= report.description %></textarea>
   <br><br>
   <button type="submit">Submit Report</button>
+  <%# Shows a message from the controller. %>
   <%= msg %>
 </form>
 </body>

@@ -5,6 +5,7 @@ import { useBuildingSpots } from '../buildingSpots'
 import { normalizeFloor, floorOrder, floorLabel } from '../floors'
 import { floorplans, findFloorplan } from '../floorplans'
 import FloorPlan from '../components/FloorPlan.vue'
+import { comparison } from '../stores/compare.js'
 
 // A building's floors on the left and the chosen floor's floorplan on the right.
 // The chosen floor is kept in ?floor= so the floor page's "All floors" link comes back to it.
@@ -28,6 +29,11 @@ const selectedFloor = computed(() =>
   floors.value.includes(route.query.floor) ? route.query.floor : floors.value.find(hasPlan) || floors.value[0])
 const selectedPlan = computed(() => findFloorplan(buildingName.value, selectedFloor.value))
 const selectedSpots = computed(() => spotsOn(selectedFloor.value))
+
+// The mapping view also keeps the comparison entry point for each catalogue spot.
+function toggleCompare(spot) {
+  comparison.toggle(spot._id)
+}
 
 function chooseFloor(floor) {
   router.replace({ query: { floor } })
@@ -76,6 +82,17 @@ function openSpot(spot) {
         <p class="hint">Click a room to open it.</p>
       </template>
       <p v-else class="no-plan">No floorplan for this floor yet.</p>
+      <!-- Keep spot comparison available alongside the latest floor mapping. -->
+      <h3>Study Spots in {{ buildingName }}</h3>
+      <ul v-if="spots.length" class="spot-list" aria-label="Study spots in this building">
+        <li v-for="spot in spots" :key="spot._id">
+          <RouterLink :to="`/spots/${spot._id}`">{{ spot.name }}</RouterLink>
+          <RouterLink :to="`/spots/${spot._id}`">View Details &amp; Reviews</RouterLink>
+          <button class="compare-button" type="button" @click="toggleCompare(spot)">
+            {{ comparison.has(spot._id) ? 'Remove from comparison' : 'Compare' }}
+          </button>
+        </li>
+      </ul>
     </section>
   </div>
 </template>
@@ -150,6 +167,10 @@ function openSpot(spot) {
 .plan h3 {
   margin-top: 0;
 }
+
+.spot-list { list-style: none; padding: 0; display: grid; gap: 8px; }
+.spot-list li { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.compare-button { padding: 6px 10px; }
 
 .hint {
   font-style: italic;

@@ -20,14 +20,20 @@ const errors = ref([])
 const saving = ref(false)
 
 async function register() {
+  // Clear old validation feedback before checking the next submission.
   errors.value = []
+  // Disable the form to prevent duplicate account requests.
   saving.value = true
   try {
+    // Send the exact fields and school codes expected by the Express API.
     await api('/api/register', { method: 'POST', body: form.value })
-    router.push({ name: 'login', query: { registered: '1' } })
+    // Registration does not log in automatically, so continue to the public login page.
+    await router.push({ name: 'login', query: { registered: '1' } })
   } catch (e) {
+    // Render structured validation and duplicate-account errors as readable list items.
     errors.value = e.data?.errors || [e.message]
   } finally {
+    // Allow a correction or retry after the request has settled.
     saving.value = false
   }
 }

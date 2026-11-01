@@ -13,16 +13,22 @@ const error = ref('')
 const loading = ref(false)
 
 async function login() {
+  // Remove the previous message before validating this submission.
   error.value = ''
+  // Disable the submit control while the server processes the credentials.
   loading.value = true
   try {
+    // The API helper sends the existing Express session cookie protocol.
     const { user } = await api('/api/login', { method: 'POST', body: { email: email.value, password: password.value } })
+    // Store only the safe session user returned by the server.
     auth.user = user
-    // go back to the page they were trying to reach, or home
-    router.push(route.query.redirect || '/')
+    // Return to the requested deep link, or take a new user to the home page.
+    await router.push(route.query.redirect || '/')
   } catch (e) {
+    // Show a safe API message without exposing a raw response or secret.
     error.value = e.message
   } finally {
+    // Re-enable the form after both success and failure.
     loading.value = false
   }
 }

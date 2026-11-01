@@ -1,3 +1,4 @@
+<%# LEGACY - not used by the Vue demo: admin list of all study spots. Rendered by showStudySpots in controllers/studyspot-controller.js. The Vue page AdminSpotsView.vue replaces it. %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,9 +6,11 @@
     <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+    <%# Navigation bar repeated on each legacy page. The role check below needs the user variable, which each handler must pass in. %>
     <nav>
         <a href ='/'><h2>Study Spots📚</h2></a>
         <a href='/profile'>Your Profile</a> |
+        <%# Admins see the management links. %>
         <% if (user.role == 'Admin'){ %>
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
@@ -16,13 +19,16 @@
             <a href="/admin/reports">Pending Reports</a> |
         <% } %> 
         <a href="/favourites">Favourites</a> |
+         <%# Legacy logout is a GET link to /logout. %>
          <a href='/logout'>Logout</a>
     </nav>
     <h2>Study Spots</h2>
 
+    <%# No spots: show a message. %>
     <% if (studySpotList.length === 0) { %>
         <p>No study spots found.</p>
     <% } else { %>
+        <%# Loop over the spots. %>
         <% studySpotList.forEach(spot => { %>
             <p><strong>Name: <%= spot.buildingName %>,  <%= spot.name %></strong></p>
             Building: <%= spot.buildingName %><br>
@@ -30,6 +36,7 @@
             Seats: <%= spot.seatCount %><br>
             Power Socket: <%= spot.hasPowerSocket ? 'Yes' : 'No' %><br>
             Noise Level: <%= spot.noiseLevel %><br>
+            <%# Links to the legacy details, edit and delete pages. %>
             <a href="/studyspot-details?id=<%= spot._id %>">View Details</a> |
             <a href="/edit-studyspot?id=<%= spot._id %>">Edit</a> |
             <a href="/delete-studyspot?id=<%= spot._id %>">Delete</a>

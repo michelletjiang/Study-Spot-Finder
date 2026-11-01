@@ -1,17 +1,23 @@
 <!doctype html>
+<!-- ACTIVE: the one HTML page of the Vue app. Vite serves it and the browser starts from here. The router changes what is inside the app element without reloading it. -->
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- The tab icon from client/public. -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Makes the page fit phone screens. -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Handwritten fonts for the study spot finder (views/FindSpotView.vue). -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- handwritten fonts for the study spot finder (views/FindSpotView.vue) -->
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet" />
+    <!-- The browser tab title. It is still the Vite starter name, which has no effect on the app's behaviour. -->
     <title>client</title>
   </head>
   <body>
+    <!-- Vue mounts the whole app into this empty element (see client/src/main.js). -->
     <div id="app"></div>
+    <!-- Loads the app code as a module. Vite turns this into the built file during npm run build. -->
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
