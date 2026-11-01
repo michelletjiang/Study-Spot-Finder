@@ -372,3 +372,169 @@ code {
     border-right-color: var(--border);
   }
 }
+
+/* ==========================================================================
+   Notebook look: ink outlines, hard shadows, yellow highlighter, sticky notes and tape.
+   Pages keep their own layout in their scoped <style>; anything used on
+   more than one page lives here. Every class starts with nb- so it can't clash with Bootstrap
+   (a plain .card or .btn would pick up Bootstrap's styles). */
+
+:root {
+  --nb-ink: #28263f;
+  --nb-muted: #6b6880;
+  --nb-paper: #fbf7ed;       /* soft panels inside a card */
+  --nb-card: #fffdf7;        /* cards, tabs, chips */
+  --nb-sheet: #fffef9;       /* sheets of paper: the floor plan, the student card, forms */
+  --nb-input: #fffdf3;
+  --nb-highlight: #ffe58a;   /* the yellow highlighter: selected things and main buttons */
+  --nb-note: #fde58f;
+  --nb-note-pink: #fbd3d8;
+  --nb-note-blue: #d6e4f5;
+  --nb-manila: #fbe9bd;      /* folders */
+  --nb-manila-dark: #f4da98;
+  --nb-pink: #f5a0a6;        /* tape, pins, the margin line */
+  --nb-rule: #cfcadb;        /* dashed dividers */
+  --nb-rule-light: #dcd8e6;  /* ruled lines on cards */
+  --nb-error: #a3303a;
+  --nb-focus: #4b3fb5;
+  --nb-heading: Caveat, 'Comic Sans MS', cursive;
+}
+
+/* ---------- buttons ---------- */
+.nb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border: 2px solid var(--nb-ink);
+  border-radius: 10px;
+  background: var(--nb-sheet);
+  color: var(--nb-ink);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+.nb-btn:hover { color: var(--nb-ink); }
+.nb-btn:disabled { opacity: 0.6; cursor: default; }
+.nb-btn:focus-visible { outline: 3px solid var(--nb-focus); outline-offset: 3px; }
+.nb-btn[aria-pressed='true'] { background: var(--nb-highlight); color: #28263f; }
+
+/* the main action: yellow, with a shadow that grows on hover */
+.nb-btn--primary {
+  background: var(--nb-highlight);
+  color: #28263f;
+  box-shadow: 4px 4px 0 var(--nb-ink);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.nb-btn--primary:hover:not(:disabled) { color: #28263f; transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--nb-ink); }
+
+/* small buttons on sticky notes, which stay light in dark mode */
+.nb-btn--small { padding: 3px 12px; font-size: 0.88rem; border-color: #28263f; background: #fffef9; color: #28263f; }
+.nb-btn--small:hover { color: #28263f; }
+
+.nb-btn--danger { border-color: var(--nb-error); background: transparent; color: var(--nb-error); }
+.nb-btn--danger:hover { background: rgba(163, 48, 58, 0.08); color: var(--nb-error); }
+
+/* ---------- sticky notes ---------- */
+.nb-note {
+  position: relative;
+  padding: 22px 24px 20px;
+  background: var(--nb-note);
+  border: 2px solid #28263f;
+  box-shadow: 5px 5px 0 var(--nb-ink);
+  color: #28263f; /* the note stays light in dark mode, so its text stays dark */
+  transform: rotate(1deg);
+}
+.nb-note--pink { background: var(--nb-note-pink); transform: rotate(-0.8deg); }
+.nb-note--blue { background: var(--nb-note-blue); transform: rotate(0.6deg); }
+.nb-note h2 { margin: 0; font: 700 1.7rem/1.1 var(--nb-heading); color: inherit; }
+.nb-note p { margin: 8px 0 0; line-height: 1.5; }
+
+/* the pin holding a note up (put it inside the note) */
+.nb-pin {
+  position: absolute;
+  top: -11px;
+  left: 28px;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #28263f;
+  border-radius: 50%;
+  background: var(--nb-pink);
+}
+.nb-pin--right { left: auto; right: 40px; background: var(--nb-highlight); }
+
+/* ---------- tape and the initial circle ---------- */
+/* a strip of pink tape across the top edge (its parent needs position: relative) */
+.nb-tape {
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  width: 78px;
+  height: 20px;
+  margin-left: -39px;
+  background: rgba(245, 160, 166, 0.7);
+  transform: rotate(-2deg);
+}
+
+/* the user's initial in a yellow circle */
+.nb-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--nb-ink);
+  border-radius: 50%;
+  background: var(--nb-highlight);
+  color: #28263f;
+  font: 700 1.6rem/1 var(--nb-heading);
+}
+
+/* ---------- loading / error / empty messages ---------- */
+.nb-state {
+  max-width: 520px;
+  padding: 14px 18px;
+  border: 2px dashed var(--nb-ink);
+  border-radius: 10px;
+  background: var(--nb-card);
+}
+.nb-state--error { border-style: solid; border-color: var(--nb-error); color: var(--nb-error); }
+
+/* ---------- highlighter ---------- */
+/* a yellow highlighter stroke behind a word or two: <mark class="nb-mark">before</mark> */
+.nb-mark {
+  padding: 0 0.08em;
+  background: linear-gradient(transparent 52%, var(--nb-highlight) 52%, var(--nb-highlight) 90%, transparent 90%);
+  color: inherit;
+}
+
+/* ---------- form fields ---------- */
+/* <div class="nb-field"><label>…</label><input class="nb-input"><small class="nb-hint">…</small></div> */
+.nb-field { display: grid; gap: 6px; margin-bottom: 16px; }
+.nb-field > label, .nb-label { font-weight: 700; }
+.nb-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border: 2px solid var(--nb-ink);
+  border-radius: 10px;
+  background: var(--nb-input);
+  color: var(--nb-ink);
+  font: inherit;
+}
+.nb-input:focus-visible { outline: 3px solid var(--nb-focus); outline-offset: 2px; }
+.nb-hint { color: var(--nb-muted); font-size: 0.85rem; }
+/* an input with a button beside it (e.g. a password's Show) */
+.nb-with-button { display: flex; gap: 10px; }
+.nb-with-button .nb-input { flex: 1; min-width: 0; }
+.nb-with-button .nb-btn { flex: none; }
+.nb-errors {
+  margin: 0 0 16px;
+  padding: 10px 14px 10px 32px;
+  border: 2px solid var(--nb-error);
+  border-radius: 8px;
+  color: var(--nb-error);
+}
+.nb-errors.single { padding-left: 14px; list-style: none; }
