@@ -19,7 +19,7 @@ const isEdit = computed(() => !!route.params.id)
 // Text such as "Building, Room" showing which spot this review is for.
 const spotLabel = ref('')
 // The form fields. The rating starts at 3.
-const form = ref({ title: '', content: '', rating: 3 })
+const form = ref({ title: '', content: '', rating: 3, noiseLevel: '' })
 // A message to show on failure.
 const error = ref('')
 // True while saving.
@@ -31,7 +31,8 @@ onMounted(async () => {
     // Editing: load the existing review (GET /api/reviews/:id).
     if (isEdit.value) {
       const review = await api(`/api/reviews/${route.params.id}`)
-      form.value = { title: review.title, content: review.content, rating: review.rating }
+      // Older reviews have no noise level, so the reviewer picks one when they edit.
+      form.value = { title: review.title, content: review.content, rating: review.rating, noiseLevel: review.noiseLevel || '' }
       spotLabel.value = `${review.buildingName}, ${review.roomId}`
     } else {
       // Adding: load the spot to show its name (GET /api/spots/:id).
@@ -78,6 +79,14 @@ async function save() {
     <label>Content <textarea v-model="form.content" required></textarea></label><br>
     <!-- Rating from 1 to 5, as a number. -->
     <label>Rating <input v-model.number="form.rating" type="number" min="1" max="5" required></label><br>
+    <label>Noise level
+      <select v-model="form.noiseLevel" required>
+        <option value="" disabled>Choose one</option>
+        <option>Quiet</option>
+        <option>Moderate</option>
+        <option>Loud</option>
+      </select>
+    </label><br>
     <p v-if="error" style="color: red">{{ error }}</p>
     <button :disabled="saving">{{ isEdit ? 'Update' : 'Add' }} Review</button>
     <button type="button" @click="router.back()">Cancel</button>

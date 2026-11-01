@@ -1,6 +1,6 @@
 // student-journey.spec.mjs
 // End-to-end test (Playwright) of the main student journey, through the real Vue UI:
-//   register -> log in -> open a study spot -> favourite it -> write, edit and report a review
+//   register -> log in -> open a study spot -> favourite it -> write (with a noise level), edit and report a review
 //   -> delete the review (its report must go too) -> delete the account (its favourites must go too).
 //
 // It creates its own throw-away account with a unique name and deletes it at the end,
@@ -73,10 +73,12 @@ test('student journey: favourite, review, report, and clean deletes', async ({ p
     await page.getByLabel('Title').fill(reviewTitle)
     await page.getByLabel('Content').fill('Quiet in the morning, plenty of sockets.')
     await page.getByLabel('Rating').fill('4')
+    await page.getByLabel('Noise level').selectOption('Quiet')
     await page.getByRole('button', { name: 'Add Review' }).click()
 
     await expect(page).toHaveURL(new RegExp(`/spots/${spot._id}$`))
     await expect(page.getByText(reviewTitle)).toBeVisible()
+    await expect(page.getByText(`${reviewTitle}`).locator('..')).toContainText('Noise: Quiet')
   })
 
   // The block on the spot page that holds our review (its own Edit / Delete / Report links).
@@ -86,10 +88,12 @@ test('student journey: favourite, review, report, and clean deletes', async ({ p
     await ourReview(reviewTitle).getByRole('link', { name: 'Edit' }).click()
     await expect(page.getByRole('heading', { name: 'Update Review' })).toBeVisible()
     await page.getByLabel('Title').fill(editedTitle)
+    await page.getByLabel('Noise level').selectOption('Loud')
     await page.getByRole('button', { name: 'Update Review' }).click()
 
     await expect(page).toHaveURL(new RegExp(`/spots/${spot._id}$`))
     await expect(page.getByText(editedTitle)).toBeVisible()
+    await expect(page.getByText(editedTitle).locator('..')).toContainText('Noise: Loud')
   })
 
   let reportId

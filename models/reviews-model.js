@@ -48,6 +48,12 @@ const reviewSchema = new mongoose.Schema({
     rating:{
         type:Number,
         default:3.0
+    },
+    // How loud the reviewer found the spot. Optional so older reviews without it stay valid.
+    // The study spot finder averages it per spot (summariseAll below).
+    noiseLevel:{
+        type:String,
+        enum:['Quiet', 'Moderate', 'Loud']
     }
 // timestamps adds createdAt and updatedAt.
 }, {timestamps:true}); // auto gives createdAt, updatedAt
@@ -93,14 +99,11 @@ exports.findByreviewId = function (reviewId) {
 };
 
 // Update the title, content and rating of a review.
-exports.editReview = function(reviewId, title, content, rating){ // first parameter = primary key users shld input
-    return Review.findByIdAndUpdate(reviewId, // primary key. this is the query object passed to updateOne. it tells mongoDB to find a review where _id=reviewId & userId=the logged-in user
-        {
-            title:title, 
-            content:content, 
-            rating:rating
-        }
-    )
+exports.editReview = function(reviewId, title, content, rating, noiseLevel){ // first parameter = primary key users shld input
+    const update = { title:title, content:content, rating:rating }
+    // The legacy EJS form has no noise field, so only change it when one is given.
+    if (noiseLevel) update.noiseLevel = noiseLevel
+    return Review.findByIdAndUpdate(reviewId, update) // primary key. this is the query object passed to updateOne. it tells mongoDB to find a review where _id=reviewId & userId=the logged-in user
 };
 
 // Delete a review by id.

@@ -83,7 +83,7 @@ async function deleteReview(review) {
     <!-- One block per review. -->
     <div v-for="review in reviews" :key="review._id">
       <!-- Title, rating and author. -->
-      <p><strong>{{ review.title }}</strong> ({{ review.rating }}/5) by {{ review.userId }}</p>
+      <p><strong>{{ review.title }}</strong> ({{ review.rating }}/5) by {{ review.userId }}<template v-if="review.noiseLevel"> · Noise: {{ review.noiseLevel }}</template></p>
       {{ review.content }}<br>
       <!-- Edit and delete are shown only for your own reviews. -->
       <template v-if="review.userId === auth.user?.username">

@@ -179,14 +179,9 @@ const mongoose = require('mongoose');
 // Spot model, to find the spot a review belongs to.
 const StudySpot = require('../models/studyspot-model');
 
-// Checks title, content and a rating from 1 to 5. Returns an error message or null.
-// returns an error message, or null if the review is valid
-function validateReview({ title, content, rating }) {
-    if (!String(title || '').trim() || !String(content || '').trim() || rating === undefined || rating === '')
-        return 'All fields are required.';
-    if (!(Number(rating) >= 1 && Number(rating) <= 5)) return 'Rating must be between 1 and 5.';
-    return null;
-}
+// Checks title, content, a rating from 1 to 5 and a noise level. Returns an error message or null.
+// validateReview now lives in lib/reviews.js so it can be unit tested (test/unit/reviews.spec.js).
+const { validateReview } = require('../lib/reviews');
 
 // finds a review by :id, or sends 404 and returns null
 // Helper: load a review by :id, or send a 404 and return null.
@@ -253,7 +248,8 @@ exports.apiCreateReview = async (req, res) => {
             roomId:       spot.name,
             title:        req.body.title.trim(),
             content:      req.body.content.trim(),
-            rating:       Number(req.body.rating)
+            rating:       Number(req.body.rating),
+            noiseLevel:   req.body.noiseLevel
         });
         // 201 means created.
         res.status(201).json(review);
@@ -275,7 +271,7 @@ exports.apiUpdateReview = async (req, res) => {
         if (msg) return res.status(400).json({ message: msg });
 
         // Write the new values.
-        await Review.editReview(review._id, req.body.title.trim(), req.body.content.trim(), Number(req.body.rating));
+        await Review.editReview(review._id, req.body.title.trim(), req.body.content.trim(), Number(req.body.rating), req.body.noiseLevel);
         res.json(await Review.findByreviewId(review._id));
     } catch (error) {
         console.error(error);

@@ -50,7 +50,7 @@ async function deleteReview(review) {
   <p v-else-if="reviews.length === 0">No reviews yet.</p>
   <!-- One block per review. -->
   <div v-for="review in reviews" :key="review._id">
-    <p><strong>{{ review.title }}</strong> ({{ review.rating }}/5)</p>
+    <p><strong>{{ review.title }}</strong> ({{ review.rating }}/5)<template v-if="review.noiseLevel"> · Noise: {{ review.noiseLevel }}</template></p>
     {{ review.buildingName }}, {{ review.roomId }}<br>
     {{ review.content }}<br>
     <!-- Edit opens ReviewFormView.vue. -->
