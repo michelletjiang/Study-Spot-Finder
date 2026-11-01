@@ -1,66 +1,84 @@
 <script setup>
-import { useRouter } from 'vue-router'
+// Bootstrap supplies the responsive collapse behavior for the shared shell.
+import { ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { Collapse } from 'bootstrap'
 import { auth } from '../stores/auth'
 import { favourites } from '../stores/favourites'
 
+// The current route lets the shell close its mobile menu after navigation.
+const route = useRoute()
+// The router performs safe public navigation after logout.
 const router = useRouter()
+// Bootstrap needs the collapse element to close it programmatically.
+const menu = ref(null)
+
+// Close the menu after a link changes the page on narrow screens.
+watch(() => route.fullPath, () => {
+  if (menu.value?.classList.contains('show')) Collapse.getOrCreateInstance(menu.value).hide()
+})
 
 async function logout() {
-  // Destroy the server session before changing the visible navigation state.
+  // Destroy the server session and clear the local account copy.
   try {
     await auth.logout()
   } finally {
-    // Clear user-owned cached data even if the network request was already expired.
+    // Clear user-owned caches even when the server session already expired.
     favourites.list = []
-    // Send the browser to a public route and replace back-navigation with the guard boundary.
+    // Replace history so browser back cannot reopen the authenticated shell.
     await router.replace('/login')
   }
 }
 </script>
 
 <template>
-  <!-- The shell keeps public and authenticated navigation in one keyboard-friendly landmark. -->
-  <nav class="app-nav" aria-label="Main navigation">
-    <!-- The brand is always available as a safe home link. -->
-    <RouterLink class="brand" to="/">Study Spots📚</RouterLink>
-    <!-- Authenticated links are rendered from the server-backed user state. -->
-    <div v-if="auth.user" class="nav-links">
-      <RouterLink to="/profile">Your Profile</RouterLink>
-      <RouterLink to="/favourites">Favourites</RouterLink>
-      <RouterLink to="/my-reviews">Your Reviews</RouterLink>
-      <!-- Admin links remain invisible to students, while API middleware stays authoritative. -->
-      <template v-if="auth.isAdmin">
-        <RouterLink to="/admin/buildings">Edit Buildings</RouterLink>
-        <RouterLink to="/admin/buildings/new">Add Building</RouterLink>
-        <RouterLink to="/admin/spots">Edit Study Spots</RouterLink>
-        <RouterLink to="/admin/spots/new">Add Study Spot</RouterLink>
-        <RouterLink to="/admin/reports">Pending Reports</RouterLink>
-      </template>
-      <!-- The button exposes the current account and performs a session logout. -->
-      <span class="account">Logged in as {{ auth.user.username }}</span>
-      <button type="button" @click="logout">Logout</button>
-    </div>
-    <!-- Public users receive only the two routes that do not require a session. -->
-    <div v-else class="nav-links">
-      <RouterLink to="/login">Login</RouterLink>
-      <RouterLink to="/register">Register</RouterLink>
+  <!-- The Bootstrap container keeps the front desk aligned at every screen width. -->
+  <nav class="navbar navbar-expand-lg">
+    <div class="container">
+      <!-- The brand is always available as a safe home link. -->
+      <RouterLink class="navbar-brand" to="/"><h2>Study Spots📚</h2></RouterLink>
+      <!-- The keyboard-labelled toggler exposes links on narrow screens. -->
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-nav" aria-controls="main-nav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <!-- The menu changes links according to the server-backed session state. -->
+      <div id="main-nav" ref="menu" class="collapse navbar-collapse">
+        <ul v-if="auth.user" class="navbar-nav me-auto">
+          <li class="nav-item"><RouterLink class="nav-link" to="/profile">Your Profile</RouterLink></li>
+          <li class="nav-item"><RouterLink class="nav-link" to="/favourites">Favourites</RouterLink></li>
+          <li class="nav-item"><RouterLink class="nav-link" to="/my-reviews">Your Reviews</RouterLink></li>
+          <!-- Client visibility is a UX boundary; server middleware still authorizes admin APIs. -->
+          <li v-if="auth.isAdmin" class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Admin</a>
+            <ul class="dropdown-menu">
+              <li><RouterLink class="dropdown-item" to="/admin/buildings">Edit Buildings</RouterLink></li>
+              <li><RouterLink class="dropdown-item" to="/admin/buildings/new">Add Building</RouterLink></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><RouterLink class="dropdown-item" to="/admin/spots">Edit Study Spots</RouterLink></li>
+              <li><RouterLink class="dropdown-item" to="/admin/spots/new">Add Study Spot</RouterLink></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><RouterLink class="dropdown-item" to="/admin/reports">Pending Reports</RouterLink></li>
+            </ul>
+          </li>
+        </ul>
+        <!-- Logged-out visitors receive only public auth links. -->
+        <ul v-else class="navbar-nav me-auto">
+          <li class="nav-item"><RouterLink class="nav-link" to="/login">Login</RouterLink></li>
+          <li class="nav-item"><RouterLink class="nav-link" to="/register">Register</RouterLink></li>
+        </ul>
+        <!-- The account label and logout button remain visible beside the menu. -->
+        <div v-if="auth.user" class="d-flex align-items-center gap-2">
+          <span class="navbar-text">Logged in as {{ auth.user.username }}</span>
+          <button class="btn btn-outline-secondary btn-sm" type="button" @click="logout">Logout</button>
+        </div>
+      </div>
     </div>
   </nav>
 </template>
 
 <style scoped>
-/* Keep the shell readable on the notebook background and usable at narrow widths. */
-.app-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: var(--paper); border-bottom: 2px solid var(--line); text-align: left; }
-/* Give the brand a stable visual anchor without relying on emoji color. */
-.brand { color: var(--ink); font-weight: 700; text-decoration: none; white-space: nowrap; }
-/* Flex wrapping prevents clipped links instead of introducing horizontal scrolling. */
-.nav-links { display: flex; flex: 1; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .65rem 1rem; }
-/* Keep focus visible for keyboard users against both native color schemes. */
-.nav-links a:focus-visible, .nav-links button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
-/* Buttons and links share the theme's readable contrast. */
-.nav-links a, .nav-links button { color: var(--ink); font: inherit; }
-/* The account label may shrink before navigation controls do. */
-.account { color: var(--text); font-size: .9rem; }
-/* Stack the shell at phone widths so every control remains tappable. */
-@media (max-width: 640px) { .app-nav { align-items: flex-start; } .nav-links { justify-content: flex-start; } .account { flex-basis: 100%; } }
+/* Keep the handwritten brand font from the app theme. */
+.navbar-brand h2 { margin: 0; }
+/* Highlight the current route for keyboard and visual orientation. */
+.nav-link.router-link-exact-active { color: var(--accent); font-weight: 600; }
 </style>

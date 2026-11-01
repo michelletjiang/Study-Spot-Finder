@@ -147,7 +147,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outlin
 @media (max-width: 650px) {
   .comparison-page { width: min(100% - 24px, 520px); margin-top: 20px; }
   .comparison-grid { grid-template-columns: 1fr; }
-  .compare-tray { width: calc(100% - 24px); }
+  .compare-tray { width: calc(100% - 24px); position: relative; }
 }
 
 /* Headings use the notebook heading font and the heading text colour. */

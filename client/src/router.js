@@ -10,6 +10,8 @@ import RegisterView from './views/RegisterView.vue'
 import ProfileView from './views/ProfileView.vue'
 import EditProfileView from './views/EditProfileView.vue'
 import BuildingSpotsView from './views/BuildingSpotsView.vue'
+import BuildingView from './views/BuildingView.vue'
+import FloorView from './views/FloorView.vue'
 import SpotDetailView from './views/SpotDetailView.vue'
 // CompareView is the side-by-side comparison page (/compare).
 import CompareView from './views/CompareView.vue'
@@ -39,7 +41,11 @@ const routes = [
   { path: '/profile', component: ProfileView, meta: { requiresAuth: true } },
   { path: '/profile/edit', component: EditProfileView, meta: { requiresAuth: true } },
   // A building's spots, with the Compare buttons. :name is the building name.
-  { path: '/building/:name', component: BuildingSpotsView, meta: { requiresAuth: true, showMap: true } },
+  { path: '/building/:name', component: BuildingView, meta: { requiresAuth: true, showMap: true } },
+  // The legacy comparison list remains available as an explicit compatibility route.
+  { path: '/building/:name/spots', component: BuildingSpotsView, meta: { requiresAuth: true, showMap: true } },
+  // Floor mapping keeps the latest main route while comparison remains a tray action.
+  { path: '/building/:name/floor/:floor', component: FloorView, meta: { requiresAuth: true, showMap: true } },
   // One spot's detail page, which also has a Compare button. :id is the spot id.
   { path: '/spots/:id', component: SpotDetailView, meta: { requiresAuth: true } },
   // The comparison page. It reads ?ids=a,b[,c] from the URL and requires login.

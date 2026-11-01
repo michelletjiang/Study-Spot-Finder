@@ -12,6 +12,7 @@ import 'leaflet/dist/leaflet.css'
 import { api } from '../api'
 // The shared minimap state (position, destination, routes).
 import { mapStore } from '../stores/map'
+import { comparison } from '../stores/compare.js'
 
 // Floating map in the bottom-right corner (mounted once in App.vue).
 // Shows the user's location and every building; on a building page it also draws the route there.
@@ -22,6 +23,8 @@ const route = useRoute()
 const router = useRouter()
 // The map shows only on routes whose meta.showMap is true.
 const visible = computed(() => !!route.meta.showMap)
+// The map moves behind the comparison tray and stops intercepting spot controls when the shortlist is non-empty.
+const withCompareTray = computed(() => comparison.count.value > 0)
 
 // The element Leaflet draws into.
 const mapEl = ref(null)
@@ -253,7 +256,7 @@ function legText(leg) {
 
 <template>
   <!-- The root element. v-show hides it without removing it, so the map is not rebuilt. -->
-  <div v-show="visible" class="minimap" :class="{ expanded: mapStore.expanded }" @transitionend="onResized">
+  <div v-show="visible" class="minimap" :class="{ expanded: mapStore.expanded, 'with-compare-tray': withCompareTray }" @transitionend="onResized">
     <!-- The element Leaflet draws into. -->
     <div ref="mapEl" class="map"></div>
 
@@ -334,11 +337,15 @@ function legText(leg) {
 
 /* Existing note below: keeps the map clear of the comparison tray. */
 /* Keep the map from covering the comparison actions at the bottom of the page. */
-.minimap.with-compare-tray { bottom: 136px; }
+.minimap.with-compare-tray { bottom: 136px; pointer-events: none; }
+/* Leaflet assigns pointer events to its descendants, so disable them too while controls are underneath. */
+.minimap.with-compare-tray * { pointer-events: none; }
 
 /* On a narrow screen the map shrinks, and is hidden while the comparison tray is showing. */
 @media (max-width: 480px) {
-  .minimap { width: calc(100vw - 32px); height: 200px; }
+  .minimap { width: calc(100vw - 32px); height: 200px; pointer-events: none; }
+  /* On phones the map is informational so it never blocks scrollable spot controls. */
+  .minimap * { pointer-events: none; }
   .minimap.with-compare-tray { display: none !important; }
 }
 
