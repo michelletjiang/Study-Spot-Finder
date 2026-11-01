@@ -1,17 +1,14 @@
 <script setup>
-// ACTIVE: the profile page for students and admins. Admins also see the pending admin requests here.
-// ref makes a changing value, onMounted runs code when the page appears.
-import { ref, onMounted } from 'vue'
-// useRouter navigates.
+// ACTIVE: the profile page for students and admins, drawn as a notebook page:
+// a "student card" with the account details, a sticky note for admin requests,
+// and two folders (favourites, reviews) with a peek at what's inside.
+// Admins see the pending admin requests on the sticky note instead.
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-// The shared JSON helper.
 import { api } from '../api'
-// The shared login state.
 import { auth } from '../stores/auth'
+import { favourites } from '../stores/favourites'
 
-// Existing note: one page for both roles.
-// One page for both students and admins (replaces profile.ejs and admin-profile.ejs)
-// The router.
 const router = useRouter()
 
 // The profile from the server.
@@ -20,60 +17,81 @@ const user = ref(null)
 const adminRequest = ref(null)
 // For admins: the requests waiting for a decision.
 const pendingRequests = ref([])
-// A message to show on failure.
+// The user's reviews, newest first (only used for the folder's count and peek).
+const reviews = ref(null)
 const error = ref('')
+const requesting = ref(false)
 
-// Load the profile.
 async function load() {
   try {
     // GET /api/profile returns the user and their latest admin request.
     const data = await api('/api/profile')
     user.value = data.user
     adminRequest.value = data.adminRequest
-    // Refresh the shared user, since an admin may have changed the role.
-    auth.user = data.user // the role may have changed since login (an admin approved the request)
-    // Admins also load the pending requests (GET /api/admin-requests).
+    // The role may have changed since login (an admin approved the request).
+    auth.user = data.user
     if (auth.isAdmin) pendingRequests.value = await api('/api/admin-requests')
   } catch (e) {
     error.value = e.message
   }
 }
 
-// Load when the page appears.
-onMounted(load)
+// The folders are extras: if these fail, the folder just leaves out its count.
+async function loadFolders() {
+  favourites.load().catch(e => console.error('Could not load favourites:', e.message))
+  try {
+    reviews.value = await api('/api/reviews/mine')
+  } catch (e) {
+    console.error('Could not load reviews:', e.message)
+  }
+}
+
+onMounted(() => {
+  load()
+  loadFolders()
+})
+
+const initial = computed(() => user.value?.username?.[0]?.toLowerCase() || '?')
+const memberSince = computed(() => user.value &&
+  new Date(user.value.createdAt).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' }))
+const schools = computed(() => [].concat(user.value?.school || []))
+
+// what's written on the paper peeking out of each folder
+const favouritesPeek = computed(() => favourites.list.slice(0, 2).map(f => f.spotName).join(' · '))
+const reviewsPeek = computed(() => {
+  const latest = reviews.value?.[0]
+  if (!latest) return ''
+  const stars = '★'.repeat(Math.round(latest.rating)) + '☆'.repeat(5 - Math.round(latest.rating))
+  return `${stars} “${latest.title || latest.content}”`
+})
 
 // A student asks to become an admin.
 async function requestAdmin() {
+  requesting.value = true
   try {
-    // POST /api/admin-requests.
     adminRequest.value = await api('/api/admin-requests', { method: 'POST' })
   } catch (e) {
     error.value = e.message
+  } finally {
+    requesting.value = false
   }
 }
 
 // An admin approves or denies a request.
 async function processRequest(req, action) {
   try {
-    // POST /api/admin-requests/:id/approve or /deny.
     await api(`/api/admin-requests/${req._id}/${action}`, { method: 'POST' })
-    // Remove it from the list.
     pendingRequests.value = pendingRequests.value.filter(r => r._id !== req._id)
   } catch (e) {
     error.value = e.message
   }
 }
 
-// Delete the logged-in account.
 async function deleteAccount() {
-  // Ask first.
   if (!confirm('Delete your account? This cannot be undone.')) return
   try {
-    // DELETE /api/profile.
     await api('/api/profile', { method: 'DELETE' })
-    // Forget the user.
     auth.user = null
-    // Go to the login page.
     router.push('/login')
   } catch (e) {
     error.value = e.message
@@ -82,61 +100,288 @@ async function deleteAccount() {
 </script>
 
 <template>
-  <!-- Error message. -->
-  <p v-if="error" style="color: red">{{ error }}</p>
-  <!-- Everything below shows once the profile has loaded. -->
-  <template v-if="user">
-    <!-- Different heading for admins and students. -->
-    <h1 v-if="auth.isAdmin">Welcome, Admin {{ user.username }}!🤩</h1>
-    <h1 v-else>Welcome to your Student Profile, {{ user.username }}!🤓</h1>
-    <!-- The account details from the server. -->
-    <p><strong>Username:</strong> {{ user.username }}</p>
-    <p><strong>Email:</strong> {{ user.email }}</p>
-    <p><strong>Your school(s):</strong></p>
-    <ul>
-      <li v-for="sch in user.school" :key="sch">{{ sch }}</li>
-    </ul>
-    <p><strong>Type of account:</strong> {{ user.role }}</p>
-    <p><strong>Member since:</strong> {{ new Date(user.createdAt).toDateString() }}</p>
+  <div class="profile-page">
+    <p v-if="error" class="nb-state nb-state--error" role="alert">{{ error }}</p>
+    <p v-if="!user && !error" class="nb-state">Loading your profile…</p>
 
-    <!-- Edit and delete buttons. -->
-    <button @click="router.push('/profile/edit')">Edit Profile</button>
-    <button @click="deleteAccount">Delete Account</button>
-    <br>
-    <!-- Shortcuts to favourites and reviews. -->
-    <RouterLink to="/favourites">Your Favourite Study Spots</RouterLink><br>
-    <RouterLink to="/my-reviews">Your Reviews</RouterLink>
-    <br><br>
+    <template v-if="user">
+      <h1>Hi, {{ user.username }}</h1>
+      <p class="intro">Your account, your favourite spots and the reviews you’ve written.</p>
 
-    <!-- students: ask to become admin -->
-    <template v-if="!auth.isAdmin">
-      <p v-if="adminRequest?.status === 'Pending'">Your admin request is <strong>pending</strong> approval.</p>
-      <template v-else>
-        <p v-if="adminRequest?.status === 'Denied'">Your admin request was <strong>denied</strong>.</p>
-        <button @click="requestAdmin">Request Admin Access</button>
-      </template>
+      <div class="layout">
+        <!-- the account details, as an ID card taped to the page -->
+        <section class="id-card" aria-labelledby="card-title">
+          <div class="nb-tape" aria-hidden="true"></div>
+          <header>
+            <span class="nb-avatar" aria-hidden="true">{{ initial }}</span>
+            <h2 id="card-title">{{ auth.isAdmin ? 'Admin card' : 'Student card' }}</h2>
+          </header>
+          <dl>
+            <div><dt>Username</dt><dd>{{ user.username }}</dd></div>
+            <div><dt>Email</dt><dd class="email">{{ user.email }}</dd></div>
+            <div>
+              <dt>School</dt>
+              <dd class="schools">
+                <span v-for="sch in schools" :key="sch" class="pill">{{ sch }}</span>
+                <span v-if="!schools.length" class="muted">Not set</span>
+              </dd>
+            </div>
+            <div><dt>Account</dt><dd>{{ user.role }}</dd></div>
+            <div><dt>Member since</dt><dd>{{ memberSince }}</dd></div>
+          </dl>
+          <RouterLink to="/profile/edit" class="nb-btn nb-btn--primary">
+            <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+              <path d="M11.5 2.5 13.5 4.5 5.5 12.5 2.5 13.5 3.5 10.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+            </svg>
+            Edit profile
+          </RouterLink>
+        </section>
+
+        <div class="side">
+          <!-- sticky note: the student's admin request, or the requests an admin has to decide on -->
+          <section v-if="auth.isAdmin" class="nb-note note" aria-labelledby="note-title">
+            <span class="nb-pin" aria-hidden="true"></span>
+            <h2 id="note-title">Admin requests</h2>
+            <p v-if="!pendingRequests.length">No one is waiting for a decision.</p>
+            <ul v-else class="requests">
+              <li v-for="req in pendingRequests" :key="req._id">
+                <span><strong>{{ req.username }}</strong> · {{ new Date(req.createdAt).toLocaleDateString('en-SG', { day: 'numeric', month: 'short' }) }}</span>
+                <span class="request-actions">
+                  <button type="button" class="nb-btn nb-btn--small" @click="processRequest(req, 'approve')">Approve</button>
+                  <button type="button" class="nb-btn nb-btn--small" @click="processRequest(req, 'deny')">Deny</button>
+                </span>
+              </li>
+            </ul>
+          </section>
+          <section v-else class="nb-note note" aria-labelledby="note-title">
+            <span class="nb-pin" aria-hidden="true"></span>
+            <template v-if="adminRequest?.status === 'Pending'">
+              <h2 id="note-title">Admin request: pending</h2>
+              <p>An admin will review it soon. You can keep using Study Spots as a student in the meantime.</p>
+            </template>
+            <template v-else>
+              <h2 id="note-title">{{ adminRequest?.status === 'Denied' ? 'Admin request: denied' : 'Help run Study Spots?' }}</h2>
+              <p v-if="adminRequest?.status === 'Denied'">Your last request wasn’t approved. You can ask again.</p>
+              <p v-else>Admins can add buildings and spots and handle reports.</p>
+              <button type="button" class="nb-btn nb-btn--small" :disabled="requesting" @click="requestAdmin">Request admin access</button>
+            </template>
+          </section>
+
+          <div class="folders">
+            <RouterLink to="/favourites" class="folder">
+              <span class="paper" aria-hidden="true">{{ favouritesPeek }}</span>
+              <span class="front">
+                <svg class="icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                  <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" fill="#f5a0a6" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+                </svg>
+                <span class="folder-title">Favourite spots</span>
+                <span class="count">{{ favourites.list.length }} saved</span>
+                <span class="open">Open folder →</span>
+              </span>
+            </RouterLink>
+            <RouterLink to="/my-reviews" class="folder">
+              <span class="paper" aria-hidden="true">{{ reviewsPeek }}</span>
+              <span class="front">
+                <svg class="icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                  <path d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8Z" fill="#ffe58a" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+                </svg>
+                <span class="folder-title">My reviews</span>
+                <span class="count">{{ reviews ? `${reviews.length} written` : '…' }}</span>
+                <span class="open">Open folder →</span>
+              </span>
+            </RouterLink>
+          </div>
+        </div>
+      </div>
+
+      <section class="danger" aria-labelledby="delete-title">
+        <div>
+          <h2 id="delete-title">Delete account</h2>
+          <p>Removes your profile, favourites and reviews for good. You’ll be asked to confirm.</p>
+        </div>
+        <button type="button" class="nb-btn nb-btn--danger" @click="deleteAccount">Delete my account</button>
+      </section>
     </template>
-
-    <!-- admins: approve/deny other users -->
-    <template v-else>
-      <h3>Pending Admin Requests</h3>
-      <p v-if="pendingRequests.length === 0">No pending requests.</p>
-      <table v-else border="1" cellpadding="5">
-        <thead>
-          <tr><th>Username</th><th>Requested At</th><th>Action</th></tr>
-        </thead>
-        <tbody>
-          <tr v-for="req in pendingRequests" :key="req._id">
-          <td>{{ req.username }}</td>
-          <td>{{ new Date(req.createdAt).toDateString() }}</td>
-          <td>
-            <button @click="processRequest(req, 'approve')">Approve</button>
-            <button @click="processRequest(req, 'deny')">Deny</button>
-          </td>
-          </tr>
-        </tbody>
-      </table>
-    </template>
-  </template>
-  <p v-else-if="!error">Loading...</p>
+  </div>
 </template>
+
+<style scoped>
+/* colours, buttons, the sticky note, tape and the initial circle come from the notebook section of style.css */
+.profile-page {
+  max-width: 1240px;
+  padding: 18px 24px 140px 48px; /* left clears the pink margin line, bottom clears the minimap */
+  color: var(--nb-ink);
+  text-align: left;
+}
+
+h1 {
+  margin: 24px 0 4px;
+  font: 700 clamp(2.6rem, 6vw, 3.6rem)/1.05 var(--nb-heading);
+  color: var(--nb-ink);
+}
+.intro { margin: 0 0 32px; color: var(--nb-muted); }
+
+.id-card h2 { margin: 0; font: 700 2rem/1.1 var(--nb-heading); color: inherit; }
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) 1fr;
+  gap: 48px;
+  align-items: start;
+}
+
+/* ---------- student card ---------- */
+.id-card {
+  position: relative;
+  padding: 20px 22px 24px;
+  background: var(--nb-sheet);
+  border: 2px solid var(--nb-ink);
+  border-radius: 3px;
+  box-shadow: 6px 6px 0 var(--nb-ink);
+  transform: rotate(-0.8deg);
+}
+.id-card header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 -22px 14px;
+  padding: 0 22px 12px;
+  border-bottom: 2px solid var(--nb-pink);
+}
+
+dl { margin: 0 0 22px; }
+dl > div {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 10px;
+  align-items: center;
+  min-height: 36px;
+  border-bottom: 1px solid var(--nb-rule-light); /* ruled lines, like the notebook */
+}
+dt { font-weight: 700; }
+dd { margin: 0; min-width: 0; }
+.email { overflow-wrap: anywhere; }
+.schools { display: flex; flex-wrap: wrap; gap: 4px; }
+.pill {
+  padding: 0 10px;
+  border: 1.5px solid var(--nb-ink);
+  border-radius: 999px;
+  background: var(--nb-highlight);
+  color: #28263f;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.muted { color: var(--nb-muted); }
+
+/* ---------- sticky note ---------- */
+.side { display: grid; gap: 36px; min-width: 0; }
+.note { max-width: 420px; }
+.note .nb-btn { margin-top: 12px; }
+.requests { display: grid; gap: 8px; margin: 10px 0 0; padding: 0; list-style: none; }
+.requests li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding-bottom: 8px;
+  border-bottom: 1.5px dashed rgba(40, 38, 63, 0.35);
+}
+.request-actions { display: flex; gap: 6px; }
+.request-actions .nb-btn { margin-top: 0; }
+
+/* ---------- folders ---------- */
+.folders {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 30px;
+}
+.folder {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 250px;
+  padding-top: 40px; /* room for the tab and the paper peeking out */
+  color: #28263f;
+  text-decoration: none;
+}
+.folder:focus-visible { outline: 3px solid var(--nb-focus); outline-offset: 3px; }
+/* the back of the folder, with its tab */
+.folder::before {
+  content: '';
+  position: absolute;
+  inset: 20px 0 0;
+  background: var(--nb-manila-dark);
+  border: 2px solid #28263f;
+  border-radius: 4px 12px 12px 12px;
+  box-shadow: 6px 6px 0 var(--nb-ink);
+}
+.folder::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 42%;
+  height: 22px;
+  background: var(--nb-manila-dark);
+  border: 2px solid #28263f;
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+}
+.paper {
+  position: absolute;
+  top: 18px;
+  left: 12px;
+  right: 12px;
+  height: 60px;
+  overflow: hidden;
+  padding: 4px 10px;
+  background: #fffef9;
+  border: 2px solid #28263f;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  transform: rotate(-0.8deg);
+  transition: transform 0.25s ease;
+}
+.paper:empty { display: none; }
+.front {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 20px 20px 18px;
+  background: var(--nb-manila);
+  border: 2px solid #28263f;
+  border-radius: 4px 4px 12px 12px;
+  box-shadow: 6px 6px 0 var(--nb-ink);
+}
+.folder:hover .paper, .folder:focus-visible .paper { transform: translateY(-14px) rotate(-1.5deg); }
+.folder-title { margin-top: 8px; font: 700 2rem/1.1 var(--nb-heading); }
+.count { color: #5e5a73; }
+.open { margin-top: auto; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---------- delete account ---------- */
+.danger {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 24px;
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 2px dashed var(--nb-rule-light);
+}
+.danger h2 { margin: 0; color: inherit; font: inherit; font-size: 1.05rem; font-weight: 700; }
+.danger p { margin: 4px 0 0; color: var(--nb-muted); font-size: 0.92rem; }
+
+@media (max-width: 820px) {
+  .profile-page { padding-left: 16px; padding-right: 16px; }
+  .layout { grid-template-columns: 1fr; gap: 36px; }
+  .id-card { transform: none; }
+  dl > div { grid-template-columns: 110px 1fr; }
+}
+</style>
