@@ -215,6 +215,8 @@ const buildings = {
     { floor: '3', name: 'Classroom 3-4', seatCount: 30, hasPowerSocket: true },
     { floor: '3', name: 'Classroom 3-5', seatCount: 30, hasPowerSocket: true },
     { floor: '3', name: 'Study Area', seatCount: 20, hasPowerSocket: true },
+  ],
+
   // GSRs, seminar rooms, classrooms, computing labs and student lounges / open learning areas
   // (not offices, meeting rooms or staff lounges)
   'SCIS 2': [
