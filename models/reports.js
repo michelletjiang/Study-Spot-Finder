@@ -59,5 +59,16 @@ Report.editReport = function(_id, description,reason) {
       }
   );
 };
+// Cascade helpers: remove reports whose review is being deleted.
+Report.deleteByReview = function(reviewId) {
+  return Report.deleteMany({ reviewId: reviewId });
+};
+Report.deleteByReviews = function(reviewIds) {
+  return Report.deleteMany({ reviewId: { $in: reviewIds } });
+};
+// Keep a user's reports when they change their username.
+Report.renameReporter = function(oldUsername, newUsername) {
+  return Report.updateMany({ reportedBy: oldUsername }, { reportedBy: newUsername });
+};
 // Export the model with its helper methods.
 module.exports = Report;

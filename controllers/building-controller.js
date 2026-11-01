@@ -6,6 +6,7 @@ const fs = require('fs/promises');
 // Get Service model
 // Building model: reads and writes the buildings collection.
 const Building = require('../models/building-model');
+const cascade = require('../services/cascade-service'); // deletes child records with their parent
 // StudySpot model: used to list the spots inside a building.
 const StudySpot = require('../models/studyspot-model'); // add this at the top with the other requires
 // OneMap service: finds the coordinates of a new building's postal code.
@@ -319,10 +320,12 @@ exports.updateBuildingJson = async (req, res) => {
 // DELETE /api/buildings/:postal
 exports.deleteBuildingJson = async (req, res) => {
     try {
-        // Remove the building.
-        const result = await Building.deleteBuilding(req.params.postal);
-        // Nothing removed: 404.
-        if (result.deletedCount === 0) return res.status(404).json({ message: 'Building not found' });
+        // Find it first: its name links it to its spots, reviews and favourites.
+        const building = await Building.findByPostal(req.params.postal);
+        // Missing building: 404.
+        if (!building) return res.status(404).json({ message: 'Building not found' });
+        // Remove the building with its spots, their reviews and reports, and favourites.
+        await cascade.deleteBuilding(building);
         // 204 means success with no body.
         res.status(204).end();
     } catch (error) {

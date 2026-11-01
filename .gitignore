@@ -7,3 +7,7 @@ client/dist/
 onemap_map.html
 onemap_search.js
 client/package-lock.json
+
+# Playwright output
+test-results/
+playwright-report/
