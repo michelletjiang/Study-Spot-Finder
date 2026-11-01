@@ -27,8 +27,8 @@
   /* Base font size, text colour and background for the whole page. */
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
-  /* Tells the browser the page supports both light and dark, so form controls and scrollbars also follow the system setting. */
-  color-scheme: light dark;
+  /* Keep native controls and browser surfaces on the app's light notebook theme. */
+  color-scheme: light;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
@@ -39,32 +39,6 @@
   /* On screens up to 1024px wide the base font is smaller. */
   @media (max-width: 1024px) {
     font-size: 16px;
-  }
-}
-
-/* Dark theme: used when the system prefers dark. It overrides the same names, including the paper and ink pair that the page body uses, so text stays readable. This matches the native dark-mode fix tested in test/theme-contrast.test.js. */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --paper: #111318;
-    --ink: #f3f4f6;
-    --line: #293241;
-    --pink: #a7556f;
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  /* Leftover from the Vite starter: no component uses this id, so it has no effect. */
-  #social .button-icon {
-    filter: invert(1) brightness(2);
   }
 }
 
