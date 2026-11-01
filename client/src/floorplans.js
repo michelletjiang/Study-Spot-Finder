@@ -317,7 +317,9 @@ export const floorplans = {
         { spotName: 'Classroom 3-2', points: '395,363 501,363 501,458 395,458' },
         { spotName: 'Seminar Room 3-1', points: '502,363 606,363 606,461 502,461' },
         { spotName: 'Classroom 3-5', points: '793,238 927,217 930,304 793,310' },
-=======
+      ],
+    },
+  },
   'SCIS 2': {
     // SVGs, like SCIS 1, but drawn inside translate(40,100) scale(0.52632): points are already converted.
     // Curves and arcs are approximated with straight segments, and rooms drawn as one shape with a divider line
