@@ -24,6 +24,10 @@ router.use('/reports', require('./reports-routes'));
 router.use('/favourites', require('./favourites-routes'));
 // /api/directions: OneMap walking directions for the minimap.
 router.use('/directions', require('./directions-routes'));
+router.use('/crowd', require('./crowd-routes'));   
+router.use('/alerts', require('./alerts-routes'));   
+
+
 
 // Any /api path that no router handled gets a JSON 404 instead of falling through to the EJS routes
 // Catch-all: this runs only when no router above answered. It returns a JSON 404, so the Vue client never receives an HTML error page.

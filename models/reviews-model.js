@@ -21,7 +21,7 @@ const reviewSchema = new mongoose.Schema({
     // roomId is the id of the study spot being reviewed (kept as text).
     roomId:{
         type: String,
-        ref:"studySpot", // subj to change acc to studyspot db
+        ref:"StudySpot", // subj to change acc to studyspot db
         required: true 
     },
 
