@@ -1,9 +1,12 @@
+/* LEGACY - not used by the Vue demo: stylesheet linked by the legacy EJS pages (served by express.static in server.js). The Vue app uses client/src/style.css instead. */
 
+/* Navigation bar background and spacing. */
 nav {
   background:#4a3f6b;
   padding: 14px 24px;
 }
 
+/* Lists inside the nav become a flex row. */
 nav ul {
   list-style: none;
   display: flex;
@@ -12,12 +15,14 @@ nav ul {
   align-items: center;
 }
 
+/* Nav links are white and bold. */
 nav a {
   color: #ffffff;
   text-decoration: none;
   font-weight: bold;
 }
 
+/* Underline a nav link on hover. */
 nav a:hover {
   text-decoration: underline;
 }

@@ -1,11 +1,14 @@
+<%# LEGACY - not used by the Vue demo: form to report a review. Rendered by findReviewforReport in controllers/report-controller.js. The Vue page ReportFormView.vue replaces it. %>
 <head>
     <title>Make Report</title>
     <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+<%# Navigation bar repeated on each legacy page. The role check below needs the user variable, which each handler must pass in. %>
 <nav>
         <a href ='/'><h2>Study Spots📚</h2></a>
         <a href='/profile'>Your Profile</a> |
+        <%# Admins see the management links. %>
         <% if (user.role == 'Admin'){ %>
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
@@ -14,13 +17,16 @@
             <a href="/admin/reports">Pending Reports</a> |
         <% } %> 
         <a href="/favourites">Favourites</a> |
+         <%# Legacy logout is a GET link to /logout. %>
          <a href='/logout'>Logout</a>
     </nav>
     <br>
 <h1>Report Review</h1>
 
+<%# Show the review being reported. %>
 <p>Review: <%= review.content %></p>
 
+<%# The form posts to the legacy report route for this review. %>
 <form action="/reports/new/<%= review._id %>" method="POST">
   <label>Reason:</label>
   <select name="reason">
@@ -37,6 +43,7 @@
   <button type="submit">Submit Report</button>
 </form>
 
+<%# Shows a message from the controller. %>
 <%= msg %>
 
 </body>

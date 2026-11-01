@@ -1,44 +1,47 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+// ACTIVE: the home page, a list of buildings.
+// onMounted runs code once when the page appears.
+import { ref, onMounted } from 'vue'
+// The shared JSON helper.
 import { api } from '../api'
+// The shared minimap state.
 import { mapStore } from '../stores/map'
 
+// The buildings from the server.
 const buildings = ref([])
+// A message to show on failure.
 const error = ref('')
-const search = ref('')
 
-// filters as you type, by building name or postal code (case-insensitive)
-const filteredBuildings = computed(() => {
-  const q = search.value.trim().toLowerCase()
-  if (!q) return buildings.value
-  return buildings.value.filter(b =>
-    b.buildingname.toLowerCase().includes(q) || String(b.postal).includes(q))
-})
-
+// Run once when the page appears.
 onMounted(async () => {
+  // Existing note: the map forgets any building.
   mapStore.clearDestination() // minimap goes back to just the user's location
 
   try {
+    // GET /api/buildings.
     buildings.value = await api('/api/buildings')
   } catch (e) {
+    // Show the error text.
     error.value = e.message
   }
 })
 </script>
 
 <template>
+  <!-- Heading and short help text. -->
   <h2>Find a Study Spot</h2>
   <p>Select a building to see available study spots.</p>
 
-  <input v-model="search" type="search" placeholder="Search buildings by name or postal code">
-
+  <!-- Error message. -->
   <p v-if="error">Could not load buildings: {{ error }}</p>
+  <!-- No buildings. -->
   <p v-else-if="buildings.length === 0">No buildings available.</p>
-  <p v-else-if="filteredBuildings.length === 0">No buildings match "{{ search }}".</p>
-  <div v-else v-for="building in filteredBuildings" :key="building._id">
+  <!-- One block per building. -->
+  <div v-else v-for="building in buildings" :key="building._id">
     <p><strong>Building: {{ building.buildingname }}</strong></p>
     Floors: {{ building.floors }}<br>
     Postal Code: {{ building.postal }}<br>
+    <!-- A link to the building's spots page (BuildingSpotsView.vue). -->
     <RouterLink :to="'/building/' + building.buildingname">View Study Spots</RouterLink>
     <hr>
   </div>

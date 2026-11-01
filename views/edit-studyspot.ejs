@@ -1,3 +1,4 @@
+<%# LEGACY - not used by the Vue demo: admin form to edit a study spot. Rendered by showEditForm in controllers/studyspot-controller.js. The Vue page SpotFormView.vue replaces it. %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,9 +6,11 @@
     <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+    <%# Navigation bar repeated on each legacy page. The role check below needs the user variable, which each handler must pass in. %>
     <nav>
         <a href ='/'><h2>Study Spots📚</h2></a>
         <a href='/profile'>Your Profile</a> |
+        <%# Admins see the management links. %>
         <% if (user.role == 'Admin'){ %>
             <a href="/edit-buildings">Edit  Buildings</a> |
             <a href="/add-building">Add Building</a> |
@@ -16,13 +19,17 @@
             <a href="/admin/reports">Pending Reports</a> |
         <% } %> 
         <a href="/favourites">Favourites</a> |
+         <%# Legacy logout is a GET link to /logout. %>
          <a href='/logout'>Logout</a>
     </nav>
     <br>
+    <%# Only show the form when a spot was found. %>
     <% if (result) { %>
         <h3>Edit: <%= result.buildingName %>, <%= result.name %></h3>
+        <%# The form posts to the legacy /edit-studyspot route. %>
         <form action="/edit-studyspot" method="POST">
             <!-- hidden field to pass the id back to the POST route -->
+            <%# A hidden field sends the spot id back. %>
             <input type="hidden" name="id" value="<%= result._id %>">
             <table border="1">
                 <tr><th>Building Name:</th><th><%= result.buildingName %></th></tr>
@@ -32,6 +39,7 @@
                 <tr><th>Power Socket:</th>
                     <td>
                         <select name="hasPowerSocket">
+                            <%# Select the current power socket value. %>
                             <option value="true"  <%= result.hasPowerSocket ? 'selected' : '' %>>Yes</option>
                             <option value="false" <%= !result.hasPowerSocket ? 'selected' : '' %>>No</option>
                         </select>
@@ -40,6 +48,7 @@
                 <tr><th>Noise Level:</th>
                     <td>
                         <select name="noiseLevel">
+                            <%# Select the current noise level. %>
                             <option value="Quiet"    <%= result.noiseLevel === 'Quiet'    ? 'selected' : '' %>>Quiet</option>
                             <option value="Moderate" <%= result.noiseLevel === 'Moderate' ? 'selected' : '' %>>Moderate</option>
                             <option value="Loud"     <%= result.noiseLevel === 'Loud'     ? 'selected' : '' %>>Loud</option>
