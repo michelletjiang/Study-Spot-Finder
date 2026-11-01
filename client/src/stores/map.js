@@ -11,6 +11,7 @@ let watchId = null // from navigator.geolocation.watchPosition
 export const mapStore = reactive({
   // Whether the minimap panel is open.
   expanded: false,
+  dockEl: null,       // the home page's map box while it's showing; the minimap moves into it (see MiniMap.vue)
 
   // The user's position from the browser, as [lat, lng].
   userPos: null,      // [lat, lng] from the browser's geolocation
