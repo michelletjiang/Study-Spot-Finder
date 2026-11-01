@@ -86,6 +86,7 @@ export const floorplans = {
       ],
     },
   },
+
   'SCIS 1': {
     // SVGs: the room shapes below come straight from their <path>s (shifted by the SVG's translate(-150,-105));
     // the seminar rooms' curved roofs are approximated with 10 straight segments
@@ -130,6 +131,193 @@ export const floorplans = {
       ],
     },
   },
+
+  
+  'Yong Pung How School of Law': {
+    // SVGs: the room shapes below come straight from their <path>s (no translate);
+    // the round law library is approximated with straight segments, minus the toilets/office/stairs cut out of it.
+    // No level 4: it's mostly the law library, which has its own building and floorplan
+    'B1': {
+      image: '/floorplans/yph-law-LB1.svg',
+      width: 1060,
+      height: 604,
+      rooms: [
+        { spotName: 'Seminar Room B1-01', points: '697,127 867,127 867,166 832,184 832,197 737,197 737,184 697,154' },
+        { spotName: 'GSR B1-04', points: '922,120 950,120 950,140 922,140' },
+        { spotName: 'GSR B1-05', points: '951,120 984,120 984,140 951,140' },
+        { spotName: 'GSR B1-06', points: '987,120 1018,120 1018,136 987,136' },
+        { spotName: 'GSR B1-03', points: '922,143 975,143 975,159 922,159' },
+        { spotName: 'GSR B1-07', points: '987,139 1018,139 1018,161 987,161' },
+        { spotName: 'GSR B1-02', points: '925,161 963,161 963,193 925,193' },
+        { spotName: 'GSR B1-08', points: '987,164 1018,164 1018,193 987,193' },
+        { spotName: 'Classroom B1-13', points: '761,228 855,228 855,294 761,294' },
+        { spotName: 'GSR B1-10', points: '857,219 893,219 893,237 857,237' },
+        { spotName: 'GSR B1-11', points: '857,239 893,239 893,260 857,260' },
+        { spotName: 'GSR B1-12', points: '857,262 893,262 893,294 857,294' },
+        { spotName: 'Classroom B1-09', points: '896,223 1018,223 1018,285 896,285' },
+      ],
+    },
+    'B2': {
+      image: '/floorplans/yph-law-LB2.svg',
+      width: 1060,
+      height: 589,
+      rooms: [
+        { spotName: 'Seminar Room B2-01', points: '689,116 827,116 827,193 689,193' },
+        { spotName: 'Classroom B2-03', points: '672,212 763,212 763,282 672,282' },
+      ],
+    },
+    '1': {
+      image: '/floorplans/yph-law-L1.svg',
+      width: 1060,
+      height: 576,
+      rooms: [
+        { spotName: 'Classroom 1-02', points: '787,131 876,131 876,200 787,200' },
+      ],
+    },
+    '2': {
+      image: '/floorplans/yph-law-L2.svg',
+      width: 1060,
+      height: 554,
+      rooms: [
+        { spotName: 'GSR 2-12', points: '211,122 238,122 238,160 211,160' },
+        { spotName: 'GSR 2-13', points: '240,122 268,122 268,160 240,160' },
+        { spotName: 'GSR 2-14', points: '271,122 299,122 299,161 271,161' },
+        { spotName: 'Seminar Room 2-15', points: '407,118 487,118 487,200 407,200' },
+        { spotName: 'Seminar Room 2-16', points: '534,122 618,122 618,204 534,204' },
+        { spotName: 'Seminar Room 2-01', points: '725,125 793,125 793,217 725,217' },
+        { spotName: 'Seminar Room 2-02', points: '796,149 890,149 890,220 796,220' },
+        { spotName: 'Seminar Room 2-03', points: '922,129 1010,129 1010,226 922,226' },
+        { spotName: 'GSR 2-08', points: '75,205 113,205 104,226 65,226' },
+        { spotName: 'GSR 2-07', points: '64,228 103,228 92,253 52,253' },
+        { spotName: 'Seminar Room 2-05', points: '362,312 451,312 451,374 362,374' },
+        { spotName: 'Seminar Room 2-04', points: '460,318 550,318 550,376 460,376' },
+        { spotName: 'Social Terrace', points: '356,398 574,398 574,456 356,456' },
+      ],
+    },
+    '3': {
+      image: '/floorplans/yph-law-L3.svg',
+      width: 1060,
+      height: 576,
+      rooms: [
+        { spotName: 'Seminar Room 3-11', points: '368,122 456,122 456,214 368,214' },
+        { spotName: 'Seminar Room 3-12', points: '505,126 592,126 592,210 505,210' },
+        { spotName: 'Seminar Room 3-01', points: '697,130 787,130 787,224 697,224' },
+        { spotName: 'Seminar Room 3-02', points: '792,137 881,137 881,228 792,228' },
+        { spotName: 'GSR 3-05', points: '916,155 969,155 969,187 916,187' },
+        { spotName: 'GSR 3-04', points: '916,188 969,188 969,211 916,211' },
+        { spotName: 'GSR 3-03', points: '916,213 969,213 969,236 916,236' },
+        { spotName: 'GSR 3-06', points: '972,159 1019,159 1019,195 972,195' },
+        { spotName: 'GSR 3-07', points: '972,197 1019,197 1019,228 972,228' },
+        { spotName: 'GSR 3-08', points: '972,230 1019,230 1019,262 972,262' },
+        { spotName: 'Kwa Geok Choo Law Library (Level 3)', points: '158,474 136,470 115,462 96,451 79,437 65,420 53,401 45,380 41,358 40,336 43,314 50,292 60,273 73,255 89,239 107,227 128,218 149,213 171,211 193,214 214,220 234,229 252,242 214,314 195,408' },
+        { spotName: 'Learning Common', points: '316,314 364,316 364,408 458,408 458,462 316,462' },
+        { spotName: 'Seminar Room 3-10', points: '366,319 453,319 453,406 366,406' },
+        { spotName: 'Seminar Room 3-09', points: '519,327 604,327 604,411 519,411' },
+      ],
+    },
+  },
+
+  'School of Accountancy': {
+    // SVGs: the room shapes below come straight from their <path>s (no translate);
+    // the seminar rooms' rounded walls are approximated with straight segments
+    '1': {
+      image: '/floorplans/soa-L1.svg',
+      width: 1060,
+      height: 760,
+      rooms: [
+        { spotName: 'Seminar Room 1.1', points: '807,202 878,202 889,203 900,205 910,209 919,214 927,220 934,227 938,234 941,243 942,251 941,260 938,268 934,276 927,283 919,289 910,294 900,297 889,300 878,300 807,300' },
+        { spotName: 'Seminar Room 1.2', points: '805,319 868,319 884,321 899,326 913,334 926,346 938,359 947,375 954,393 958,412 959,431 805,431' },
+        { spotName: 'Seminar Room 1.3', points: '810,431 962,431 961,455 957,477 950,498 940,517 929,534 915,547 900,557 884,563 868,565 810,565' },
+      ],
+    },
+    '2': {
+      image: '/floorplans/soa-L2.svg',
+      width: 1060,
+      height: 760,
+      rooms: [
+        { spotName: 'GSR 2.5', points: '530,145 565,145 565,184 530,184' },
+        { spotName: 'GSR 2.6', points: '568,156 602,164 597,204 568,204' },
+        { spotName: 'GSR 2.7', points: '688,176 738,176 738,202 707,202 707,237 688,237' },
+        { spotName: 'Seminar Room 2.2', points: '418,162 475,162 475,298 418,298 408,297 398,294 389,289 381,282 374,274 368,264 364,253 361,242 361,230 361,218 364,207 368,196 374,186 381,178 389,171 398,166 408,163 418,162' },
+        { spotName: 'Seminar Room 2.1', points: '413,326 460,326 460,407 425,409 425,488 413,488 403,487 393,483 384,477 376,469 369,459 363,447 359,435 356,421 356,407 356,393 359,379 363,367 369,355 376,345 384,337 393,331 403,327 413,326' },
+        { spotName: 'Seminar Room 2.3', points: '859,165 871,166 882,169 893,174 902,181 911,189 917,198 922,209 925,220 926,231 925,243 922,254 917,264 911,273 902,282 893,288 882,293 871,296 859,297 812,297 812,237 792,237 792,206 817,203 817,184 836,181' },
+        { spotName: 'Seminar Room 2.4', points: '814,323 876,323 888,325 899,330 910,337 920,348 928,361 935,376 940,393 943,411 944,429 814,429' },
+        { spotName: 'Seminar Room 2.5', points: '814,438 949,438 948,459 944,480 939,499 932,517 923,532 913,544 901,553 889,559 876,561 814,538' },
+        { spotName: 'GSR 2.4', points: '518,389 567,389 567,413 518,413' },
+        { spotName: 'GSR 2.3', points: '518,416 568,416 568,441 518,441' },
+        { spotName: 'GSR 2.2', points: '516,444 551,446 551,499 515,483' },
+        { spotName: 'GSR 2.1', points: '553,463 587,463 588,530 553,505' },
+        { spotName: 'GSR 2.9', points: '692,415 736,415 736,443 692,443' },
+        { spotName: 'GSR 2.8', points: '693,449 737,449 737,477 693,477' },
+        { spotName: 'Classroom 2.1', points: '695,482 758,485 764,597 695,575' },
+      ],
+    },
+    '3': {
+      image: '/floorplans/soa-L3.svg',
+      width: 1060,
+      height: 760,
+      rooms: [
+        { spotName: 'GSR 3.2', points: '534,144 570,144 570,182 534,182' },
+        { spotName: 'GSR 3.3', points: '572,155 620,155 620,193 572,193' },
+        { spotName: 'GSR 3.4', points: '675,177 731,177 731,202 675,202' },
+        { spotName: 'GSR 3.5', points: '675,204 731,204 731,236 675,236' },
+        { spotName: 'GSR 3.6', points: '736,208 768,208 768,252 736,252' },
+        { spotName: 'Seminar Room 3.3', points: '841,162 859,161 873,162 886,164 899,169 910,176 920,184 928,193 934,203 937,214 938,225 937,236 934,247 928,257 920,266 910,274 899,281 886,285 873,288 859,289 812,289 812,188 841,186' },
+        { spotName: 'Seminar Room 3.4', points: '819,358 879,358 890,359 901,363 912,370 922,379 930,391 937,404 942,418 945,434 946,450 819,450' },
+        { spotName: 'Seminar Room 3.5', points: '819,454 948,454 947,472 944,489 939,506 932,520 923,533 913,543 902,551 891,556 879,557 819,557' },
+        { spotName: 'GSR 3.7', points: '699,524 763,528 765,597 698,571' },
+        { spotName: 'GSR 3.10', points: '696,388 739,388 739,413 696,413' },
+        { spotName: 'GSR 3.9', points: '697,417 740,417 740,443 697,443' },
+        { spotName: 'GSR 3.8', points: '698,446 741,446 741,477 698,477' },
+        { spotName: 'Seminar Room 3.2', points: '422,166 455,167 455,195 481,198 481,237 469,238 469,281 422,292 412,291 402,289 393,284 385,278 378,270 372,261 368,251 365,240 364,229 365,218 368,208 372,198 378,188 385,181 393,174 402,170 412,167 422,166' },
+        { spotName: 'Seminar Room 3.1', points: '414,324 465,327 465,407 429,408 429,477 414,477 405,476 396,473 387,467 379,459 372,450 367,439 363,427 360,414 359,401 360,387 363,374 367,362 372,351 379,342 387,334 396,329 405,325 414,324' },
+        { spotName: 'GSR 3.1', points: '520,446 591,450 592,530 517,490' },
+      ],
+    },
+  },
+
+  'School of Social Sciences / College of Integrative Studies': {
+    // SVGs: the room shapes below come straight from their <path>s (no translate)
+    'B1': {
+      image: '/floorplans/soss-LB1.svg',
+      width: 1060,
+      height: 588,
+      rooms: [
+        { spotName: 'Seminar Room B1-1', points: '498,237 567,219 602,219 602,335 498,335' },
+      ],
+    },
+    '1': {
+      image: '/floorplans/soss-L1.svg',
+      width: 1060,
+      height: 640,
+      rooms: [
+        { spotName: 'Student Lounge', points: '390,261 709,142 763,297 706,312 706,367 590,382 390,382' },
+        { spotName: 'Seminar Room 1-2', points: '270,388 373,388 373,491 270,491' },
+        { spotName: 'Classroom 1-2', points: '374,391 480,391 480,500 374,500' },
+        { spotName: 'Seminar Room 1-1', points: '481,400 588,400 588,506 481,506' },
+      ],
+    },
+    '2': {
+      image: '/floorplans/soss-L2.svg',
+      width: 1060,
+      height: 606,
+      rooms: [
+        { spotName: 'Seminar Room 2-2', points: '411,379 518,379 518,483 411,483' },
+        { spotName: 'Seminar Room 2-1', points: '520,379 627,379 627,483 520,483' },
+      ],
+    },
+    '3': {
+      image: '/floorplans/soss-L3.svg',
+      width: 1060,
+      height: 574,
+      rooms: [
+        { spotName: 'Study Area', points: '189,335 251,292 274,285 284,348 189,348' },
+        { spotName: 'Classroom 3-4', points: '276,285 458,212 458,313 276,316' },
+        { spotName: 'Seminar Room 3-3', points: '287,363 395,363 395,458 287,458' },
+        { spotName: 'Classroom 3-2', points: '395,363 501,363 501,458 395,458' },
+        { spotName: 'Seminar Room 3-1', points: '502,363 606,363 606,461 502,461' },
+        { spotName: 'Classroom 3-5', points: '793,238 927,217 930,304 793,310' },
+=======
   'SCIS 2': {
     // SVGs, like SCIS 1, but drawn inside translate(40,100) scale(0.52632): points are already converted.
     // Curves and arcs are approximated with straight segments, and rooms drawn as one shape with a divider line
@@ -253,6 +441,7 @@ export const floorplans = {
         { spotName: 'Seminar Room 5-2', points: '229.5,353.7 214.7,354.5 200.2,356.8 186.2,360.7 172.9,366 160.6,372.7 149.5,380.7 139.7,389.7 131.5,399.7 124.9,410.5 120.2,422 117.3,433.8 116.3,445.8 117.3,457.8 120.2,469.6 124.9,481 131.5,491.8 139.7,501.9 149.5,510.9 160.6,518.9 172.9,525.6 186.2,530.9 200.2,534.8 214.7,537.1 229.5,537.9' },
         { spotName: 'CTE Scape', points: '309.5,489.5 450.5,489.5 450.5,565.8 309.5,565.8' },
         { spotName: 'Interactive Learning Space', points: '650.5,378.9 709.5,378.9 709.5,450 650.5,450' },
+
       ],
     },
   },
