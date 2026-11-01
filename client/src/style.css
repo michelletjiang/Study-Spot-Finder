@@ -258,6 +258,30 @@ code {
   }
 }
 
+/* Route pages fade and move a few pixels while the persistent shell stays in place. */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+/* Motion-sensitive users keep the same route swap without animation. */
+@media (prefers-reduced-motion: reduce) {
+  .page-enter-active,
+  .page-leave-active {
+    transition: none;
+  }
+}
+
 /* The app container: centred, up to 1126px wide, with a thin border on each side and text centred by default. Some pages override alignment with their own classes. */
 #app {
   width: 1126px;

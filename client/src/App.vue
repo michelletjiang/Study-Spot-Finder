@@ -21,7 +21,13 @@ const hasComparison = computed(() => comparison.count.value > 0)
   <!-- NavBar shows different links for guests, students and admins. -->
   <NavBar />
   <!-- RouterView is where router.js puts the current page. -->
-  <RouterView />
+  <!-- Keep the shell mounted while only the active page receives the transition. -->
+  <RouterView v-slot="{ Component, route }">
+    <!-- Key by the route record, not the full URL, so query/filter changes do not remount pages. -->
+    <Transition name="page" mode="out-in">
+      <component :is="Component" :key="route.matched[route.matched.length - 1]?.path" />
+    </Transition>
+  </RouterView>
   <!-- Existing note: placed outside RouterView so the map survives page changes. -->
   <!-- outside RouterView so the map survives page changes; it hides itself on pages without meta.showMap -->
   <!-- Only logged-in users get the map. The with-compare-tray class makes room for the tray. -->
