@@ -258,6 +258,9 @@ code {
   }
 }
 
+/* The transition wrapper spans the content column without changing each view's internal layout. */
+.page-transition-page { width: 100%; }
+
 /* Route pages fade and move a few pixels while the persistent shell stays in place. */
 .page-enter-active,
 .page-leave-active {

@@ -25,7 +25,10 @@ const hasComparison = computed(() => comparison.count.value > 0)
   <RouterView v-slot="{ Component, route }">
     <!-- Key by the route record, not the full URL, so query/filter changes do not remount pages. -->
     <Transition name="page" mode="out-in">
-      <component :is="Component" :key="route.matched[route.matched.length - 1]?.path" />
+      <!-- The wrapper gives every view, including multi-root templates, one animated element. -->
+      <div class="page-transition-page" :key="route.matched[route.matched.length - 1]?.path">
+        <component :is="Component" />
+      </div>
     </Transition>
   </RouterView>
   <!-- Existing note: placed outside RouterView so the map survives page changes. -->
