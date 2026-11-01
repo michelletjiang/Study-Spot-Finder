@@ -5,6 +5,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { auth } from './stores/auth'
 // The imports below are the page views; each one lives in client/src/views.
 import HomeView from './views/HomeView.vue'
+import FindSpotView from './views/FindSpotView.vue'
 import LoginView from './views/LoginView.vue'
 import RegisterView from './views/RegisterView.vue'
 import ProfileView from './views/ProfileView.vue'
@@ -38,6 +39,7 @@ const routes = [
   // any logged-in user
   // Home lists the buildings. showMap turns on the floating minimap.
   { path: '/', name: 'home', component: HomeView, meta: { requiresAuth: true, showMap: true } },
+  { path: '/find', component: FindSpotView, meta: { requiresAuth: true } },
   { path: '/profile', component: ProfileView, meta: { requiresAuth: true } },
   { path: '/profile/edit', component: EditProfileView, meta: { requiresAuth: true } },
   // (.*) lets a building name contain a slash, e.g. "School of Social Sciences / College of Integrative Studies"
