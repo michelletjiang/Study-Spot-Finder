@@ -54,12 +54,12 @@ async function deleteReview(review) {
       </p>
 
       <article v-for="review in reviews" :key="review._id" class="entry">
-        <RouterLink v-if="spotOf(review)" :to="`/spots/${spotOf(review)._id}`" class="tab">
+        <RouterLink v-if="spotOf(review)" :to="`/spots/${spotOf(review)._id}`" class="nb-folder-tab">
           {{ review.buildingName }} · {{ review.roomId }} <span aria-hidden="true">›</span>
         </RouterLink>
-        <span v-else class="tab">{{ review.buildingName }} · {{ review.roomId }}</span>
-        <div class="nb-sheet review">
-          <h2>{{ review.title }} <StarRating :rating="review.rating" /></h2>
+        <span v-else class="nb-folder-tab">{{ review.buildingName }} · {{ review.roomId }}</span>
+        <div class="nb-sheet nb-review review">
+          <h2 class="nb-review-title">{{ review.title }} <StarRating :rating="review.rating" /></h2>
           <p>{{ review.content }}</p>
           <div class="actions">
             <!-- ReviewFormView.vue; it comes back here after saving -->
@@ -80,28 +80,8 @@ async function deleteReview(review) {
 .list { max-width: 760px; }
 
 .entry { margin-bottom: 30px; }
-/* the folder tab naming the room, sitting on the sheet's top edge */
-.tab {
-  position: relative;
-  bottom: -2px;
-  display: inline-block;
-  max-width: calc(100% - 20px);
-  padding: 6px 18px;
-  border: 2px solid #28263f;
-  border-bottom: none;
-  border-radius: 10px 10px 0 0;
-  background: var(--nb-manila-dark);
-  color: #28263f;
-  font-weight: 700;
-  font-size: 0.92rem;
-  text-decoration: none;
-}
-a.tab:hover { background: var(--nb-highlight); color: #28263f; }
-a.tab:focus-visible { outline: 3px solid var(--nb-focus); outline-offset: 2px; }
-.review { padding: 18px 22px 16px; border-radius: 0 8px 8px 8px; }
-.review h2 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 0 0 6px; font: 700 1.7rem/1.15 var(--nb-heading); color: var(--nb-ink); }
-.review h2 .stars { font: 1.2rem/1 system-ui, sans-serif; }
-.review > p { margin: 0 0 12px; white-space: pre-line; }
+.nb-folder-tab { font-size: 0.92rem; }
+.review { border-radius: 0 8px 8px 8px; }
 .actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 10px; border-top: 1px solid var(--nb-rule-light); }
 .actions .nb-btn { padding: 5px 16px; font-size: 0.92rem; }
 

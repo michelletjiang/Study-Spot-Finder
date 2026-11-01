@@ -100,13 +100,13 @@ async function deleteAccount() {
 </script>
 
 <template>
-  <div class="profile-page">
+  <div class="nb-page">
     <p v-if="error" class="nb-state nb-state--error" role="alert">{{ error }}</p>
     <p v-if="!user && !error" class="nb-state">Loading your profile…</p>
 
     <template v-if="user">
-      <h1>Hi, {{ user.username }}</h1>
-      <p class="intro">Your account, your favourite spots and the reviews you’ve written.</p>
+      <h1 class="nb-title">Hi, {{ user.username }}</h1>
+      <p class="nb-subtitle intro">Your account, your favourite spots and the reviews you’ve written.</p>
 
       <div class="layout">
         <!-- the account details, as an ID card taped to the page -->
@@ -207,19 +207,7 @@ async function deleteAccount() {
 
 <style scoped>
 /* colours, buttons, the sticky note, tape and the initial circle come from the notebook section of style.css */
-.profile-page {
-  max-width: 1240px;
-  padding: 18px 24px 140px 48px; /* left clears the pink margin line, bottom clears the minimap */
-  color: var(--nb-ink);
-  text-align: left;
-}
-
-h1 {
-  margin: 24px 0 4px;
-  font: 700 clamp(2.6rem, 6vw, 3.6rem)/1.05 var(--nb-heading);
-  color: var(--nb-ink);
-}
-.intro { margin: 0 0 32px; color: var(--nb-muted); }
+.intro { margin-bottom: 32px; }
 
 .id-card h2 { margin: 0; font: 700 2rem/1.1 var(--nb-heading); color: inherit; }
 
@@ -318,7 +306,6 @@ dd { margin: 0; min-width: 0; }
 .danger p { margin: 4px 0 0; color: var(--nb-muted); font-size: 0.92rem; }
 
 @media (max-width: 820px) {
-  .profile-page { padding-left: 16px; padding-right: 16px; }
   .layout { grid-template-columns: 1fr; gap: 36px; }
   .id-card { transform: none; }
   dl > div { grid-template-columns: 110px 1fr; }
