@@ -446,6 +446,66 @@ export const floorplans = {
       ],
     },
   },
+  'CONNEX': {
+    // SMU Connexion SVGs, drawn inside translate(40,100) scale(s) > translate(ix,iy): points are already converted.
+    // Only rooms named meeting / study / classroom are spots, plus each level's Collaboration Zone.
+    '2': {
+      image: '/floorplans/connex-L2.svg',
+      width: 1080,
+      height: 533,
+      rooms: [
+        { spotName: 'Collaboration Zone (Level 2)', points: '329,170.6 429.9,164.2 490.5,170.6 490.5,280.7 329,278.9' },
+      ],
+    },
+    '3': {
+      image: '/floorplans/connex-L3.svg',
+      width: 1080,
+      height: 692,
+      rooms: [
+        // first, so the booths and pods drawn on top of it still get their own clicks
+        { spotName: 'Collaboration Zone (Level 3)', points: '211.6,228.4 354.7,228.4 354.7,248 486.1,244.1 540,210.8 540,291.2 211.6,291.2' },
+        { spotName: 'Study Booth 3-1', points: '205.7,189.2 235.1,189.2 235.1,224.5 205.7,224.5' },
+        { spotName: 'Study Booth 3-2', points: '235.1,189.2 265.5,189.2 265.5,224.5 235.1,224.5' },
+        { spotName: 'Study Booth 3-3', points: '265.5,189.2 294.9,189.2 294.9,224.5 265.5,224.5' },
+        { spotName: 'Study Booth 3-4', points: '294.9,189.2 324.3,189.2 324.3,224.5 294.9,224.5' },
+        { spotName: 'Study Booth 3-5', points: '324.3,189.2 354.7,189.2 354.7,224.5 324.3,224.5' },
+        { spotName: 'Study Booth 3-6', points: '354.7,189.2 384.1,189.2 384.1,224.5 354.7,224.5' },
+        { spotName: 'Study Booth 3-7', points: '354.7,224.5 388,224.5 388,248 354.7,248' },
+        { spotName: 'Active Learning Classroom 3-1', points: '215.5,291.2 321.4,291.2 321.4,367.6 215.5,367.6' },
+        { spotName: 'Active Learning Classroom 3-2', points: '388,293.1 490,293.1 490,369.6 388,369.6' },
+        { spotName: 'Active Learning Classroom 3-3', points: '678.2,301 841,301 841,387.3 678.2,387.3' },
+      ],
+    },
+    '4': {
+      image: '/floorplans/connex-L4.svg',
+      width: 1080,
+      height: 721,
+      rooms: [
+        // first, so the booths and pods drawn on top of it still get their own clicks
+        { spotName: 'Collaboration Zone (Level 4)', points: '133.5,209.3 334.4,130.8 491.4,218.7 497.9,353.3 133.5,353.3' },
+        { spotName: 'Study Booth 4-1', points: '141.9,188.8 171.8,188.8 171.8,209.3 141.9,209.3' },
+        { spotName: 'Study Booth 4-2', points: '177.4,173.8 207.3,173.8 207.3,194.4 177.4,194.4' },
+        { spotName: 'Study Booth 4-3', points: '208.2,160.7 238.1,160.7 238.1,181.3 208.2,181.3' },
+        { spotName: 'Study Booth 4-4', points: '240,147.7 269.9,147.7 269.9,168.2 240,168.2' },
+        { spotName: 'Study Booth 4-5', points: '275.5,134.6 305.4,134.6 305.4,155.1 275.5,155.1' },
+        { spotName: 'Study Booth 4-6', points: '319.4,123.4 349.3,123.4 349.3,143.9 319.4,143.9' },
+        { spotName: 'Study Booth 4-7', points: '356.8,140.2 386.7,140.2 386.7,160.7 356.8,160.7' },
+        { spotName: 'Study Booth 4-8', points: '387.7,157 417.6,157 417.6,177.6 387.7,177.6' },
+        { spotName: 'Study Booth 4-9', points: '418.5,175.7 448.4,175.7 448.4,196.3 418.5,196.3' },
+        { spotName: 'Study Booth 4-10', points: '452.1,192.5 482.1,192.5 482.1,213.1 452.1,213.1' },
+        { spotName: 'Meeting Pod 4-1', points: '399.8,294.4 450.3,294.4 450.3,315.9 399.8,315.9' },
+        { spotName: 'Meeting Pod 4-2', points: '399.8,272.9 450.3,272.9 450.3,294.4 399.8,294.4' },
+        { spotName: 'Meeting Pod 4-3', points: '399.8,251.4 450.3,251.4 450.3,272.9 399.8,272.9' },
+        { spotName: 'Meeting Pod 4-4', points: '399.8,229.9 450.3,229.9 450.3,251.4 399.8,251.4' },
+        { spotName: 'Meeting Pod 4-5', points: '173.6,244.9 224.1,244.9 224.1,270.1 173.6,270.1' },
+        { spotName: 'Meeting Pod 4-6', points: '173.6,270.1 224.1,270.1 224.1,294.4 173.6,294.4' },
+        { spotName: 'Meeting Pod 4-7', points: '173.6,294.4 224.1,294.4 224.1,319.6 173.6,319.6' },
+        { spotName: 'Meeting Lounge 4-1', points: '581.1,218.7 647.5,218.7 647.5,287.9 581.1,287.9' },
+        { spotName: 'Active Learning Classroom 4-1', points: '133.5,360.7 289.5,360.7 289.5,437.4 133.5,437.4' },
+        { spotName: 'Active Learning Classroom 4-2', points: '289.5,360.7 450.3,360.7 450.3,439.3 289.5,439.3' },
+      ],
+    },
+  },
 
   // SVGs generated from the kiosk photos;
   // the seminar rooms' rounded walls are approximated with straight segments
