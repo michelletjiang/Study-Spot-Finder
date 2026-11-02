@@ -1,36 +1,40 @@
 <script setup>
-// ACTIVE (admin only): list of all study spots with View, Edit and Delete.
-// ref makes a changing value, onMounted runs code when the page appears.
-import { ref, onMounted } from 'vue'
-// The shared JSON helper.
+// ACTIVE (admin only): every study spot in one table, with search, building filters and View, Edit and Delete.
+import { ref, computed, onMounted } from 'vue'
 import { api } from '../api'
+import AdminTabs from '../components/AdminTabs.vue'
 
-// The spots from the server.
 const spots = ref([])
-// A message to show on failure.
 const error = ref('')
+const loading = ref(true)
+const search = ref('')
+const building = ref('') // '' = all buildings
 
-// Run once when the page appears.
 onMounted(async () => {
   try {
     // GET /api/spots.
     spots.value = await api('/api/spots')
   } catch (e) {
-    // Show the error text.
     error.value = e.message
+  } finally {
+    loading.value = false
   }
 })
 
-// Delete one spot.
+// one filter chip per building that has spots, in the order they first appear
+const buildingNames = computed(() => [...new Set(spots.value.map(s => s.buildingName))])
+
+const shown = computed(() => {
+  const q = search.value.trim().toLowerCase()
+  return spots.value.filter(s => (!building.value || s.buildingName === building.value) && (!q || s.name.toLowerCase().includes(q)))
+})
+
 async function remove(spot) {
-  // Existing TODO: a nicer confirmation box later.
   // TODO: swap for a ConfirmModal component later
-  // Ask for confirmation with the browser's own dialog.
-  if (!confirm(`Delete ${spot.buildingName}, ${spot.name}?`)) return
+  if (!confirm(`Delete ${spot.buildingName}, ${spot.name}? Its reviews are deleted too.`)) return
   try {
     // DELETE /api/spots/:id (admin only on the server).
     await api(`/api/spots/${spot._id}`, { method: 'DELETE' })
-    // Existing note: remove it from the page without reloading.
     spots.value = spots.value.filter(s => s._id !== spot._id) // remove without refetching
   } catch (e) {
     error.value = e.message
@@ -39,21 +43,73 @@ async function remove(spot) {
 </script>
 
 <template>
-  <!-- Page title and add link. -->
-  <h2>Study Spots</h2>
-  <RouterLink to="/admin/spots/new">+ Add Study Spot</RouterLink>
-  <p v-if="error">{{ error }}</p>
-  <p v-if="spots.length === 0">No study spots found.</p>
-  <!-- One block per spot. -->
-  <div v-for="spot in spots" :key="spot._id">
-    <p><strong>{{ spot.buildingName }}, {{ spot.name }}</strong></p>
-    Floor: {{ spot.floor }} · Seats: {{ spot.seatCount }} ·
-    Power: {{ spot.hasPowerSocket ? 'Yes' : 'No' }} · Noise: {{ spot.noiseLevel }}<br>
-    <!-- Opens the public detail page, which also has the Compare button. -->
-    <RouterLink :to="`/spots/${spot._id}`">View</RouterLink> |
-    <!-- Opens SpotFormView.vue. -->
-    <RouterLink :to="`/admin/spots/${spot._id}/edit`">Edit</RouterLink> |
-    <button @click="remove(spot)">Delete</button>
-    <hr>
+  <div class="nb-page">
+    <AdminTabs />
+
+    <header class="nb-page-head">
+      <div>
+        <h1 class="nb-title">Study spots</h1>
+        <p class="nb-subtitle"><template v-if="!loading">{{ shown.length }} of {{ spots.length }} spots shown</template></p>
+      </div>
+      <div class="nb-page-tools">
+        <div class="nb-field">
+          <label for="spot-search">Search</label>
+          <input id="spot-search" v-model="search" class="nb-input" type="search" placeholder="Room name">
+        </div>
+        <RouterLink to="/admin/spots/new" class="nb-btn nb-btn--primary">+ Add study spot</RouterLink>
+      </div>
+    </header>
+
+    <div v-if="buildingNames.length > 1" class="chips" role="group" aria-label="Filter by building">
+      <button type="button" class="nb-chip" :aria-pressed="!building" @click="building = ''">All</button>
+      <button v-for="name in buildingNames" :key="name" type="button" class="nb-chip" :aria-pressed="building === name" @click="building = name">
+        {{ name }}
+      </button>
+    </div>
+
+    <p v-if="error" class="nb-state nb-state--error" role="alert">{{ error }}</p>
+    <p v-if="loading" class="nb-state">Loading study spots…</p>
+    <p v-else-if="!spots.length && !error" class="nb-state">No study spots yet. Add the first one.</p>
+    <p v-else-if="!shown.length" class="nb-state">No study spots match. <button type="button" class="link" @click="search = ''; building = ''">Clear the filters</button></p>
+
+    <div v-else class="nb-table-wrap">
+      <table class="nb-table">
+        <thead>
+          <tr>
+            <th>Room</th><th>Building</th><th>Floor</th><th>Seats</th><th>Power</th><th>Noise</th>
+            <th><span class="visually-hidden">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="spot in shown" :key="spot._id">
+            <td><strong>{{ spot.name }}</strong></td>
+            <td>{{ spot.buildingName }}</td>
+            <td>{{ spot.floor }}</td>
+            <td>{{ spot.seatCount }}</td>
+            <td>{{ spot.hasPowerSocket ? 'Yes' : 'No' }}</td>
+            <td>
+              <span v-if="spot.noiseLevel" class="nb-tag" :class="`nb-tag--${spot.noiseLevel.toLowerCase()}`">{{ spot.noiseLevel }}</span>
+              <span v-else class="missing">Not set</span>
+            </td>
+            <td>
+              <div class="nb-actions">
+                <!-- View opens the public room page, which also has the Compare button. -->
+                <RouterLink :to="`/spots/${spot._id}`" class="nb-btn" :aria-label="`View ${spot.name}`">View</RouterLink>
+                <!-- Edit opens SpotFormView.vue. -->
+                <RouterLink :to="`/admin/spots/${spot._id}/edit`" class="nb-btn" :aria-label="`Edit ${spot.name}`">Edit</RouterLink>
+                <button type="button" class="nb-btn nb-btn--danger" :aria-label="`Delete ${spot.name}`" @click="remove(spot)">Delete</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.chips { display: flex; flex-wrap: wrap; gap: 8px; max-width: 1140px; margin: -8px 0 24px; }
+.nb-table-wrap { max-width: 1140px; }
+.missing { color: var(--nb-muted); font-size: 0.88rem; font-style: italic; }
+.link { padding: 0; border: none; background: none; color: inherit; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+</style>

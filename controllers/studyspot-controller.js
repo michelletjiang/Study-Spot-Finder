@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const StudySpot = require('../models/studyspot-model');
 // Building model: used to check a spot's floor against the building's floor count.
 const Building = require('../models/building-model');
+const cascade = require('../services/cascade-service'); // deletes child records with their parent
 // ACTIVE (comparison): validates the ?ids= value of a compare request. See lib/compare.js.
 const { parseComparisonIds } = require('../lib/compare');
 
@@ -316,13 +317,16 @@ exports.updateSpotJson = async (req, res) => {
         if (msg) return res.status(400).json({ message: msg });
 
         // Write the new values. The building cannot be changed here.
-        await StudySpot.editSpot(spot._id, {
+        const updated = {
             name:           req.body.name.trim(),
             floor:          String(req.body.floor).toUpperCase(),
             seatCount:      Number(req.body.seatCount),
             hasPowerSocket: Boolean(req.body.hasPowerSocket),
             noiseLevel:     req.body.noiseLevel
-        });
+        };
+        await StudySpot.editSpot(spot._id, updated);
+        // Reviews and favourites point at the spot by name, so carry the edit over to them.
+        await cascade.syncSpotEdit(spot, updated);
         // Return the saved spot.
         res.json(await StudySpot.findById(spot._id));
     } catch (error) {
@@ -336,10 +340,12 @@ exports.updateSpotJson = async (req, res) => {
 exports.deleteSpotJson = async (req, res) => {
     if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ message: 'Study spot not found' });
     try {
-        // Delete in the database.
-        const result = await StudySpot.deleteSpot(req.params.id);
-        // Nothing deleted means it did not exist.
-        if (result.deletedCount === 0) return res.status(404).json({ message: 'Study spot not found' });
+        // Find it first: its name is needed to find the reviews and favourites that point at it.
+        const spot = await StudySpot.findById(req.params.id);
+        // Missing spot means it did not exist.
+        if (!spot) return res.status(404).json({ message: 'Study spot not found' });
+        // Delete the spot with its reviews, their reports and everyone's favourites of it.
+        await cascade.deleteSpot(spot);
         // 204 means success with no body.
         res.status(204).end();
     } catch (error) {

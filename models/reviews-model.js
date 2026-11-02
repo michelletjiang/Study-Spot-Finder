@@ -108,3 +108,27 @@ exports.deleteReview = function (reviewId){
     return Review.findOneAndDelete({_id:reviewId})
 };
 
+
+// Cascade helpers: used when a spot, building or account is deleted, so no review is left orphaned.
+// Reviews are linked to a spot by buildingName + roomId (the spot's name), not by ObjectId.
+exports.findByBuilding = function(buildingName){
+    return Review.find({ buildingName: buildingName });
+};
+exports.deleteByRoom = function(buildingName, roomId){
+    return Review.deleteMany({ buildingName: buildingName, roomId: roomId });
+};
+exports.deleteByBuilding = function(buildingName){
+    return Review.deleteMany({ buildingName: buildingName });
+};
+// userId on a review holds the author's username.
+exports.deleteByUser = function(username){
+    return Review.deleteMany({ userId: username });
+};
+// Keep reviews attached when an admin renames a spot.
+exports.renameRoom = function(buildingName, oldRoomId, newRoomId){
+    return Review.updateMany({ buildingName: buildingName, roomId: oldRoomId }, { roomId: newRoomId });
+};
+// Keep a user's reviews when they change their username.
+exports.renameUser = function(oldUsername, newUsername){
+    return Review.updateMany({ userId: oldUsername }, { userId: newUsername });
+};

@@ -94,3 +94,8 @@ exports.editSpot = function(id, updatedData) {
 exports.deleteSpot = function(id) {
     return StudySpot.deleteOne({ _id: id });
 };
+
+// Cascade helper: remove every spot in a building.
+exports.deleteByBuilding = function(buildingName) {
+    return StudySpot.deleteMany({ buildingName: buildingName });
+};

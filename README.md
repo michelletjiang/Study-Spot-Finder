@@ -183,6 +183,38 @@ A full walkthrough of the Vue + Express structure (every file, every `/api` endp
 
 ---
 
+## How to Test
+
+Install the dev tools once (Vitest and Playwright) and Playwright's browser:
+```bash
+npm ci
+npx playwright install chromium
+```
+(`npm ci` installs exactly what is in package-lock.json. On npm 10, `npm install` can fail with
+"Cannot read properties of null (reading 'edgesOut')"; `npm ci` or npm 11 avoids it.)
+
+**Unit tests (Vitest + node:test)**: no database needed.
+```bash
+npm test          # all unit tests
+npm run test:unit # only the Vitest tests in test/unit
+```
+`test/unit/cascade-service.spec.js` checks that deleting a review, study spot, building or account also
+deletes the records that depend on it (reports, reviews, favourites, admin requests), in the right order,
+and that renaming a spot or username keeps reviews and favourites attached. Model calls are replaced
+with `vi.spyOn` stubs, so the tests are repeatable and never touch the real data.
+
+**End-to-end tests (Playwright)**: drive the real app in a browser.
+```bash
+npm run dev       # terminal 1: start the app
+npm run test:e2e  # terminal 2: run the browser tests (desktop and mobile sizes)
+npx playwright show-report   # optional: open the HTML report
+```
+`e2e/student-journey.spec.mjs` registers a throw-away account, logs in, favourites a spot, writes, edits
+and reports a review, deletes the review (and checks its report is gone), then deletes the account.
+It cleans up after itself, so it is safe to run against the shared database.
+
+---
+
 ## User Accounts & Roles
 
 ### Roles

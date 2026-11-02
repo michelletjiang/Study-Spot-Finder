@@ -1,20 +1,16 @@
 <script setup>
-// ACTIVE: the student's favourite spots.
-// ref makes a changing value, onMounted runs code when the page appears.
+// ACTIVE: the student's favourite spots, one manila folder each, plus a card that leads to more spots.
 import { ref, onMounted } from 'vue'
-// The shared JSON helper.
 import { api } from '../api'
-// The shared favourites list.
 import { favourites } from '../stores/favourites'
+import { loadSpotIndex } from '../spotIndex'
+import { floorLabel, normalizeFloor } from '../floors'
 
-// Existing note: replaces the old EJS page.
-// Replaces favourites.ejs
-// A message to show on failure.
 const error = ref('')
-// True while loading.
 const loading = ref(true)
+// finds a favourite's spot (for "View room"); null until loaded, or if loading the spots failed
+const findSpot = ref(null)
 
-// Run once when the page appears.
 onMounted(async () => {
   try {
     // GET /api/favourites, filled into the shared list.
@@ -24,14 +20,20 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+  // without the spots, "View room" falls back to the building page
+  loadSpotIndex().then(find => (findSpot.value = find)).catch(e => console.error('Could not load spots:', e.message))
 })
 
-// Remove one favourite.
+// Favourites are copies of the spot's details taken when it was saved, so link by building + name.
+function roomLink(fav) {
+  const spot = findSpot.value?.(fav.buildingName, fav.spotName)
+  return spot ? `/spots/${spot._id}` : `/building/${fav.buildingName}`
+}
+
 async function remove(fav) {
   try {
     // DELETE /api/favourites/:id (only your own).
     await api(`/api/favourites/${fav._id}`, { method: 'DELETE' })
-    // Drop it from the shared list.
     favourites.list = favourites.list.filter(f => f._id !== fav._id)
   } catch (e) {
     error.value = e.message
@@ -40,24 +42,97 @@ async function remove(fav) {
 </script>
 
 <template>
-  <!-- Page heading. -->
-  <h1>My Favourite Study Spots</h1>
-  <!-- Error message. -->
-  <p v-if="error" style="color: red">{{ error }}</p>
-  <p v-if="loading">Loading...</p>
-  <p v-else-if="favourites.list.length === 0">No favourites added yet.</p>
-  <!-- One block per favourite. These are copies of the spot's details taken when it was saved. -->
-  <div v-for="fav in favourites.list" :key="fav._id">
-    <p><strong>Name: {{ fav.spotName }}</strong></p>
-    Building: {{ fav.buildingName }}<br>
-    Floor: {{ fav.floor }}<br>
-    Seats: {{ fav.seatCount }}<br>
-    Power Socket: {{ fav.hasPowerSocket ? 'Yes' : 'No' }}<br>
-    Noise Level: {{ fav.noiseLevel }}<br>
-    <!-- Link to the building's page. -->
-    <RouterLink :to="`/building/${fav.buildingName}`">View building</RouterLink> |
-    <button @click="remove(fav)">Remove from Favourites</button>
-    <hr>
+  <div class="nb-page">
+    <h1 class="nb-title">My favourite spots</h1>
+    <p class="nb-subtitle">
+      <template v-if="!loading">{{ favourites.list.length }} spot{{ favourites.list.length === 1 ? '' : 's' }} saved</template>
+    </p>
+
+    <p v-if="error" class="nb-state nb-state--error" role="alert">{{ error }}</p>
+    <p v-if="loading" class="nb-state">Loading your favourites…</p>
+
+    <div v-else class="grid">
+      <article v-for="fav in favourites.list" :key="fav._id" class="nb-folder">
+        <span class="nb-folder-paper" aria-hidden="true">{{ fav.buildingName }}</span>
+        <div class="nb-folder-front">
+          <div class="title-row">
+            <h2>{{ fav.spotName }}</h2>
+            <button type="button" class="heart" :aria-label="`Remove ${fav.spotName} from favourites`" @click="remove(fav)">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" fill="#f5a0a6" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+              </svg>
+            </button>
+          </div>
+          <p class="where">{{ fav.buildingName }} · {{ floorLabel(normalizeFloor(fav.floor)) }}</p>
+          <p class="tags">
+            <span class="nb-tag">{{ fav.seatCount }} seats</span>
+            <span v-if="fav.hasPowerSocket" class="nb-tag">Power sockets</span>
+            <span v-if="fav.noiseLevel" class="nb-tag" :class="`nb-tag--${fav.noiseLevel.toLowerCase()}`">{{ fav.noiseLevel }}</span>
+          </p>
+          <RouterLink :to="roomLink(fav)" class="view">View room →</RouterLink>
+        </div>
+      </article>
+
+      <RouterLink to="/" class="find-more">
+        <span class="plus" aria-hidden="true">+</span>
+        <strong>Find more spots</strong>
+        <span>Tap ♥ on any room to save it here</span>
+      </RouterLink>
+    </div>
+
+    <RouterLink to="/" class="nb-back">‹ All buildings</RouterLink>
   </div>
-  <RouterLink to="/">Back to all buildings</RouterLink>
 </template>
+
+<style scoped>
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 32px;
+  max-width: 1140px;
+  margin-bottom: 36px;
+}
+.nb-folder { min-height: 270px; }
+
+.title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; width: 100%; }
+h2 { margin: 4px 0 0; font: 700 1.9rem/1.1 var(--nb-heading); color: #28263f; overflow-wrap: anywhere; }
+.heart {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border: 2px solid #28263f;
+  border-radius: 50%;
+  background: #fffef9;
+  color: #28263f;
+  cursor: pointer;
+}
+.heart:hover { background: var(--nb-note-pink); }
+.heart:focus-visible { outline: 3px solid var(--nb-focus); outline-offset: 2px; }
+.where { margin: 8px 0 10px; color: #5e5a73; font-size: 0.92rem; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+.view { margin-top: auto; padding-top: 16px; color: #28263f; font-weight: 700; text-underline-offset: 3px; }
+.view:focus-visible { outline: 3px solid var(--nb-focus); outline-offset: 3px; }
+
+/* the empty slot at the end: a dashed card that leads back to the buildings */
+.find-more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 230px;
+  margin-top: 40px;
+  border: 2px dashed var(--nb-ink);
+  border-radius: 6px;
+  background: rgba(255, 254, 249, 0.6);
+  color: var(--nb-muted);
+  text-align: center;
+  text-decoration: none;
+}
+.find-more:hover { background: var(--nb-sheet); color: var(--nb-muted); }
+.find-more:focus-visible { outline: 3px solid var(--nb-focus); outline-offset: 3px; }
+.find-more .plus { font-size: 2.4rem; line-height: 1; color: var(--nb-ink); }
+.find-more strong { font: 700 1.9rem/1.1 var(--nb-heading); color: var(--nb-ink); }
+</style>
