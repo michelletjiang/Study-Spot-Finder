@@ -40,18 +40,21 @@ onMounted(async () => {
   }
 })
 
-// Delete one of your reviews.
 // Send a vote. Clicking the arrow you already chose takes the vote back.
+// The list is not re-sorted straight away, so the review does not jump away from under the mouse.
 async function vote(review, direction) {
   const next = review.myVote === direction ? 'none' : direction
   try {
     const updated = await api(`/api/reviews/${review._id}/vote`, { method: 'POST', body: { vote: next } })
     Object.assign(review, updated)
+    // A later success clears an earlier vote error.
+    error.value = ''
   } catch (e) {
     error.value = e.message
   }
 }
 
+// Delete one of your reviews.
 async function deleteReview(review) {
   // Ask first.
   if (!confirm(`Delete your review "${review.title}"?`)) return
@@ -109,8 +112,8 @@ async function deleteReview(review) {
         <RouterLink :to="{ path: `/reviews/${review._id}/edit`, query: { back: route.fullPath } }">Edit</RouterLink> |
         <button @click="deleteReview(review)">Delete</button> |
       </template>
-      <!-- Everyone can report a review. -->
-      <RouterLink :to="`/reviews/${review._id}/report`">Report Review</RouterLink>
+      <!-- Anyone except the author can report a review. -->
+      <RouterLink v-if="review.userId !== auth.user?.username" :to="`/reviews/${review._id}/report`">Report Review</RouterLink>
       <hr>
     </div>
 

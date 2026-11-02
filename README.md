@@ -204,6 +204,10 @@ npm run test:unit # only the Vitest tests in test/unit
   replaced with `vi.spyOn` stubs, so the tests are repeatable and never touch the real data.
 - `test/unit/reviews.spec.js` checks review validation (rating, noise level) and the vote helpers
   (one vote per user, no voting on your own review, scores, most-helpful-first sorting).
+- `test/unit/access-control.spec.js` checks who may change what: only the author edits a review, the author
+  or an admin deletes it, only the reporter edits a still-pending report, nobody reports their own review or
+  reports the same review twice, and favourites can only be removed by their owner. It covers the old EJS
+  routes as well as the JSON API, and checks that reviewers' noise reports feed the find-a-spot ranking.
 
 **End-to-end tests (Playwright)**: drive the real app in a browser.
 ```bash
@@ -211,8 +215,9 @@ npm run dev       # terminal 1: start the app
 npm run test:e2e  # terminal 2: run the browser tests (desktop and mobile sizes)
 npx playwright show-report   # optional: open the HTML report
 ```
-- `e2e/student-journey.spec.mjs`: register, log in, favourite a spot, write (with a noise level), edit and
-  report a review, delete the review (its report must go too), delete the account.
+- `e2e/student-journey.spec.mjs`: register, log in, favourite a spot, write (with a noise level) and edit a
+  review, check the author cannot report it, have a second student report it (once only), delete the review
+  (its report must go too), delete the account.
 - `e2e/review-votes.spec.mjs`: a second student upvotes, switches to downvote and takes the vote back;
   the vote survives a reload; authors cannot vote on their own review.
 - `e2e/admin-moderation.spec.mjs`: an admin approves one report (review deleted) and declines another

@@ -1,7 +1,8 @@
 // student-journey.spec.mjs
 // End-to-end test (Playwright) of the main student journey, through the real Vue UI:
-//   register -> log in -> open a study spot -> favourite it -> write (with a noise level), edit and report a review
-//   -> delete the review (its report must go too) -> delete the account (its favourites must go too).
+//   register -> log in -> open a study spot -> favourite it -> write (with a noise level) and edit a review
+//   -> a second student reports it (the author cannot) -> delete the review (its report must go too)
+//   -> delete the account (its favourites must go too).
 //
 // It creates its own throw-away account with a unique name and deletes it at the end,
 // so it can be run again and again against the shared team database without leaving data behind.
@@ -10,6 +11,7 @@
 // Run: start the app with `npm run dev`, then `npm run test:e2e`.
 
 import { test, expect } from '@playwright/test'
+import { newAccount, apiUser, deleteApiUser } from './helpers.mjs'
 
 // Unique per run so repeated runs never clash.
 const stamp = Date.now().toString(36)
@@ -22,7 +24,7 @@ const reviewTitle = `E2E review ${stamp}`
 const editedTitle = `E2E review ${stamp} (edited)`
 
 // Steps share the browser page, so run them in order in one test.
-test('student journey: favourite, review, report, and clean deletes', async ({ page }) => {
+test('student journey: favourite, review, report, and clean deletes', async ({ page, playwright, baseURL }) => {
   // The app asks "Delete ...?" with confirm(); accept it like a user clicking OK.
   page.on('dialog', dialog => dialog.accept())
 
@@ -96,17 +98,28 @@ test('student journey: favourite, review, report, and clean deletes', async ({ p
     await expect(page.getByText(editedTitle).locator('..')).toContainText('Noise: Loud')
   })
 
+  // A second throw-away student, used only through the API, who reports the review.
+  let reporter
   let reportId
-  await test.step('report the review', async () => {
-    await ourReview(editedTitle).getByRole('link', { name: 'Report Review' }).click()
-    await page.getByLabel('Description').fill('E2E test report, safe to ignore.')
-    await page.getByRole('button', { name: 'Submit Report' }).click()
+  await test.step('the author cannot report their own review', async () => {
+    await expect(ourReview(editedTitle).getByRole('link', { name: 'Report Review' })).toHaveCount(0)
+    const reviews = await (await page.request.get(`/api/reviews?spotId=${spot._id}`)).json()
+    const ours = reviews.find(r => r.title === editedTitle)
+    const res = await page.request.post('/api/reports', { data: { reviewId: ours._id, reason: 'Spam', description: 'Self report' } })
+    expect(res.status()).toBe(403)
+  })
 
-    await expect(page.getByRole('heading', { name: 'Report sent successfully!' })).toBeVisible()
-    // The "Edit" link after sending is /reports/<id>/edit; keep the id to check it later.
-    const href = await page.getByRole('link', { name: 'Edit' }).getAttribute('href')
-    reportId = href.split('/')[2]
-    expect((await page.request.get(`/api/reports/${reportId}`)).status()).toBe(200)
+  await test.step('another student reports the review', async () => {
+    reporter = await apiUser(playwright, baseURL, newAccount('reporter'))
+    const reviews = await (await reporter.get(`/api/reviews?spotId=${spot._id}`)).json()
+    const ours = reviews.find(r => r.title === editedTitle)
+    const res = await reporter.post('/api/reports', { data: { reviewId: ours._id, reason: 'Spam', description: 'E2E test report, safe to ignore.' } })
+    expect(res.status()).toBe(201)
+    reportId = (await res.json())._id
+    expect((await reporter.get(`/api/reports/${reportId}`)).status()).toBe(200)
+    // Reporting the same review again while the first report is pending is refused.
+    const again = await reporter.post('/api/reports', { data: { reviewId: ours._id, reason: 'Spam', description: 'Again' } })
+    expect(again.status()).toBe(409)
   })
 
   await test.step('deleting the review also deletes its report', async () => {
@@ -115,7 +128,8 @@ test('student journey: favourite, review, report, and clean deletes', async ({ p
 
     await expect(page.getByText(editedTitle)).toHaveCount(0)
     // Cascade check: the report on the deleted review is gone too.
-    expect((await page.request.get(`/api/reports/${reportId}`)).status()).toBe(404)
+    expect((await reporter.get(`/api/reports/${reportId}`)).status()).toBe(404)
+    await deleteApiUser(reporter)
   })
 
   await test.step('deleting the account removes it and logs out', async () => {

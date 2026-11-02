@@ -1,7 +1,11 @@
 // MIXED file: lines 1 to 137 are LEGACY EJS handlers used only by routes/reviews-route.js. The "JSON API" section from line 142 is ACTIVE and used by routes/api/reviews-routes.js.
 // Review model: the reviews collection.
 const Review = require('../models/reviews-model'); // path to model
+// Used to check that ids are well formed before querying.
+const mongoose = require('mongoose');
 const cascade = require('../services/cascade-service'); // deletes child records with their parent
+// Shared checks: input validation, votes, and who may edit or delete a review.
+const { validateReview, validateVote, withVotes, sortByScore, canEditReview, canDeleteReview } = require('../lib/reviews');
 
 // LEGACY - not used by the Vue demo: shows all reviews for one spot.
 exports.showReview = async (req,res) => {
@@ -99,8 +103,10 @@ exports.getReview = async (req,res) => {
 
   try{
     let result=await Review.findByreviewId(reviewId)
-    // Render views/update-review.ejs.
-    res.render("update-review", {result:result || null , msg : '', building: result ? result.buildingName : null, spotName: result ? result.roomId : null})
+    // Only the author may open the edit form.
+    if (result && !canEditReview(result, req.session.user)) return res.status(403).send('You can only edit your own reviews.')
+    // Render views/update-review.ejs. user is needed by the page's navigation bar.
+    res.render("update-review", {result:result || null , msg : '', user: req.session.user, building: result ? result.buildingName : null, spotName: result ? result.roomId : null})
   } catch (error){
     console.error(error);
     res.send("Error retrieving review")
@@ -109,27 +115,33 @@ exports.getReview = async (req,res) => {
 
 // LEGACY - not used by the Vue demo: saves an edited review.
 exports.updateReview = async (req,res) => {
-    const reviewId= req.body.reviewId;
+    // The id comes from the URL; the hidden form field is ignored so the two cannot disagree.
+    const reviewId= req.params.reviewId;
     const title= req.body.title;
     const content = req.body.content;
     const rating = req.body.rating;
+    const user = req.session.user;
 
     try{
-        // Existing weakness: when a field is blank the form is rendered but the code does not stop, so it goes on to update and render again.
+        const review = mongoose.isValidObjectId(reviewId) ? await Review.findByreviewId(reviewId) : null
+        if (!review) return res.status(404).send('Review not found.')
+        // Only the author may edit (same rule as PUT /api/reviews/:id).
+        if (!canEditReview(review, user)) return res.status(403).send('You can only edit your own reviews.')
+        // A blank field shows the form again and stops here.
         if (!title || !content || !rating) {
-        let result=await Review.findByreviewId(reviewId)
-        res.render("update-review", {result:result || null , msg : 'All fields are required.', building: result ? result.buildingName : null, spotName: result ? result.roomId : null})
-        };
-        // Write the new title, content and rating.
-        let result = await Review.editReview(reviewId, title, content, rating)
-        console.log(result)
-        // Reload the saved review.
-        let updated = await Review.findByreviewId(reviewId)
-        // Render the form with a success message.
-        res.render("update-review", {result: updated, msg: 'Review has been successfully updated.', building: updated.buildingName, spotName: updated.roomId})
+            return res.render("update-review", {result: review, msg : 'All fields are required.', user, building: review.buildingName, spotName: review.roomId})
+        }
+        if (!(Number(rating) >= 1 && Number(rating) <= 5)) {
+            return res.render("update-review", {result: review, msg : 'Rating must be between 1 and 5.', user, building: review.buildingName, spotName: review.roomId})
+        }
+        // Write the new title, content and rating. The legacy form has no noise field, so the noise level is kept.
+        await Review.editReview(review._id, title, content, Number(rating))
+        // Reload the saved review and show it with a success message.
+        let updated = await Review.findByreviewId(review._id)
+        res.render("update-review", {result: updated, msg: 'Review has been successfully updated.', user, building: updated.buildingName, spotName: updated.roomId})
     } catch (error){
         console.error(error)
-        res.send("Error updating review")
+        res.status(500).send("Error updating review")
     }
 }; 
 
@@ -139,30 +151,31 @@ exports.getMarkedReview = async (req,res) => {
 
     try {
         let result= await Review.findByreviewId(reviewId)
-
-        res.render("show-marked-review", {result:result || null, msg: '' } )
+        // Only the author or an admin may open the delete page.
+        if (result && !canDeleteReview(result, req.session.user)) return res.status(403).send('You can only delete your own reviews.')
+        res.render("show-marked-review", {result:result || null, msg: '', user: req.session.user } )
     } catch (error){
         console.error(error)
-        res.render("show-marked-review", {result: null, msg: 'Failed to load review.'})
+        res.render("show-marked-review", {result: null, msg: 'Failed to load review.', user: req.session.user})
   }
 };
 
 // LEGACY - not used by the Vue demo: deletes a review after confirmation.
 exports.deleteAReview = async (req,res) => {
     const reviewId = req.body.id;
-    const building = req.body.building;
-    const spotName = req.body.spotName;
-    console.log(reviewId)
     try{
-        // Delete by id.
-        let success = await Review.deleteReview(reviewId)
-        console.log(success)
-        // Redirect to the legacy review list.
-        res.redirect(`/review-list/${building}/${spotName}`)
+        const review = mongoose.isValidObjectId(reviewId) ? await Review.findByreviewId(reviewId) : null;
+        if (!review) return res.status(404).send('Review not found.')
+        // Only the author or an admin may delete (same rule as DELETE /api/reviews/:id).
+        if (!canDeleteReview(review, req.session.user)) return res.status(403).send('You can only delete your own reviews.')
+        // Delete the review and the reports filed against it.
+        await cascade.deleteReview(review._id)
+        // Redirect to the legacy review list. The building and spot come from the saved review, not the form.
+        res.redirect(`/review-list/${encodeURIComponent(review.buildingName)}/${encodeURIComponent(review.roomId)}`)
         }
      catch (error){
         console.error(error)
-        res.send('Failed to delete review.')
+        res.status(500).send('Failed to delete review.')
     }
 }
 
@@ -174,14 +187,11 @@ exports.deleteAReview = async (req,res) => {
 // Reviews are stored by buildingName + roomId (spot name) + userId (username), same as the old pages,
 // so reviews written on the EJS pages still show up here.
 
-// Used to check that ids are well formed.
-const mongoose = require('mongoose');
 // Spot model, to find the spot a review belongs to.
 const StudySpot = require('../models/studyspot-model');
 
-// Checks title, content, a rating from 1 to 5 and a noise level. Returns an error message or null.
-// validateReview now lives in lib/reviews.js so it can be unit tested (test/unit/reviews.spec.js).
-const { validateReview, validateVote, withVotes, sortByScore } = require('../lib/reviews');
+// validateReview, the vote helpers and the permission checks are imported at the top from lib/reviews.js,
+// so they can be unit tested (test/unit/reviews.spec.js).
 
 // finds a review by :id, or sends 404 and returns null
 // Helper: load a review by :id, or send a 404 and return null.
@@ -269,7 +279,7 @@ exports.apiUpdateReview = async (req, res) => {
         const review = await findReviewOr404(req, res);
         if (!review) return;
         // Anyone else gets 403.
-        if (review.userId !== req.session.user.username) return res.status(403).json({ message: 'You can only edit your own reviews' });
+        if (!canEditReview(review, req.session.user)) return res.status(403).json({ message: 'You can only edit your own reviews' });
         const msg = validateReview(req.body);
         if (msg) return res.status(400).json({ message: msg });
 
@@ -289,7 +299,7 @@ exports.apiDeleteReview = async (req, res) => {
         const review = await findReviewOr404(req, res);
         if (!review) return;
         // Others get 403.
-        if (review.userId !== req.session.user.username && req.session.user.role !== 'Admin')
+        if (!canDeleteReview(review, req.session.user))
             return res.status(403).json({ message: 'You can only delete your own reviews' });
 
         // Delete the review and every report filed against it.

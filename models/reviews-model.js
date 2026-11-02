@@ -142,12 +142,13 @@ exports.renameUser = async function(oldUsername, newUsername){
     await Review.updateMany({ downvotes: oldUsername }, { $set: { 'downvotes.$': newUsername } });
 };
 // Record a user's vote: 'up', 'down' or 'none' (take the vote back). Returns the updated review.
-// Pull the user from both lists first, so changing a vote never counts twice.
-exports.voteReview = async function(reviewId, username, vote){
-    await Review.updateOne({ _id: reviewId }, { $pull: { upvotes: username, downvotes: username } });
-    if (vote === 'up')   await Review.updateOne({ _id: reviewId }, { $addToSet: { upvotes: username } });
-    if (vote === 'down') await Review.updateOne({ _id: reviewId }, { $addToSet: { downvotes: username } });
-    return Review.findById(reviewId);
+// One atomic update per vote, so two quick clicks can never leave the user in both lists.
+exports.voteReview = function(reviewId, username, vote){
+    let update;
+    if (vote === 'up')        update = { $addToSet: { upvotes: username },   $pull: { downvotes: username } };
+    else if (vote === 'down') update = { $addToSet: { downvotes: username }, $pull: { upvotes: username } };
+    else                      update = { $pull: { upvotes: username, downvotes: username } };
+    return Review.findByIdAndUpdate(reviewId, update, { returnDocument: 'after' });
 };
 // Remove a deleted account's votes from every review.
 exports.removeVotesByUser = function(username){

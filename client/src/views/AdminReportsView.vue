@@ -52,23 +52,88 @@ async function resolve(report, action) {
   <p v-if="error" style="color: red">{{ error }}</p>
   <p v-if="loading">Loading...</p>
   <p v-else-if="reports.length === 0">No pending reports</p>
-  <table v-else border="1" cellpadding="5">
-    <!-- The table header row. -->
-    <tr>
-      <th>Review</th><th>Review By</th><th>Report Reason</th><th>Report Description</th><th>Reported By</th><th></th>
-    </tr>
-    <!-- One row per report. A review that was deleted shows a placeholder. -->
-    <tr v-for="report in reports" :key="report._id">
-      <td>{{ report.reviewId ? report.reviewId.content : '(review deleted)' }}</td>
-      <td>{{ report.reviewId ? report.reviewId.userId : '(review deleted)' }}</td>
-      <td>{{ report.reason }}</td>
-      <td>{{ report.description }}</td>
-      <td>{{ report.reportedBy }}</td>
-      <!-- The two action buttons for the row. -->
-      <td>
-        <button @click="resolve(report, 'approve')">Approve (delete review)</button>
-        <button @click="resolve(report, 'decline')">Decline</button>
-      </td>
-    </tr>
-  </table>
+  <!-- The wrapper scrolls sideways on wide tables; on phones each row becomes a card (see the styles below). -->
+  <div v-else class="report-table-wrap">
+    <table class="report-table">
+      <!-- The table header row. -->
+      <thead>
+        <tr>
+          <th>Review</th><th>Review By</th><th>Report Reason</th><th>Report Description</th><th>Reported By</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- One row per report. A review that was deleted shows a placeholder. data-label names the column on phones. -->
+        <tr v-for="report in reports" :key="report._id">
+          <td data-label="Review">{{ report.reviewId ? report.reviewId.content : '(review deleted)' }}</td>
+          <td data-label="Review by">{{ report.reviewId ? report.reviewId.userId : '(review deleted)' }}</td>
+          <td data-label="Reason">{{ report.reason }}</td>
+          <td data-label="Description">{{ report.description }}</td>
+          <td data-label="Reported by">{{ report.reportedBy }}</td>
+          <!-- The two action buttons for the row. -->
+          <td data-label="Actions">
+            <div class="report-actions">
+              <button @click="resolve(report, 'approve')">Approve (delete review)</button>
+              <button class="secondary" @click="resolve(report, 'decline')">Decline</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </template>
+
+<style scoped>
+/* Wide screens: a normal table that can scroll sideways inside its box instead of widening the page. */
+.report-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.report-table th,
+.report-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--accent-border);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Phones: one card per report, each value labelled, so nothing runs off the screen. */
+@media (max-width: 650px) {
+  .report-table thead {
+    display: none;
+  }
+  .report-table,
+  .report-table tbody,
+  .report-table tr,
+  .report-table td {
+    display: block;
+    width: 100%;
+  }
+  .report-table tr {
+    margin-bottom: 12px;
+    border: 1px solid var(--accent-border);
+    border-radius: 8px;
+    padding: 6px 0;
+  }
+  .report-table td {
+    border-bottom: none;
+    padding: 4px 12px;
+  }
+  .report-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.8em;
+    font-weight: 600;
+    opacity: 0.75;
+  }
+}
+</style>

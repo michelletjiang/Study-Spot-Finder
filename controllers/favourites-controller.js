@@ -55,8 +55,8 @@ exports.removeFavourite = async (req, res) => {
     try {
         // The favourite id from the query string.
         const favId = req.query.favId;
-        // Delete by id, without checking the owner.
-        await Favourite.removeFavourite(favId);
+        // Delete only if this favourite belongs to the logged-in user (same rule as the JSON API).
+        await Favourite.removeFavouriteForUser(favId, req.session.user.username);
         // Redirect to the legacy favourites page.
         res.redirect('/favourites');
     } catch (error) {

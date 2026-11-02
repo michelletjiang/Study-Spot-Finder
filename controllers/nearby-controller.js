@@ -40,8 +40,10 @@ exports.nearby = async (req, res) => {
                 floor: spot.floor,
                 seats: spot.seatCount,
                 hasPower: spot.hasPowerSocket,
-                // 1 (quiet) .. 5 (loud): the spot's own noise level if it has one, else what reviews reported; null = unknown
-                noiseLevel: NOISE_SCALE[spot.noiseLevel] ?? summary?.avgNoise ?? null,
+                // 1 (quiet) .. 5 (loud): what reviewers reported if any review gave a noise level, else the
+                // spot's catalogue value; null = unknown. Every spot has a catalogue value, so it must come second
+                // or the reviews would never count.
+                noiseLevel: summary?.avgNoise ?? NOISE_SCALE[spot.noiseLevel] ?? null,
                 avgRating: summary?.avgRating ?? null,  // 1 .. 5, null = no reviews yet
                 reviewCount: summary?.count ?? 0,
                 distanceMeters: meters,

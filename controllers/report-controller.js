@@ -1,8 +1,14 @@
 // MIXED file: lines 4 to 117 are LEGACY EJS handlers used only by routes/report-routes.js. The "JSON API" section from line 118 is ACTIVE and used by routes/api/reports-routes.js.
 // Report model: the reports collection.
 const Report = require('../models/reports');
+// Used to check that ids are well formed before querying.
+const mongoose = require('mongoose');
+// The allowed report reasons, the same list as the model.
+const REASONS = ['Inaccurate', 'Offensive', 'Spam', 'Other'];
 // Review model: used to find and delete the reported review.
 const Review = require('../models/reviews-model');
+// Who may edit a report, and who may report a review (shared with the JSON API below).
+const { canEditReport, validateReportTarget } = require('../lib/reviews');
 
 // LEGACY - not used by the Vue demo: shows the report form for one review.
 // GET route - when opening report form, finds review from reviewId to reference in the report form
@@ -29,11 +35,16 @@ exports.findReviewforReport = async (req, res) =>{
 exports.uploadReport = async (req,res) => {
 
     // Load the reported review.
-    const review = await Review.findByreviewId(req.params.reviewId);
+    const review = mongoose.isValidObjectId(req.params.reviewId) ? await Review.findByreviewId(req.params.reviewId) : null;
+    if (!review) return res.status(404).render("error", {message: "Review not found"});
     const reason = req.body.reason;
     const description = req.body.description;
     // The reporter is the logged-in user.
     const reportBy = req.session.user.username
+    // Same rules as POST /api/reports: not your own review, and no second pending report on it.
+    const alreadyReported = !!(await Report.exists({ reviewId: review._id, reportedBy: reportBy, status: 'Pending' }));
+    const targetMsg = validateReportTarget(review, reportBy, alreadyReported);
+    if (targetMsg) return res.render('new-report', { review, msg: targetMsg });
     // The description may not be blank.
     if (!description || description.trim() == ""){
       return res.render('new-report',{ review, msg: 'All fields are required'})
@@ -71,36 +82,46 @@ try {
 // LEGACY - not used by the Vue demo: shows the edit form for a report.
 // GET route to edit report
 exports.editReport = async (req,res) => {
-  // Load the report by id.
-  const report = await Report.findById(req.params.reportId); // finds report from the query
-  console.log(report)
-  console.log("reportId param:", req.params.reportId);
-  // Render views/edit-report.ejs.
-  res.render('edit-report', { report, msg: '' }) // renders the edit report form with pre-filled fields
+  try {
+    // Load the report by id.
+    const report = mongoose.isValidObjectId(req.params.reportId) ? await Report.findById(req.params.reportId) : null;
+    if (!report) return res.status(404).send('Report not found.');
+    // Only the reporter, and only while the report is still pending.
+    if (!canEditReport(report, req.session.user)) return res.status(403).send('You can only edit your own pending reports.');
+    // Render views/edit-report.ejs. user is needed by the page's navigation bar.
+    res.render('edit-report', { report, msg: '', user: req.session.user })
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error loading report');
+  }
 }
 
 // LEGACY - not used by the Vue demo: saves edits to a report.
 // POST route to update report in the db
 exports.updateReport = async (req,res) => {
-  const reportId = req.params.reportId 
   const editedReason = req.body.reason
   const editedDescription = req.body.description
-  // Load the report so the form can be redisplayed.
-  const report = await Report.findById(req.params.reportId) // find report in database
-  // The description may not be blank.
-  if (!editedDescription || editedDescription.trim() == ""){ // makes sure description cannot be empty
-      return res.render('edit-report',{report, msg: 'Description cannot be empty'})
-    }
   try {
-      // Write the new reason and description.
-      let success= await Report.editReport(reportId,editedDescription,editedReason); // sends updated fields to report in database
-      console.log(success);
-      // Reply with a small inline HTML message.
-      res.send(`Report has been successfully updated. <br> <a href="/studyspot-list">Back to list</a> `)
-    } catch (error) {
-      console.error(error);
-     
-    }};
+    const report = mongoose.isValidObjectId(req.params.reportId) ? await Report.findById(req.params.reportId) : null;
+    if (!report) return res.status(404).send('Report not found.');
+    // Only the reporter, and only while the report is still pending (same rule as PUT /api/reports/:id).
+    if (!canEditReport(report, req.session.user)) return res.status(403).send('You can only edit your own pending reports.');
+    // The description may not be blank.
+    if (!editedDescription || editedDescription.trim() == ""){
+      return res.render('edit-report',{report, msg: 'Description cannot be empty', user: req.session.user})
+    }
+    if (!REASONS.includes(editedReason)) {
+      return res.render('edit-report',{report, msg: 'Please choose a reason.', user: req.session.user})
+    }
+    // Write the new reason and description.
+    await Report.editReport(report._id, editedDescription.trim(), editedReason);
+    // Reply with a small inline HTML message.
+    res.send(`Report has been successfully updated. <br> <a href="/studyspot-list">Back to list</a> `)
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error updating report');
+  }
+};
 
 // LEGACY - not used by the Vue demo: admin page listing pending reports.
 // GET route - show admin page of pending reports
@@ -151,11 +172,7 @@ exports.updateAdminDisplayReports = async (req,res) => {
 // ACTIVE: JSON API used by the Vue client (ReportFormView.vue and AdminReportsView.vue).
 // ---------- JSON API (used by Vue) ----------
 
-// Used to check that ids are well formed.
-const mongoose = require('mongoose');
 
-// The allowed report reasons, the same list as the model.
-const REASONS = ['Inaccurate', 'Offensive', 'Spam', 'Other'];
 
 // Checks the reason and description. Returns an error message, or null.
 // returns an error message, or null if the report is valid
@@ -186,6 +203,11 @@ exports.apiCreateReport = async (req, res) => {
     // Load the review being reported.
     const review = await Review.findByreviewId(req.body.reviewId);
     if (!review) return res.status(404).json({ message: 'Review not found' });
+    // No reporting your own review, and one pending report per user per review.
+    const username = req.session.user.username;
+    const alreadyReported = !!(await Report.exists({ reviewId: review._id, reportedBy: username, status: 'Pending' }));
+    const targetMsg = validateReportTarget(review, username, alreadyReported);
+    if (targetMsg) return res.status(review.userId === username ? 403 : 409).json({ message: targetMsg });
 
     // Save the report, linked to the review and to the reporting username.
     const report = await Report.addReport({
