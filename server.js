@@ -1,5 +1,8 @@
 // Serves the built Vue website and its JSON API from one address.
 // Express is the web framework: it routes each HTTP request to a handler function.
+const dns = require('dns');
+dns.setServers(['8.8.8.8', '1.1.1.1']);
+
 const express = require('express');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
