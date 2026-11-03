@@ -87,7 +87,7 @@ export const floorplans = {
     },
   },
 
-  'SCIS 1': {
+  'School of Computing and Information Systems 1': {
     // SVGs: the room shapes below come straight from their <path>s (shifted by the SVG's translate(-150,-105));
     // the seminar rooms' curved roofs are approximated with 10 straight segments
     '2': {
@@ -319,7 +319,7 @@ export const floorplans = {
     },
   },
 
-  'SCIS 2': {
+  'SCIS 2 / SOE': {
     // SVGs, like SCIS 1, but drawn inside translate(40,100) scale(0.52632): points are already converted.
     // Curves and arcs are approximated with straight segments, and rooms drawn as one shape with a divider line
     // (e.g. Seminar 2-6 / 2-7) are cut along that line.

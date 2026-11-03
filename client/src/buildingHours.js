@@ -5,8 +5,8 @@ const SCHOOL = { weekday: ['07:00', '23:00'], saturday: ['08:00', '18:00'], sund
 
 export const buildingHours = {
   'Li Ka Shing Library': { weekday: ['08:00', '22:00'], saturday: ['09:00', '17:00'], sunday: null },
-  'SCIS 1': SCHOOL,
-  'SCIS 2': SCHOOL,
+  'School of Computing and Information Systems 1': SCHOOL,
+  'SCIS 2 / SOE': SCHOOL,
   'Yong Pung How School of Law': SCHOOL,
   'School of Accountancy': SCHOOL,
   'School of Social Sciences / College of Integrative Studies': SCHOOL,
