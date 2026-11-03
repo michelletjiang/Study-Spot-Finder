@@ -17,6 +17,8 @@ const Report = require('../../models/reports')
 const Favourite = require('../../models/favourites-model')
 const Building = require('../../models/building-model')
 const StudySpot = require('../../models/studyspot-model')
+const CheckIn = require('../../models/checkin-model')
+const StudySpotAlert = require('../../models/studyspot-alert-model')
 const cascade = require('../../services/cascade-service')
 const reviewsController = require('../../controllers/reviews-controller')
 const reportController = require('../../controllers/report-controller')
@@ -179,6 +181,10 @@ describe('TestSuite4: POST /api/reports', () => {
 
 describe('TestSuite5: review noise feeds the find-a-spot ranking', () => {
   beforeEach(() => {
+    vi.spyOn(CheckIn, 'find').mockReturnValue({ lean: vi.fn().mockResolvedValue([{ spot: 's1' }]) })
+    vi.spyOn(StudySpotAlert, 'find').mockReturnValue({ sort: vi.fn().mockResolvedValue([
+      { _id: 'alert1', spot: 's1', type: 'Aircon', resolved: false, expiresAt: new Date(Date.now() + 60000), confirms: [], disputes: [] }
+    ]) })
     vi.spyOn(Building, 'retrieveAll').mockResolvedValue([{ buildingname: 'SCIS 1', lat: 1.297, lng: 103.849 }])
     vi.spyOn(StudySpot, 'retrieveAll').mockResolvedValue([
       { _id: 's1', name: 'Lounge', buildingName: 'SCIS 1', noiseLevel: 'Quiet' },
@@ -191,9 +197,14 @@ describe('TestSuite5: review noise feeds the find-a-spot ranking', () => {
     vi.spyOn(Review, 'summariseAll').mockResolvedValue([{ _id: { buildingName: 'SCIS 1', roomId: 'Lounge' }, count: 2, avgRating: 3, avgNoise: 5 }])
     const res = fakeRes()
     await nearbyController.nearby(fakeReq(alice, { body: { latitude: 1.296, longitude: 103.85 } }), res)
+    expect(res.statusCode).toBe(200)
     const spots = res.json.mock.calls[0][0].spots
     expect(spots.find(s => s.name === 'Lounge').noiseLevel).toBe(5)
+    expect(spots.find(s => s.name === 'Lounge').checkedIn).toBe(1)
+    expect(spots.find(s => s.name === 'Lounge').alerts).toEqual(['Aircon'])
     // Pod has no reviews, so it keeps its catalogue value (Moderate = 3).
     expect(spots.find(s => s.name === 'Pod').noiseLevel).toBe(3)
+    expect(spots.find(s => s.name === 'Pod').checkedIn).toBe(0)
+    expect(spots.find(s => s.name === 'Pod').alerts).toEqual([])
   })
 })
