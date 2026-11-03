@@ -14,10 +14,17 @@ MongoDB stores accounts, buildings, study spots, reviews, favourites, check-ins 
 
 - Browse buildings and interactive floorplans; inspect study-spot details.
 - Rank nearby spots by preferences and compare a shortlist.
-- View OneMap directions and recent crowd check-ins in the building interface.
+- View OneMap directions, active seat check-ins, reported issues and busy-times patterns.
 - Save favourites; write reviews with ratings and noise reports; vote on and report reviews.
 - Register, sign in and manage a profile.
 - Admins manage buildings and spots, moderate reported reviews and approve admin requests.
+
+## Map layout
+
+On building and floor pages, **Map and directions** sits below the page content, so it does not cover
+room details, favourites or comparison controls. On screens up to 760px wide, use **Show map** to open
+it and **Hide map**, the **Close map** button or Escape while focused inside the map to close it.
+Closing returns keyboard focus to Show map. The homepage keeps its existing embedded map.
 
 ## Technology and files
 
@@ -164,6 +171,10 @@ npx playwright show-report   # optional
 The browser suite currently targets the development address on port 5173; the database-free HTTP test
 checks production serving separately.
 
+The map layout was manually checked on desktop and at 375 × 667: the room and comparison controls
+remain unobstructed, the mobile map opens and closes, focus returns to Show map, and the homepage
+map remains embedded. These visual checks are separate from the automated test suite.
+
 ## User Accounts & Roles
 
 ### Roles
@@ -190,7 +201,7 @@ checks production serving separately.
 
 ## Database Design
 
-The application uses **9 MongoDB schemas** with relationships between them:
+The active application uses **9 MongoDB schemas** with relationships between them:
 
 | Schema           | Key Fields                                                                     | Relationships                             |
 |------------------|--------------------------------------------------------------------------------|-------------------------------------------|
@@ -202,7 +213,7 @@ The application uses **9 MongoDB schemas** with relationships between them:
 | **AdminRequest** | userId (ObjectId ref), username, status                                        | References User                           |
 | **Favourite**    | userName, spotName, buildingName, floor, seatCount, hasPowerSocket, noiseLevel | Linked to User and StudySpot by name      |
 
-The other two schemas are `CrowdReport` (recent crowd check-ins linked to a spot and user) and
+The other two active schemas are `CheckIn` (seat check-ins linked to a spot and user) and
 `StudySpotAlert` (spot alerts and their confirm/dispute votes).
 
 ---

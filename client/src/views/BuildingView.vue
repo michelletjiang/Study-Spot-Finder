@@ -291,7 +291,7 @@ onUnmounted(() => {
 <style scoped>
 .building-page {
   /* colours come from the shared notebook palette (style.css) */
-  padding: 18px 24px 140px 48px; /* left clears the pink margin line, bottom clears the minimap */
+  padding: 18px 24px 32px 48px; /* left clears the notebook's pink margin line */
   color: var(--nb-ink);
   text-align: left;
   font-family: 'Patrick Hand', system-ui, sans-serif;

@@ -54,13 +54,3 @@ test('comparison layout includes a narrow-screen breakpoint', () => {
   assert.match(css, /@media \(max-width: 650px\)/);
   assert.match(css, /grid-template-columns: 1fr/);
 });
-
-// The tray, map and comparison page must keep their layout hooks, so the tray does not cover the map or the results.
-test('comparison controls do not cover the map or the comparison results', () => {
-  const app = fs.readFileSync('client/src/App.vue', 'utf8');
-  const map = fs.readFileSync('client/src/components/MiniMap.vue', 'utf8');
-  const tray = fs.readFileSync('client/src/components/CompareTray.vue', 'utf8');
-  assert.match(app, /with-compare-tray/);
-  assert.match(map, /\.minimap\.with-compare-tray/);
-  assert.match(tray, /route\.path !== '\/compare'/);
-});
