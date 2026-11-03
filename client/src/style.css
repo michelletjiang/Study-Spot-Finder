@@ -150,6 +150,11 @@ p {
   --nb-error: #a3303a;
   --nb-focus: #4b3fb5;
   --nb-heading: Caveat, 'Comic Sans MS', cursive;
+  /* seats free right now: the seat dots, the floor plan's Seats free colours and its legend */
+  --nb-seats-plenty: #5fb36b; /* half or more free */
+  --nb-seats-some: #f5d34a;
+  --nb-seats-few: #ec8a35;
+  --nb-seats-full: #e0606a;
 }
 
 /* ---------- buttons ---------- */
@@ -357,10 +362,10 @@ p {
   border-radius: 50%;
   vertical-align: -0.05em;
 }
-.nb-dot--plenty { background: #5fb36b; } /* half or more free */
-.nb-dot--some { background: #f0c23a; }
-.nb-dot--few { background: #f0a23a; }
-.nb-dot--full { background: #e0606a; }
+.nb-dot--plenty { background: var(--nb-seats-plenty); }
+.nb-dot--some { background: var(--nb-seats-some); }
+.nb-dot--few { background: var(--nb-seats-few); }
+.nb-dot--full { background: var(--nb-seats-full); }
 
 /* ---------- folders ---------- */
 /* <div class="nb-folder"><span class="nb-folder-paper">peeking text</span><div class="nb-folder-front">…</div></div> */

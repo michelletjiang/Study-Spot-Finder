@@ -238,6 +238,7 @@ onUnmounted(() => {
             <span><i class="swatch alert"></i>Issue reported</span>
           </div>
           <div v-else class="legend" aria-label="Room colours: seats free right now">
+            <span class="label">Seats free now</span>
             <span v-for="level in SEAT_LEVELS" :key="level.key"><i class="swatch" :class="level.key"></i>{{ level.label }}</span>
             <span><i class="swatch none"></i>Nobody checked in</span>
             <span><i class="swatch alert"></i>Issue reported</span>
@@ -420,10 +421,10 @@ h1 {
 .swatch.none { background: transparent; border-style: dashed; }
 /* margin and padding: Bootstrap has its own .alert */
 .swatch.alert { margin: 0; padding: 0; background: transparent; border: 2px dashed var(--nb-error); border-radius: 3px; }
-.swatch.plenty { background: #5fb36b; }
-.swatch.some { background: #f0c23a; }
-.swatch.few { background: #f0a23a; }
-.swatch.full { background: #e0606a; }
+.swatch.plenty { background: var(--nb-seats-plenty); }
+.swatch.some { background: var(--nb-seats-some); }
+.swatch.few { background: var(--nb-seats-few); }
+.swatch.full { background: var(--nb-seats-full); }
 .legend-wrap { display: grid; gap: 6px; justify-items: start; }
 .alert-flag { color: var(--nb-error); }
 .swatch.striped { flex: none; width: 20px; height: 20px; border-style: dashed; background: repeating-linear-gradient(45deg, #d9d5e2 0 4px, #fffef9 4px 8px); }
@@ -522,10 +523,10 @@ h1 {
 .room.tone-top { background: #5cb068; color: #28263f; }
 .room.tone-mid { background: #a4d99c; color: #28263f; }
 .room.tone-low { background: #def3d6; color: #28263f; }
-.room.tone-plenty { background: #5fb36b; color: #28263f; }
-.room.tone-some { background: #f0c23a; color: #28263f; }
-.room.tone-few { background: #f0a23a; color: #28263f; }
-.room.tone-full { background: #e0606a; color: #28263f; }
+.room.tone-plenty { background: var(--nb-seats-plenty); color: #28263f; }
+.room.tone-some { background: var(--nb-seats-some); color: #28263f; }
+.room.tone-few { background: var(--nb-seats-few); color: #28263f; }
+.room.tone-full { background: var(--nb-seats-full); color: #28263f; }
 .room[class*='tone-']:not(.tone-none) span { color: #4a4660; }
 .room.selected { box-shadow: 4px 4px 0 var(--nb-ink); }
 .room.dimmed { opacity: 0.35; }

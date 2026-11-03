@@ -217,15 +217,20 @@ polygon:focus-visible {
 }
 
 /* building page: rooms coloured by rating (the plan image's labels show through) */
-polygon.tone-none { fill: rgba(214, 240, 208, 0.35); stroke: #28263f; stroke-width: 2; }
+/* no data (no reviews, or nobody checked in): plain paper with a dashed outline, like the legend's swatch */
+polygon.tone-none { fill: rgba(255, 254, 249, 0.6); stroke: #28263f; stroke-width: 2; stroke-dasharray: 6 4; }
 polygon.tone-low { fill: rgba(222, 243, 214, 0.85); stroke: #28263f; stroke-width: 2; }
 polygon.tone-mid { fill: rgba(164, 217, 156, 0.85); stroke: #28263f; stroke-width: 2; }
 polygon.tone-top { fill: rgba(92, 176, 104, 0.85); stroke: #28263f; stroke-width: 2; }
-/* or by seats free right now (same colours as the .nb-dot seat dots in style.css) */
-polygon.tone-plenty { fill: rgba(95, 179, 107, 0.85); stroke: #28263f; stroke-width: 2; }
-polygon.tone-some { fill: rgba(240, 194, 58, 0.8); stroke: #28263f; stroke-width: 2; }
-polygon.tone-few { fill: rgba(240, 162, 58, 0.85); stroke: #28263f; stroke-width: 2; }
-polygon.tone-full { fill: rgba(224, 96, 106, 0.85); stroke: #28263f; stroke-width: 2; }
+/* or by seats free right now (the --nb-seats-* colours in style.css, shared with the seat dots) */
+polygon.tone-plenty { fill: var(--nb-seats-plenty); }
+polygon.tone-some { fill: var(--nb-seats-some); }
+polygon.tone-few { fill: var(--nb-seats-few); }
+polygon.tone-full { fill: var(--nb-seats-full); }
+polygon.tone-plenty,
+polygon.tone-some,
+polygon.tone-few,
+polygon.tone-full { fill-opacity: 0.85; stroke: #28263f; stroke-width: 2; }
 /* hover and selection are purple (the app's accent), so they can't be mistaken for a rating or seats colour.
    Hover is the lighter wash and keeps the room's outline, so a reported issue's red dashes stay visible. */
 polygon[class*='tone-']:hover,

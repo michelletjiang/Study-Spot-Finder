@@ -3,8 +3,16 @@
 import { findFloorplan } from './floorplans'
 
 // Buildings with the heatmap, on every floor that has a floor plan. To roll it out further, add them here.
-const HEATMAP_BUILDINGS = ['CONNEX', 'School of Computing and Information Systems 1', 'SCIS 2 / SOE', 'Li Ka Shing Library']
-
+const HEATMAP_BUILDINGS = [
+  'CONNEX',
+  'School of Computing and Information Systems 1',
+  'SCIS 2 / SOE',
+  'Li Ka Shing Library',
+  'Lee Kong Chian School of Business',
+  'School of Accountancy',
+  'Yong Pung How School of Law',
+  'School of Social Sciences / College of Integrative Studies',
+]
 export const heatEnabled = (buildingName, floor) => HEATMAP_BUILDINGS.includes(buildingName) && !!findFloorplan(buildingName, floor)
 
 // the noise levels, in score order (see services/noise-service.js). key is what's stored, label what students see.
