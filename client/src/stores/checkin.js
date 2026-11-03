@@ -6,6 +6,7 @@ import { api } from '../api'
 export const myCheckIn = reactive({
   current: null,
   loaded: false,
+  noiseRatings: {}, // spot _id -> this user's latest noise answer there, or null
 
   // GET /api/checkins/me, once per page load (call again with force to refresh)
   async load(force = false) {
