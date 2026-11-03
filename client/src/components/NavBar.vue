@@ -36,7 +36,7 @@ async function logout() {
   <nav class="navbar navbar-expand-lg">
     <div class="container">
       <!-- The brand is always available as a safe home link. -->
-      <RouterLink class="navbar-brand" to="/"><h2>Study Spots📚</h2></RouterLink>
+      <RouterLink class="navbar-brand" to="/"><img src="/logo.png" alt="" class="brand-logo"><h2>Study Spots</h2></RouterLink>
       <!-- The keyboard-labelled toggler exposes links on narrow screens. -->
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-nav" aria-controls="main-nav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -77,8 +77,10 @@ async function logout() {
 </template>
 
 <style scoped>
-/* Keep the handwritten brand font from the app theme. */
+/* The logo sits beside the handwritten brand name, which keeps the app theme's font. */
+.navbar-brand { display: flex; align-items: center; gap: 4px; }
 .navbar-brand h2 { margin: 0; }
+.brand-logo { width: 52px; height: auto; }
 /* Highlight the current route for keyboard and visual orientation. */
 /* a yellow highlighter stroke behind the link (yellow text would be too faint on the cream page) */
 .nav-link.router-link-active {
