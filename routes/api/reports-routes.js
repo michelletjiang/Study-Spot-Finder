@@ -12,6 +12,8 @@ const router = express.Router();
 router.post('/', auth.apiLoggedIn, reportController.apiCreateReport);
 // GET /pending lists reports waiting for moderation (admin only). It is declared before /:id so the word "pending" is not read as an id.
 router.get('/pending', auth.apiAdmin, reportController.apiPendingReports); // before /:id
+// GET /mine lists the logged-in user's own reports, newest first (also before /:id).
+router.get('/mine', auth.apiLoggedIn, reportController.apiMyReports);
 // GET /:id reads one report.
 router.get('/:id', auth.apiLoggedIn, reportController.apiGetReport);
 // PUT /:id lets the reporter edit their report.

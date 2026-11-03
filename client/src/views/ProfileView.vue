@@ -1,7 +1,7 @@
 <script setup>
 // ACTIVE: the profile page for students and admins, drawn as a notebook page:
 // a "student card" with the account details, a sticky note for admin requests,
-// two folders (favourites, reviews) with a peek at what's inside, and the study preferences with
+// three folders (favourites, reviews, reports) with a peek at what's inside, and the study preferences with
 // the top picks they give.
 // Admins see the pending admin requests on the sticky note instead.
 import { ref, computed, onMounted } from 'vue'
@@ -9,6 +9,7 @@ import { useRouter } from 'vue-router'
 import { api } from '../api'
 import { auth } from '../stores/auth'
 import { favourites } from '../stores/favourites'
+import { reportStatusLabel } from '../reports'
 import StudyPreferences from '../components/StudyPreferences.vue'
 import TopPicks from '../components/TopPicks.vue'
 
@@ -22,6 +23,8 @@ const adminRequest = ref(null)
 const pendingRequests = ref([])
 // The user's reviews, newest first (only used for the folder's count and peek).
 const reviews = ref(null)
+// The reviews the user has reported, newest first (only used for the folder's count and peek).
+const reports = ref(null)
 // The saved study preferences, shared by the preferences sheet and the top picks.
 const prefs = ref(null)
 const error = ref('')
@@ -48,6 +51,11 @@ async function loadFolders() {
     reviews.value = await api('/api/reviews/mine')
   } catch (e) {
     console.error('Could not load reviews:', e.message)
+  }
+  try {
+    reports.value = await api('/api/reports/mine')
+  } catch (e) {
+    console.error('Could not load reports:', e.message)
   }
 }
 
@@ -78,6 +86,12 @@ const reviewsPeek = computed(() => {
   const stars = '★'.repeat(Math.round(latest.rating)) + '☆'.repeat(5 - Math.round(latest.rating))
   return `${stars} “${latest.title || latest.content}”`
 })
+
+const reportsPeek = computed(() => {
+  const latest = reports.value?.[0]
+  return latest ? `${latest.reason} · ${reportStatusLabel(latest.status)}` : ''
+})
+const waitingReports = computed(() => reports.value?.filter(r => r.status === 'Pending').length ?? 0)
 
 // A student asks to become an admin.
 async function requestAdmin() {
@@ -120,7 +134,7 @@ async function deleteAccount() {
 
     <template v-if="user">
       <h1 class="nb-title">Hi, {{ user.username }}</h1>
-      <p class="nb-subtitle intro">Your account, your favourite spots and the reviews you’ve written.</p>
+      <p class="nb-subtitle intro">Your account, your favourite spots, and the reviews you’ve written and reported.</p>
 
       <div class="layout">
         <!-- the account details, as an ID card taped to the page -->
@@ -201,6 +215,20 @@ async function deleteAccount() {
                 </svg>
                 <span class="folder-title">My reviews</span>
                 <span class="count">{{ reviews ? `${reviews.length} written` : '…' }}</span>
+                <span class="open">Open folder →</span>
+              </span>
+            </RouterLink>
+            <RouterLink to="/my-reports" class="nb-folder folder">
+              <span class="nb-folder-paper" aria-hidden="true">{{ reportsPeek }}</span>
+              <span class="nb-folder-front">
+                <svg class="icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                  <path d="M5 21V4M5 4h11l-2 4 2 4H5" fill="#f5a0a6" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" />
+                </svg>
+                <span class="folder-title">My reports</span>
+                <span class="count">
+                  <template v-if="!reports">…</template>
+                  <template v-else>{{ reports.length }} sent<template v-if="waitingReports"> · {{ waitingReports }} waiting</template></template>
+                </span>
                 <span class="open">Open folder →</span>
               </span>
             </RouterLink>
@@ -301,15 +329,16 @@ dd { margin: 0; min-width: 0; }
 .request-actions .nb-btn { margin-top: 0; }
 
 /* ---------- folders ---------- */
+/* three folders side by side; they wrap on narrower screens */
 .folders {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 30px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 24px;
 }
 /* the folder look comes from style.css (nb-folder) */
-.folder { min-height: 250px; }
+.folder { min-height: 230px; }
 .folder:focus-visible { outline: 3px solid var(--nb-focus); outline-offset: 3px; }
-.folder-title { margin-top: 8px; font: 700 2rem/1.1 var(--nb-heading); }
+.folder-title { margin-top: 8px; font: 700 1.8rem/1.05 var(--nb-heading); }
 .count { color: #5e5a73; }
 .open { margin-top: auto; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 

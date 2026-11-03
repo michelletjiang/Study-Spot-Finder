@@ -2,6 +2,7 @@
 // ACTIVE (admin only): list of buildings with Edit and Delete. The router checks the admin role, and the server checks again.
 import { ref, computed, onMounted } from 'vue'
 import { api } from '../api'
+import { levelsText } from '../floors'
 import AdminTabs from '../components/AdminTabs.vue'
 
 const buildings = ref([])
@@ -73,7 +74,7 @@ async function remove(building) {
           <tbody>
             <tr v-for="building in shown" :key="building._id">
               <td><strong>{{ building.buildingname }}</strong></td>
-              <td>{{ building.floors }}</td>
+              <td>{{ levelsText(building) }}</td>
               <td>{{ building.postal }}</td>
               <td>
                 <div class="nb-actions">

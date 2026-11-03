@@ -18,6 +18,7 @@ import SpotDetailView from './views/SpotDetailView.vue'
 import CompareView from './views/CompareView.vue'
 import ReviewFormView from './views/ReviewFormView.vue'
 import MyReviewsView from './views/MyReviewsView.vue'
+import MyReportsView from './views/MyReportsView.vue'
 import ReportFormView from './views/ReportFormView.vue'
 import FavouritesView from './views/FavouritesView.vue'
 import AdminBuildingsView from './views/AdminBuildingsView.vue'
@@ -61,6 +62,7 @@ const routes = [
   { path: '/reviews/:reviewId/report', component: ReportFormView, meta: { requiresAuth: true } },
   { path: '/reports/:id/edit', component: ReportFormView, meta: { requiresAuth: true } },
   { path: '/my-reviews', component: MyReviewsView, meta: { requiresAuth: true } },
+  { path: '/my-reports', component: MyReportsView, meta: { requiresAuth: true } },
   { path: '/favourites', component: FavouritesView, meta: { requiresAuth: true } },
 
   // admin only

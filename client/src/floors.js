@@ -10,6 +10,12 @@ export function floorOrder(floor) {
   return floor.startsWith('B') ? -Number(floor.slice(1)) : Number(floor)
 }
 
+// "5 floors", "3 floors · 2 basements": a building's levels, for cards and tables
+export function levelsText({ floors, basements = 0 }) {
+  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`
+  return basements ? `${plural(floors, 'floor')} · ${plural(basements, 'basement')}` : plural(floors, 'floor')
+}
+
 export function floorLabel(floor) {
   return floor.startsWith('B') ? floor : `Level ${floor}`
 }

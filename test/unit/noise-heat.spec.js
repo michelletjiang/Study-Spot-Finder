@@ -140,11 +140,16 @@ describe('heatEnabled', () => {
     expect(heatEnabled('School of Computing and Information Systems 1', '2')).toBe(true)
     expect(heatEnabled('SCIS 2 / SOE', 'B1')).toBe(true)
     expect(heatEnabled('Li Ka Shing Library', '5')).toBe(true)
+    expect(heatEnabled('Lee Kong Chian School of Business', '2')).toBe(true)
+    expect(heatEnabled('School of Accountancy', '1')).toBe(true)
+    expect(heatEnabled('Yong Pung How School of Law', 'B2')).toBe(true)
+    expect(heatEnabled('School of Social Sciences / College of Integrative Studies', 'B1')).toBe(true)
   })
 
   it('is off for floors without a plan and for other buildings', () => {
     expect(heatEnabled('CONNEX', '7')).toBe(false)
-    expect(heatEnabled('School of Accountancy', '1')).toBe(false)
+    expect(heatEnabled('School of Accountancy', '4')).toBe(false) // no level 4 plan
+    expect(heatEnabled('Some New Building', '1')).toBe(false)
     expect(heatEnabled('SCIS 1', '2')).toBe(false) // the building's old name
   })
 })

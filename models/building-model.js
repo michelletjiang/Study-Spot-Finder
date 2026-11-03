@@ -9,10 +9,17 @@ const buildingSchema = new mongoose.Schema({
         required: [true, 'A building must have a name']
         
     },
-    // Number of floors.
+    // Number of floors above ground (1 to 10).
     floors: {
         type: Number,
         required: [true, 'A building must have floors'],
+    },
+    // Basement levels (0 to 2): B1, B2. Older buildings saved before this field have none until an admin sets it.
+    basements: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 2,
     },
     // Postal code. It is unique, so it also acts as the id in the URLs (/api/buildings/:postal).
     postal: {
@@ -55,9 +62,9 @@ exports.addBuilding = function(newBuilding) {
   return Building.create(newBuilding);
 };
 
-// Change the number of floors of the building with that postal code.
-exports.editBuilding = function(postal,floors) {
-  return Building.updateOne({postal:postal} ,{floors:floors});
+// Change the number of floors of the building with that postal code (and its basement levels, when given).
+exports.editBuilding = function(postal, floors, basements) {
+  return Building.updateOne({ postal: postal }, basements === undefined ? { floors } : { floors, basements });
 };
 
 // Save latitude and longitude. Used by the geocode script.

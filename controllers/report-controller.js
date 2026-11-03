@@ -237,6 +237,17 @@ exports.apiPendingReports = async (req, res) => {
   }
 };
 
+// GET /api/reports/mine: the logged-in user's own reports, newest first, with their review filled in.
+// An approved report's review has been deleted, so its reviewId comes back as null.
+exports.apiMyReports = async (req, res) => {
+  try {
+    res.json(await Report.find({ reportedBy: req.session.user.username }).populate('reviewId').sort({ createdAt: -1 }));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error loading your reports' });
+  }
+};
+
 // GET /api/reports/:id: the reporter or an admin may read it.
 // GET /api/reports/:id   (whoever filed it, or an admin)
 exports.apiGetReport = async (req, res) => {

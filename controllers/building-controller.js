@@ -1,5 +1,6 @@
 // MIXED file: lines 10 to 168 are LEGACY EJS handlers used only by routes/buildings-routes.js. The "JSON API" section from line 171 is ACTIVE and used by routes/api/buildings-routes.js.
 // fs/promises is imported but not used in this file.
+const { checkLevels } = require('../lib/floors');
 const fs = require('fs/promises');
 
 // Models and services this controller calls.
@@ -214,14 +215,13 @@ exports.showBuildingSpots = async (req, res) => {
 
 // Checks the admin form for a new building. Returns an error message or null.
 // shared validation for create
-function validateBuilding({ buildingname, postal, floors }) {
+function validateBuilding({ buildingname, postal, floors, basements }) {
     // Name, postal code and floors are all required.
     if (!buildingname?.trim() || !postal || !floors) return 'All Fields Are Required.';
     // The postal code is exactly six digits.
     if (!/^\d{6}$/.test(String(postal))) return 'Enter Valid Postal Code.';
-    // Floors are from 1 to 10.
-    if (!(Number(floors) >= 1 && Number(floors) <= 10)) return 'Enter Valid Floor.';
-    return null;
+    // Floors are from 1 to 10 and basement levels 0 to 2 (lib/floors.js).
+    return checkLevels({ floors, basements });
 }
 
 // GET /api/buildings: list buildings for the home page (HomeView.vue).
@@ -286,7 +286,7 @@ exports.createBuildingJson = async (req, res) => {
     if (msg) return res.status(400).json({ message: msg });
 
     // Pull out the fields.
-    const { buildingname, postal, floors } = req.body;
+    const { buildingname, postal, floors, basements = 0 } = req.body;
     try {
         // Existing note: a failed OneMap lookup does not stop the save.
         // look up lat/lng from OneMap; if that fails the building is still saved
@@ -299,7 +299,7 @@ exports.createBuildingJson = async (req, res) => {
             console.error('Geocode failed for postal ' + postal + ':', error.message);
         }
         // Save the building; the coordinates are added when found.
-        const building = await Building.addBuilding({ buildingname: buildingname.trim(), postal, floors, ...coords });
+        const building = await Building.addBuilding({ buildingname: buildingname.trim(), postal, floors, basements: Number(basements), ...coords });
         res.status(201).json(building);
     } catch (error) {
         // Duplicate postal code: 409 conflict.
@@ -309,15 +309,16 @@ exports.createBuildingJson = async (req, res) => {
     }
 };
 
-// PUT /api/buildings/:postal (admin): only the floors can change.
-// PUT /api/buildings/:postal  (only floors can change, same as the old form)
+// PUT /api/buildings/:postal (admin): only the floors and basement levels can change.
+// PUT /api/buildings/:postal  body: { floors, basements? }
 exports.updateBuildingJson = async (req, res) => {
-    const floors = Number(req.body.floors);
-    // Floors must be 1 to 10.
-    if (!(floors >= 1 && floors <= 10)) return res.status(400).json({ message: 'Enter Valid Floor.' });
+    const { floors, basements } = req.body;
+    // Floors must be 1 to 10 and basement levels 0 to 2 (lib/floors.js).
+    const msg = checkLevels({ floors, basements: basements ?? 0 });
+    if (msg) return res.status(400).json({ message: msg });
     try {
-        // Update the floors.
-        const result = await Building.editBuilding(req.params.postal, floors);
+        // Update the floors, and the basements if they were sent.
+        const result = await Building.editBuilding(req.params.postal, Number(floors), basements === undefined ? undefined : Number(basements));
         // No match means no such building.
         if (result.matchedCount === 0) return res.status(404).json({ message: 'Building not found' });
         // Return the updated building.
