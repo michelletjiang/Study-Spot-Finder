@@ -1,5 +1,5 @@
 <script setup>
-// ACTIVE: the floating Leaflet map. App.vue mounts it once for logged-in users. It is unrelated to the comparison feature except that it is lifted above the tray (class with-compare-tray, styled below).
+// Leaflet map: in its own page section, or docked inside the home page map box.
 // Vue helpers for state, derived values, watchers and start and stop hooks.
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 // The route (to read meta.showMap) and the router (to open a building).
@@ -12,29 +12,32 @@ import 'leaflet/dist/leaflet.css'
 import { api } from '../api'
 // The shared minimap state (position, destination, routes).
 import { mapStore } from '../stores/map'
-import { comparison } from '../stores/compare.js'
 
-// Floating map in the bottom-right corner (mounted once in App.vue).
+// Mounted once in App.vue so location and routes survive page changes.
 // Shows the user's location and every building; on a building page it also draws the route there.
 // Only visible on routes with meta.showMap, but kept mounted so the map isn't rebuilt on every page change.
-// On the home page it moves into that page's map box instead (HomeView puts the box in mapStore.dockEl),
-// filling it rather than floating - the same map, so the route and location carry over between pages.
+// On the home page it moves into that page's map box (HomeView sets mapStore.dockEl).
+// The same map keeps the route and location when moving between pages.
 
 // The current route and the router.
 const route = useRoute()
 const router = useRouter()
 // The map shows only on routes whose meta.showMap is true.
 const visible = computed(() => !!route.meta.showMap)
-// Whether the map is sitting in the home page's box rather than floating in the corner.
+// Whether the map is sitting in the home page's box.
 const docked = computed(() => !!mapStore.dockEl)
-// The map moves behind the comparison tray and stops intercepting spot controls when the shortlist is non-empty.
-const withCompareTray = computed(() => comparison.count.value > 0)
 
 // The element Leaflet draws into.
 const mapEl = ref(null)
 // The .minimap box (moved into mapStore.dockEl while docked) and where it normally lives (this component's root).
 const boxEl = ref(null)
 const homeEl = ref(null)
+const toggleEl = ref(null)
+
+function closeMap() {
+  mapStore.expanded = false
+  toggleEl.value?.focus()
+}
 // Buildings that have coordinates.
 const buildings = ref([])
 
@@ -163,7 +166,7 @@ watch(() => mapStore.dockEl, dockEl => {
   ;(dockEl || homeEl.value).appendChild(boxEl.value)
 }, { flush: 'sync' })
 
-// Moving between the corner and the home page box: re-centre on whatever is shown.
+// Moving between page sections: re-centre on whatever is shown.
 watch(docked, async () => {
   await nextTick()
   map.invalidateSize()
@@ -285,19 +288,25 @@ function legText(leg) {
 
 <template>
   <!-- Wrapper the box returns to when it leaves the home page. -->
-  <div ref="homeEl">
+  <section ref="homeEl" v-show="visible && !docked" class="map-section" aria-label="Map and directions">
+    <h2 class="map-heading">Map and directions</h2>
+    <button ref="toggleEl" type="button" class="nb-btn map-toggle" :aria-expanded="mapStore.expanded"
+            aria-controls="studyspot-map" @click="mapStore.expanded = !mapStore.expanded">
+      {{ mapStore.expanded ? 'Hide map' : 'Show map' }}
+    </button>
   <!-- The map box. v-show hides it without removing it, so the map is not rebuilt. -->
-  <div ref="boxEl" v-show="visible" class="minimap" :class="{ expanded: mapStore.expanded && !docked, docked, 'with-compare-tray': withCompareTray && !docked }" @transitionend="onResized">
+  <div id="studyspot-map" ref="boxEl" v-show="visible" class="minimap" :class="{ expanded: mapStore.expanded && !docked, docked }" @transitionend="onResized" @keydown.esc="closeMap">
     <!-- The element Leaflet draws into. -->
     <div ref="mapEl" class="map"></div>
 
     <!-- Recentre and expand buttons. -->
     <div class="controls">
       <button type="button" title="Recentre" @click="recentre">◎</button>
-      <button v-if="!docked" type="button" :title="mapStore.expanded ? 'Shrink map' : 'Expand map'"
+      <button v-if="!docked" type="button" class="expand-map" :title="mapStore.expanded ? 'Shrink map' : 'Expand map'"
               @click="mapStore.expanded = !mapStore.expanded">
         {{ mapStore.expanded ? '✕' : '⤢' }}
       </button>
+      <button v-if="!docked" type="button" class="close-map" aria-label="Close map" title="Close map" @click="closeMap">✕</button>
     </div>
 
     <!-- The text panel with messages and route choices. -->
@@ -335,20 +344,25 @@ function legText(leg) {
       <p v-else-if="mapStore.routeError" class="note">{{ mapStore.routeError }}</p>
     </div>
   </div>
-  </div>
+  </section>
 </template>
 
 /* Scoped CSS: these rules apply only to this component. */
 <style scoped>
-/* The box fixed to the bottom-right of the screen. */
+.map-section {
+  margin: 0 24px 40px 48px;
+  min-width: 0;
+  text-align: left;
+}
+.map-heading { font: 700 2rem/1.2 var(--nb-heading); }
+.map-toggle, .close-map { display: none; }
+
+/* Normal document flow keeps the map clear of room and comparison controls. */
 .minimap {
-  position: fixed;
-  right: 16px;
-  bottom: 16px;
-  /* Existing note: above page content. */
-  z-index: 1000; /* above page content; Leaflet's own panes go up to ~1000 inside this box */
-  width: 300px;
-  height: 220px;
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  height: 360px;
   display: flex;
   flex-direction: column;
   border-radius: 14px;
@@ -358,27 +372,18 @@ function legText(leg) {
   box-shadow: var(--shadow);
   text-align: left;
   font-size: 14px;
-  transition: width 0.25s ease, height 0.25s ease;
+  transition: height 0.25s ease;
 }
 
-/* The enlarged state. */
-.minimap.expanded {
-  width: min(720px, calc(100vw - 32px));
-  height: min(600px, calc(100vh - 32px));
-}
+.minimap.expanded { height: min(600px, 80vh); }
 
-/* Existing note below: keeps the map clear of the comparison tray. */
-/* Keep the map from covering the comparison actions at the bottom of the page. */
-.minimap.with-compare-tray { bottom: 136px; pointer-events: none; }
-/* Leaflet assigns pointer events to its descendants, so disable them too while controls are underneath. */
-.minimap.with-compare-tray * { pointer-events: none; }
-
-/* On a narrow screen the map shrinks, and is hidden while the comparison tray is showing. */
-@media (max-width: 480px) {
-  .minimap { width: calc(100vw - 32px); height: 200px; pointer-events: none; }
-  /* On phones the map is informational so it never blocks scrollable spot controls. */
-  .minimap * { pointer-events: none; }
-  .minimap.with-compare-tray { display: none !important; }
+@media (max-width: 760px) {
+  .map-section { margin-left: 16px; margin-right: 16px; }
+  .map-heading, .expand-map { display: none; }
+  .map-toggle { display: inline-block; margin-bottom: 12px; }
+  .controls .close-map { display: inline-block; }
+  .minimap:not(.docked):not(.expanded) { display: none !important; }
+  .minimap.expanded { height: 360px; max-height: 70vh; }
 }
 
 /* The map area fills the box. */
@@ -490,7 +495,7 @@ function legText(leg) {
   color: var(--text);
 }
 
-/* In the home page's map box: fill it instead of floating in the corner, and stay interactive on phones too. */
+/* Fill the existing home-page map box. */
 .minimap.docked {
   position: relative;
   right: auto;
