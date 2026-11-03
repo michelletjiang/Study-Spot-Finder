@@ -10,6 +10,7 @@ export const buildingHours = {
   'Yong Pung How School of Law': SCHOOL,
   'School of Accountancy': SCHOOL,
   'School of Social Sciences / College of Integrative Studies': SCHOOL,
+  'Lee Kong Chian School of Business': SCHOOL,
 }
 
 // a closing time this close counts as "closing soon"

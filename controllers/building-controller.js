@@ -9,6 +9,8 @@ const Building = require('../models/building-model');
 const cascade = require('../services/cascade-service'); // deletes child records with their parent
 // StudySpot model: used to list the spots inside a building.
 const StudySpot = require('../models/studyspot-model'); // add this at the top with the other requires
+// Review summaries give each spot its average rating on the building page.
+const Review = require('../models/reviews-model');
 // OneMap service: finds the coordinates of a new building's postal code.
 const onemap = require('../services/onemap');
 
@@ -256,8 +258,18 @@ exports.listBuildingSpots = async (req, res) => {
         // Find the building by name.
         const building = await Building.findByName(req.params.buildingname);
         if (!building) return res.status(404).json({ message: 'Building not found' });
-        // Find its spots.
-        const studySpots = await StudySpot.findByBuilding(building.buildingname);
+        // Find its spots, and the review summary of every reviewed spot.
+        const [spots, summaries] = await Promise.all([StudySpot.findByBuilding(building.buildingname), Review.summariseAll()]);
+        // Reviews are stored by building name + spot name (roomId), so match them the same way.
+        const reviews = new Map(summaries
+            .filter(r => r._id.buildingName === building.buildingname)
+            .map(r => [r._id.roomId, r]));
+        // Each spot gets avgRating (1-5, null = no reviews yet) and reviewCount, for the floor plan colours.
+        const studySpots = spots.map(spot => ({
+            ...spot.toObject(),
+            avgRating: reviews.get(spot.name)?.avgRating ?? null,
+            reviewCount: reviews.get(spot.name)?.count ?? 0,
+        }));
         // Send both together.
         res.json({ building, studySpots });
     } catch (error) {

@@ -80,5 +80,12 @@ async function logout() {
 /* Keep the handwritten brand font from the app theme. */
 .navbar-brand h2 { margin: 0; }
 /* Highlight the current route for keyboard and visual orientation. */
-.nav-link.router-link-exact-active { color: var(--accent); font-weight: 600; }
+/* a yellow highlighter stroke behind the link (yellow text would be too faint on the cream page) */
+.nav-link.router-link-active {
+  color: #28263f;
+  font-weight: 600;
+  background: linear-gradient(transparent 48%, #ffe58a 48%, #ffe58a 78%, transparent 78%) no-repeat;
+  background-size: calc(100% - 2 * var(--bs-navbar-nav-link-padding-x, 0.5rem)) 100%;
+  background-position: center;
+}
 </style>

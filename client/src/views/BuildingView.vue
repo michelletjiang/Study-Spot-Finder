@@ -1,14 +1,16 @@
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBuildingSpots } from '../buildingSpots'
 import { normalizeFloor, floorOrder, floorLabel } from '../floors'
 import { floorplans, findFloorplan } from '../floorplans'
+import { openStatus } from '../buildingHours'
+import { isGroupRoom, isQuiet } from '../roomTypes'
 import FloorPlan from '../components/FloorPlan.vue'
-import { comparison } from '../stores/compare.js'
+import SpotPanel from '../components/SpotPanel.vue'
 
-// A building's floors on the left and the chosen floor's floorplan on the right.
-// The chosen floor is kept in ?floor= so the floor page's "All floors" link comes back to it.
+// A building: floor tabs, the chosen floor's plan (rooms coloured by rating), and a details card for the clicked room.
+// The floor and room are kept in ?floor= and ?spot=, so the back button and shared links come back to the same view.
 const route = useRoute()
 const router = useRouter()
 const buildingName = computed(() => route.params.name)
@@ -23,176 +25,367 @@ const floors = computed(() => {
 
 const spotsOn = floor => spots.value.filter(s => normalizeFloor(s.floor) === floor)
 const hasPlan = floor => !!findFloorplan(buildingName.value, floor)
+const tabLabel = floor => (floor.startsWith('B') ? floor : `L${floor}`)
 
 // ?floor= if it's valid, otherwise the first floor with a floorplan, otherwise the first floor
 const selectedFloor = computed(() =>
   floors.value.includes(route.query.floor) ? route.query.floor : floors.value.find(hasPlan) || floors.value[0])
 const selectedPlan = computed(() => findFloorplan(buildingName.value, selectedFloor.value))
-const selectedSpots = computed(() => spotsOn(selectedFloor.value))
+const floorSpots = computed(() => spotsOn(selectedFloor.value))
+const selectedSpot = computed(() => floorSpots.value.find(s => s._id === route.query.spot) || null)
 
-// The mapping view also keeps the comparison entry point for each catalogue spot.
-function toggleCompare(spot) {
-  comparison.toggle(spot._id)
+// open/closed badge, refreshed every minute
+const now = ref(new Date())
+const status = computed(() => openStatus(buildingName.value, now.value))
+
+// ---------- filters ----------
+const FILTERS = [
+  { key: 'power', label: 'Power sockets', test: s => s.hasPowerSocket },
+  { key: 'group', label: 'Group study rooms', test: isGroupRoom },
+  { key: 'quiet', label: 'Quiet', test: isQuiet },
+]
+const activeFilters = ref([])
+const matches = spot => FILTERS.filter(f => activeFilters.value.includes(f.key)).every(f => f.test(spot))
+const dimmedIds = computed(() => floorSpots.value.filter(s => !matches(s)).map(s => s._id))
+const matchCount = computed(() => floorSpots.value.length - dimmedIds.value.length)
+
+function toggleFilter(key) {
+  activeFilters.value = activeFilters.value.includes(key)
+    ? activeFilters.value.filter(k => k !== key)
+    : [...activeFilters.value, key]
 }
 
+// ---------- rating colours ----------
+function tone(spot) {
+  if (spot.avgRating == null) return 'none'
+  if (spot.avgRating >= 4.5) return 'top'
+  if (spot.avgRating >= 4) return 'mid'
+  return 'low'
+}
+const tones = computed(() => Object.fromEntries(floorSpots.value.map(s => [s._id, tone(s)])))
+const anyReviews = computed(() => spots.value.some(s => s.reviewCount > 0))
+
+// ---------- floors, rooms, zoom, list ----------
 function chooseFloor(floor) {
-  router.replace({ query: { floor } })
+  router.replace({ query: { floor } }) // a new floor starts with no room selected
 }
 
-function floorPath(floor) {
-  return `/building/${buildingName.value}/floor/${floor}`
+function stepFloor(step) {
+  const i = floors.value.indexOf(selectedFloor.value) + step
+  if (i >= 0 && i < floors.value.length) chooseFloor(floors.value[i])
+}
+const isFirstFloor = computed(() => floors.value.indexOf(selectedFloor.value) <= 0)
+const isLastFloor = computed(() => floors.value.indexOf(selectedFloor.value) >= floors.value.length - 1)
+
+function selectSpot(spot) {
+  router.replace({ query: { floor: selectedFloor.value, spot: spot._id } })
+}
+function closePanel() {
+  router.replace({ query: { floor: selectedFloor.value } })
 }
 
-// clicking a room in the preview opens that floor with the room already selected
-function openSpot(spot) {
-  router.push({ path: floorPath(selectedFloor.value), query: { spot: spot._id } })
+const ZOOMS = [1, 1.5, 2]
+const zoom = ref(1)
+const zoomIn = () => (zoom.value = ZOOMS[Math.min(ZOOMS.indexOf(zoom.value) + 1, ZOOMS.length - 1)])
+const zoomOut = () => (zoom.value = ZOOMS[Math.max(ZOOMS.indexOf(zoom.value) - 1, 0)])
+
+// list view: chosen with the ☰ button, and always used for floors without a plan
+const listChosen = ref(false)
+const showList = computed(() => listChosen.value || !selectedPlan.value)
+watch(selectedFloor, () => (zoom.value = 1))
+
+// ← / → switch floors, unless you're typing somewhere
+function onKey(e) {
+  if (e.target.closest('input, textarea, select, [contenteditable]') || e.altKey || e.ctrlKey || e.metaKey) return
+  if (e.key === 'ArrowLeft') stepFloor(-1)
+  if (e.key === 'ArrowRight') stepFloor(1)
 }
+
+let timer
+onMounted(() => {
+  window.addEventListener('keydown', onKey)
+  timer = setInterval(() => (now.value = new Date()), 60_000)
+})
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKey)
+  clearInterval(timer)
+})
 </script>
 
 <template>
-  <h2>{{ buildingName }}</h2>
-  <p v-if="loading">Loading...</p>
-  <p v-else-if="error">{{ error }}</p>
-  <p v-else-if="floors.length === 0">No study spots in this building yet.</p>
-  <div v-else class="split">
-    <nav class="floor-list" aria-label="Floors">
-      <!-- a div, not a button, because a button can't contain the arrow link -->
-      <div v-for="floor in floors" :key="floor" :class="['floor-card', { selected: floor === selectedFloor }]">
-        <button class="floor-select" :aria-pressed="floor === selectedFloor" @click="chooseFloor(floor)">
-          <strong>{{ floorLabel(floor) }}</strong>
-          <small>
-            {{ spotsOn(floor).length }} study spot{{ spotsOn(floor).length === 1 ? '' : 's' }}{{ hasPlan(floor) ? ' · floorplan' : '' }}
-          </small>
-        </button>
-        <RouterLink
-          v-if="spotsOn(floor).length"
-          :to="floorPath(floor)"
-          class="floor-open"
-          :aria-label="`View the study spots on ${floorLabel(floor)}`"
-          :title="`View the study spots on ${floorLabel(floor)}`"
-        >&rarr;</RouterLink>
-      </div>
-    </nav>
+  <div class="building-page">
+    <RouterLink to="/" class="back">‹ All buildings</RouterLink>
 
-    <section v-if="selectedFloor" class="plan">
-      <h3>{{ floorLabel(selectedFloor) }}</h3>
-      <p v-if="!selectedSpots.length">No study spots on this floor yet.</p>
-      <template v-if="selectedPlan">
-        <FloorPlan :plan="selectedPlan" :spots="selectedSpots" @select="openSpot" />
-        <p class="hint">Click a room to open it.</p>
-      </template>
-      <p v-else class="no-plan">No floorplan for this floor yet.</p>
-      <!-- Keep spot comparison available alongside the latest floor mapping. -->
-      <h3>Study Spots in {{ buildingName }}</h3>
-      <ul v-if="spots.length" class="spot-list" aria-label="Study spots in this building">
-        <li v-for="spot in spots" :key="spot._id">
-          <RouterLink :to="`/spots/${spot._id}`">{{ spot.name }}</RouterLink>
-          <RouterLink :to="`/spots/${spot._id}`">View Details &amp; Reviews</RouterLink>
-          <button class="compare-button" type="button" @click="toggleCompare(spot)">
-            {{ comparison.has(spot._id) ? 'Remove from comparison' : 'Compare' }}
-          </button>
-        </li>
-      </ul>
-    </section>
+    <header class="title-row">
+      <h1>{{ buildingName }}</h1>
+      <span v-if="status" class="status" :class="status.state">
+        <span class="dot" aria-hidden="true"></span>{{ status.text }}
+      </span>
+    </header>
+
+    <p v-if="loading" class="nb-state">Loading floors and rooms…</p>
+    <p v-else-if="error" class="nb-state nb-state--error">Couldn't load this building: {{ error }}</p>
+    <p v-else-if="floors.length === 0" class="nb-state">No study spots in this building yet.</p>
+
+    <template v-else>
+      <div class="toolbar">
+        <div class="filters" role="group" aria-label="Show rooms with">
+          <span class="label">Show rooms with</span>
+          <button
+            v-for="f in FILTERS" :key="f.key" type="button" class="chip"
+            :aria-pressed="activeFilters.includes(f.key)" @click="toggleFilter(f.key)"
+          >{{ f.label }}</button>
+        </div>
+        <div class="legend" aria-label="Room colours: average rating">
+          <span class="label">Avg. rating</span>
+          <span><i class="swatch top"></i>4.5 and up</span>
+          <span><i class="swatch mid"></i>4.0 – 4.4</span>
+          <span><i class="swatch low"></i>Under 4.0</span>
+          <span><i class="swatch none"></i>No reviews yet</span>
+        </div>
+      </div>
+
+      <div class="layout" :class="{ 'with-panel': selectedSpot }">
+        <div class="plan-col">
+          <div class="tab-row">
+            <nav class="tabs" aria-label="Floors">
+              <button
+                v-for="floor in floors" :key="floor" type="button" class="tab"
+                :class="{ active: floor === selectedFloor }" :aria-current="floor === selectedFloor ? 'true' : null"
+                :aria-label="`${floorLabel(floor)}, ${spotsOn(floor).length} study spots`"
+                @click="chooseFloor(floor)"
+              >
+                <strong>{{ tabLabel(floor) }}</strong>
+                <small> · {{ spotsOn(floor).length }}<template v-if="floor === selectedFloor"> spot{{ spotsOn(floor).length === 1 ? '' : 's' }}</template></small>
+              </button>
+            </nav>
+            <div class="steppers">
+              <button type="button" class="square" aria-label="Previous floor" :disabled="isFirstFloor" @click="stepFloor(-1)">‹</button>
+              <button type="button" class="square" aria-label="Next floor" :disabled="isLastFloor" @click="stepFloor(1)">›</button>
+            </div>
+          </div>
+
+          <section class="sheet" :aria-label="`${floorLabel(selectedFloor)} floor plan`">
+            <div class="sheet-tools">
+              <template v-if="selectedPlan && !showList">
+                <button type="button" class="square" aria-label="Zoom in" :disabled="zoom === ZOOMS[ZOOMS.length - 1]" @click="zoomIn">+</button>
+                <button type="button" class="square" aria-label="Zoom out" :disabled="zoom === ZOOMS[0]" @click="zoomOut">−</button>
+              </template>
+              <button
+                v-if="selectedPlan" type="button" class="square" :aria-pressed="listChosen"
+                :aria-label="listChosen ? 'Show floor plan' : 'Show rooms as a list'" @click="listChosen = !listChosen"
+              >{{ listChosen ? '▦' : '☰' }}</button>
+            </div>
+
+            <p v-if="activeFilters.length" class="match-note">
+              {{ matchCount }} of {{ floorSpots.length }} rooms match
+              <button type="button" class="link" @click="activeFilters = []">Clear filters</button>
+            </p>
+
+            <!-- plan -->
+            <div v-if="!showList" class="plan-scroll">
+              <div class="plan-inner" :style="{ width: `${zoom * 100}%` }">
+                <FloorPlan
+                  :plan="selectedPlan" :spots="floorSpots" :selected-id="selectedSpot?._id ?? null"
+                  :tones="tones" :dimmed-ids="dimmedIds" @select="selectSpot"
+                />
+              </div>
+            </div>
+
+            <!-- list (also the fallback for floors without a plan) -->
+            <div v-else class="room-list">
+              <p v-if="!selectedPlan" class="no-plan">No floor plan for {{ floorLabel(selectedFloor) }} yet, so here are its rooms as a list.</p>
+              <p v-if="!floorSpots.length" class="no-plan">No study spots on this floor yet.</p>
+              <button
+                v-for="spot in floorSpots" :key="spot._id" type="button" class="room"
+                :class="[`tone-${tone(spot)}`, { dimmed: dimmedIds.includes(spot._id), selected: selectedSpot?._id === spot._id }]"
+                @click="selectSpot(spot)"
+              >
+                <strong>{{ spot.name }}</strong>
+                <span>{{ spot.seatCount }} seats</span>
+                <span>{{ spot.hasPowerSocket ? '🔌 Sockets' : 'No sockets' }}</span>
+                <span>{{ spot.avgRating != null ? `★ ${spot.avgRating.toFixed(1)}` : 'No reviews' }}</span>
+              </button>
+            </div>
+
+            <p class="footnote">
+              Tap a room for seats and reviews. Use ← → to switch floors.
+              <template v-if="!anyReviews"> Rooms get their colour once they have reviews.</template>
+            </p>
+          </section>
+        </div>
+
+        <SpotPanel v-if="selectedSpot" :spot="selectedSpot" class="panel" @close="closePanel" />
+        <aside v-else class="hint-card">
+          <h2>{{ floorLabel(selectedFloor) }}</h2>
+          <p>{{ floorSpots.length }} study spot{{ floorSpots.length === 1 ? '' : 's' }} ·
+            {{ floorSpots.filter(s => s.hasPowerSocket).length }} with power sockets</p>
+          <p class="muted">Pick a room on the plan to see its seats, how busy it is and what people say about it.</p>
+        </aside>
+      </div>
+    </template>
   </div>
 </template>
 
 <style scoped>
-.split {
-  display: grid;
-  grid-template-columns: minmax(180px, 1fr) 3fr;
-  gap: 20px;
-  align-items: start;
+.building-page {
+  /* colours come from the shared notebook palette (style.css) */
+  padding: 18px 24px 140px 48px; /* left clears the pink margin line, bottom clears the minimap */
+  color: var(--nb-ink);
+  text-align: left;
+  font-family: 'Patrick Hand', system-ui, sans-serif;
+  font-size: 1.05rem;
 }
 
-.floor-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.back { color: var(--nb-ink); font-weight: 700; text-decoration: none; }
+.back:hover { text-decoration: underline; }
+
+.title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 16px; margin: 6px 0 14px; }
+h1 {
+  margin: 0;
+  font: 700 clamp(2.4rem, 5vw, 3.4rem)/1.05 var(--nb-heading);
+  color: var(--nb-ink);
+  letter-spacing: 0;
 }
 
-.floor-card {
-  display: flex;
+.status {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding-right: 12px;
-  border: 2px solid var(--border);
+  gap: 7px;
+  padding: 2px 12px;
+  border: 2px solid var(--nb-ink);
+  border-radius: 999px;
+  background: var(--nb-card);
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+.status .dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--nb-ink); }
+.status.open .dot { background: #5fb36b; }
+.status.closing { background: var(--nb-highlight); color: #28263f; }
+.status.closing .dot { background: #f0a23a; }
+.status.closed { border-style: dashed; background: transparent; color: var(--nb-muted); }
+.status.closed .dot { background: #f5a0a6; }
+
+/* ---------- toolbar ---------- */
+.toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px 24px; margin-bottom: 18px; }
+.filters, .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.label { font-weight: 700; margin-right: 4px; }
+.chip {
+  padding: 2px 14px;
+  border: 2px dashed var(--nb-ink);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--nb-ink);
+  font: inherit;
+  font-size: 0.98rem;
+  cursor: pointer;
+}
+.chip[aria-pressed='true'] { border-style: solid; background: var(--nb-highlight); color: #28263f; }
+.legend { font-size: 0.9rem; gap: 6px 14px; }
+.legend > span:not(.label) { display: inline-flex; align-items: center; gap: 5px; }
+.swatch { display: inline-block; width: 16px; height: 16px; border: 1.5px solid var(--nb-ink); border-radius: 3px; }
+.swatch.top { background: #5cb068; }
+.swatch.mid { background: #a4d99c; }
+.swatch.low { background: #def3d6; }
+.swatch.none { background: transparent; border-style: dashed; }
+
+/* ---------- layout ---------- */
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 28px; align-items: start; }
+.plan-col { min-width: 0; }
+
+.tab-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-left: 10px; }
+.tab {
+  position: relative;
+  bottom: -2px; /* sits on the sheet's top border */
+  padding: 6px 16px 5px;
+  border: 2px solid var(--nb-ink);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  background: var(--nb-card);
+  color: var(--nb-ink);
+  font: inherit;
+  cursor: pointer;
+}
+.tab small { color: var(--nb-muted); font-size: 0.82rem; }
+.tab.active { z-index: 1; padding-top: 10px; background: var(--nb-highlight); color: #28263f; }
+.tab.active small { color: #4a4660; }
+.steppers { display: flex; gap: 6px; margin-bottom: 8px; }
+
+.square {
+  width: 38px;
+  height: 38px;
+  border: 2px solid var(--nb-ink);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.55); /* translucent so the notebook-paper lines show through */
+  background: var(--nb-card);
+  color: var(--nb-ink);
+  font: 700 1.2rem/1 system-ui, sans-serif;
+  cursor: pointer;
 }
+.square:disabled { opacity: 0.35; cursor: default; }
+.square[aria-pressed='true'] { background: var(--nb-highlight); color: #28263f; }
 
-.floor-card:hover {
-  border-color: var(--accent-border);
+.sheet {
+  position: relative;
+  padding: 14px 14px 12px;
+  background: var(--nb-sheet);
+  border: 2px solid var(--nb-ink);
+  border-radius: 4px;
+  box-shadow: 7px 7px 0 var(--nb-ink);
 }
+.sheet-tools { position: absolute; top: 14px; right: 14px; z-index: 2; display: flex; flex-direction: column; gap: 6px; }
 
-.floor-card.selected {
-  border-color: var(--accent);
-  background: var(--accent-bg);
-}
+.match-note { margin: 0 56px 8px 0; font-size: 0.95rem; }
+.link { border: none; background: none; color: var(--nb-ink); font: inherit; text-decoration: underline; cursor: pointer; }
 
-/* fills the card, so clicking anywhere but the arrow previews the floor */
-.floor-select {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 10px 14px;
-  border: none;
-  background: none;
-  color: inherit;
+.plan-scroll { overflow: auto; max-height: 72vh; margin-right: 52px; border-radius: 6px; }
+.plan-inner { min-width: 100%; }
+
+.room-list { display: grid; gap: 8px; margin-right: 52px; }
+.room {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  align-items: center;
+  padding: 9px 14px;
+  border: 2px solid var(--nb-ink);
+  border-radius: 6px;
+  background: var(--nb-card);
+  color: var(--nb-ink);
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
+.room span { color: var(--nb-muted); font-size: 0.92rem; }
+.room.tone-top { background: #5cb068; color: #28263f; }
+.room.tone-mid { background: #a4d99c; color: #28263f; }
+.room.tone-low { background: #def3d6; color: #28263f; }
+.room[class*='tone-']:not(.tone-none) span { color: #4a4660; }
+.room.selected { box-shadow: 4px 4px 0 var(--nb-ink); }
+.room.dimmed { opacity: 0.35; }
+.no-plan { margin: 0; padding: 12px; border: 1.5px dashed var(--nb-rule); border-radius: 6px; color: var(--nb-muted); }
 
-.floor-open {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: #fff;
-  font-size: 1.3em;
-  text-decoration: none;
-  transition: transform 0.15s;
+.footnote { margin: 10px 0 0; font-size: 0.9rem; color: var(--nb-muted); }
+
+.hint-card {
+  padding: 18px;
+  border: 2px dashed var(--nb-ink);
+  border-radius: 6px;
+  background: var(--nb-card);
 }
+.hint-card h2 { margin: 0 0 6px; font: 700 1.8rem/1.1 var(--nb-heading); color: var(--nb-ink); }
+.hint-card p { margin: 0 0 6px; }
+.muted { color: var(--nb-muted); }
 
-.floor-open:hover,
-.floor-open:focus-visible {
-  transform: translateX(3px);
+button:focus-visible, a:focus-visible { outline: 3px solid var(--nb-focus); outline-offset: 2px; }
+
+@media (max-width: 960px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
 }
-
-.plan h3 {
-  margin-top: 0;
-}
-
-.spot-list { list-style: none; padding: 0; display: grid; gap: 8px; }
-.spot-list li { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
-.compare-button { padding: 6px 10px; }
-
-.hint {
-  font-style: italic;
-  font-size: 0.9em;
-}
-
-.no-plan {
-  padding: 40px 16px;
-  border: 1px dashed var(--border);
-  border-radius: 8px;
-  text-align: center;
-}
-
-/* phones: floors become a wrapping row of cards above the plan */
-@media (max-width: 760px) {
-  .split {
-    grid-template-columns: 1fr;
-  }
-
-  .floor-list {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
+@media (max-width: 600px) {
+  .building-page { padding-left: 16px; padding-right: 16px; }
+  .plan-scroll, .room-list { margin-right: 0; margin-top: 50px; }
+  .sheet-tools { flex-direction: row; }
+  .room { grid-template-columns: 1fr 1fr; }
 }
 </style>

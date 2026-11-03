@@ -37,18 +37,18 @@ test.describe('admin moderation', () => {
       page.on('dialog', dialog => dialog.accept()) // the "Approve this report?" confirm
       await uiLogin(page, ADMIN_EMAIL, ADMIN_PASSWORD)
       await page.goto('/admin/reports')
-      await expect(page.getByRole('heading', { name: 'Pending Reports' })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Reports', exact: true })).toBeVisible()
 
       const rowFor = (review) => page.getByRole('row').filter({ hasText: review.content })
 
       await test.step('approve: the review is deleted', async () => {
-        await rowFor(toApprove).getByRole('button', { name: 'Approve (delete review)' }).click()
+        await rowFor(toApprove).getByRole('button', { name: 'Delete review' }).click()
         await expect(rowFor(toApprove)).toHaveCount(0)
         expect((await author.get(`/api/reviews/${toApprove._id}`)).status()).toBe(404)
       })
 
       await test.step('decline: the review stays', async () => {
-        await rowFor(toDecline).getByRole('button', { name: 'Decline' }).click()
+        await rowFor(toDecline).getByRole('button', { name: 'Keep review' }).click()
         await expect(rowFor(toDecline)).toHaveCount(0)
         expect((await author.get(`/api/reviews/${toDecline._id}`)).status()).toBe(200)
       })
