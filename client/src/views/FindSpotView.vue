@@ -4,6 +4,8 @@ import { api } from '../api'
 import { mapStore } from '../stores/map'
 import { NEEDS, rankSpots } from '../ranking'
 import { normalizeFloor, floorLabel } from '../floors'
+import { alertLabel, alertIcon } from '../alerts'
+import { seatsLevel, seatsFreeText, peopleText } from '../seats'
 
 // /find - "Find the right study spot" (linked from the home page): pick needs, share your location,
 // get the top 10 spots ranked. The ranking itself lives in ranking.js; this file is the page around it.
@@ -155,9 +157,16 @@ async function findNearby() {
               {{ r.buildingname }}, {{ floorLabel(normalizeFloor(r.floor)) }} · {{ r.seats }} seats ·
               {{ distanceText(r.distanceMeters) }} (about {{ r.walkingMinutes }} min walk)
             </p>
+            <p v-if="r.checkedIn" class="line seats">
+              <span class="nb-dot" :class="`nb-dot--${seatsLevel(r.checkedIn, r.seats)}`" aria-hidden="true"></span>{{ seatsFreeText(r.checkedIn, r.seats) }}
+              ({{ peopleText(r.checkedIn) }} checked in)
+            </p>
+            <p v-if="r.alerts.length" class="line alert">
+              ⚠ Reported: <template v-for="(type, i) in r.alerts" :key="type">{{ i ? ', ' : '' }}<span aria-hidden="true">{{ alertIcon(type) }}</span> {{ alertLabel(type) }}</template>
+            </p>
             <p v-if="r.matched.length" class="line ok">Meets: {{ r.matched.join(', ') }}</p>
             <p v-if="r.missing.length" class="line miss">Missing: {{ r.missing.join(', ') }}</p>
-            <p v-if="r.unknown.length" class="line unknown">No reviews yet for: {{ r.unknown.join(', ') }}</p>
+            <p v-if="r.unknown.length" class="line unknown">Not enough info yet: {{ r.unknown.join(', ') }}</p>
           </div>
         </article>
       </li>
@@ -454,6 +463,15 @@ input:focus-visible {
 
 .unknown {
   color: var(--pencil);
+}
+
+/* an active alert pushes the room down the list; say why */
+.alert {
+  width: fit-content;
+  padding: 0.05rem 0.5rem;
+  color: var(--red-text);
+  background: #fdeceb;
+  border-left: 3px solid var(--red);
 }
 
 /* ---------- Top 3: hand-drawn oval ---------- */
