@@ -73,7 +73,7 @@ const buildings = {
   ],
 
   // seminar rooms seat about 40-50, classrooms about 20
-  'SCIS 1': [
+  'School of Computing and Information Systems 1': [
     // level 2
     { floor: '2', name: 'GSR 2-1', seatCount: 6, hasPowerSocket: true },
     { floor: '2', name: 'GSR 2-2', seatCount: 6, hasPowerSocket: true },
@@ -218,7 +218,7 @@ const buildings = {
 
   // GSRs, seminar rooms, classrooms, computing labs and student lounges / open learning areas
   // (not offices, meeting rooms or staff lounges)
-  'SCIS 2': [
+  'SCIS 2 / SOE': [
     // basement 1
     { floor: 'B1', name: 'Seminar Room B1-1', seatCount: 45, hasPowerSocket: true },
     { floor: 'B1', name: 'Seminar Room B1-2', seatCount: 45, hasPowerSocket: true },
