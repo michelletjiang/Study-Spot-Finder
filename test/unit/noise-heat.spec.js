@@ -121,15 +121,30 @@ describe('heatLabel', () => {
     expect(texts(heatLabel(rect(30, 20), 'Study Booth 4-1', 0, 1080))).toEqual(['4-1'])
   })
 
+  it('moves the label off a smaller room drawn over this one', () => {
+    const pod = { x0: 70, y0: 0, x1: 130, y1: 60 } // covers the top middle of a 200 x 140 zone
+    const label = heatLabel(rect(200, 140), 'Collaboration Zone', 3, 1080, [pod])
+    const top = Math.min(...label.rows.map(row => row.y - row.size / 2))
+    expect(top).toBeGreaterThanOrEqual(60)
+  })
+
   it('says when a room has no reports', () => {
     expect(texts(heatLabel(rect(160, 80), 'Maker Space', 0, 1080))).toContain('no reports')
   })
 })
 
 describe('heatEnabled', () => {
-  it('is only on for the trial floor', () => {
+  it('is on for every floor with a plan in the chosen buildings', () => {
     expect(heatEnabled('CONNEX', '4')).toBe(true)
-    expect(heatEnabled('CONNEX', '3')).toBe(false)
-    expect(heatEnabled('SCIS 1', '4')).toBe(false)
+    expect(heatEnabled('CONNEX', '3')).toBe(true)
+    expect(heatEnabled('School of Computing and Information Systems 1', '2')).toBe(true)
+    expect(heatEnabled('SCIS 2 / SOE', 'B1')).toBe(true)
+    expect(heatEnabled('Li Ka Shing Library', '5')).toBe(true)
+  })
+
+  it('is off for floors without a plan and for other buildings', () => {
+    expect(heatEnabled('CONNEX', '7')).toBe(false)
+    expect(heatEnabled('School of Accountancy', '1')).toBe(false)
+    expect(heatEnabled('SCIS 1', '2')).toBe(false) // the building's old name
   })
 })

@@ -3,7 +3,7 @@ import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import { alertLabel, alertIcon } from '../alerts'
 import { timeAgo } from '../reviews'
 import { seatsFreeText } from '../seats'
-import { heatColour, heatTextColour, heatLabel, reportCount, noiseLabel } from '../heatmap'
+import { heatColour, heatTextColour, heatLabel, reportCount, noiseLabel, parsePoints, polygonArea, boundingBox } from '../heatmap'
 
 // Clickable floorplan: clicking a room emits 'select' with its study spot, and selectedId highlights one room.
 // Hovering (or tabbing to) a room shows a popup with its seats free, power sockets and any reported issues.
@@ -70,13 +70,20 @@ function roomLabel(room) {
 }
 
 // the text written on each room. Drawn after all the rooms, so a pod's label is never covered by a neighbour.
+// A room's label keeps clear of the smaller rooms that overlap it (booths and pods drawn over a big zone).
 const labels = computed(() => {
   if (!props.heat) return []
-  return rooms.value.map(room => {
+  const shapes = rooms.value.map(room => {
+    const pts = parsePoints(room.points)
+    return { area: polygonArea(pts), box: boundingBox(pts) }
+  })
+  const overlaps = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1
+  return rooms.value.map((room, i) => {
     const report = props.heat[room.spot._id]
+    const obstacles = shapes.filter((s, j) => j !== i && s.area < shapes[i].area && overlaps(s.box, shapes[i].box)).map(s => s.box)
     return {
       key: room.spotName,
-      ...heatLabel(room.points, room.spotName, report?.count ?? 0, props.plan.width),
+      ...heatLabel(room.points, room.spotName, report?.count ?? 0, props.plan.width, obstacles),
       colour: report ? heatTextColour(report.score) : '#28263f',
       striped: !report,
       dimmed: props.dimmedIds.includes(room.spot._id),
