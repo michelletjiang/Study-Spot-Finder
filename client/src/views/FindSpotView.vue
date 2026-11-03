@@ -6,6 +6,7 @@ import { levelLabel } from '../floors'
 import { alertLabel, alertIcon } from '../alerts'
 import { seatsLevel, seatsFreeText, peopleText } from '../seats'
 import { fetchNearby, walkText } from '../location'
+import { NEED_LEVELS, DISTANCE_LEVELS } from '../preferences'
 
 // /find - "Find the right study spot" (linked from the home page): pick needs, share your location,
 // get the top 10 spots ranked. The ranking itself lives in ranking.js; this file is the page around it.
@@ -44,16 +45,55 @@ const results = computed(() =>
 
 const buttonText = computed(() => status.value || (searched.value ? 'Search again' : 'Use my location'))
 
-// Start from the study preferences saved on the profile page. Changes here aren't saved back.
+// ---------------------------------------------------------------------
+// Saved preferences (profile page)
+// ---------------------------------------------------------------------
+// The page starts from them, and "Use my preferences" puts them back after changes. Changes here aren't saved back.
+const savedPrefs = ref(null) // { needs: { id: 'off' | 'nice' | 'must' }, distance, seats }, null until loaded
+const prefsError = ref(false)
+
+function usePrefs() {
+  const prefs = savedPrefs.value
+  for (const [id, level] of Object.entries(prefs.needs)) {
+    if (picked[id]) picked[id] = { on: level !== 'off', level: level === 'off' ? 'important' : level }
+  }
+  distanceImportance.value = prefs.distance
+  seatsNeeded.value = prefs.seats ?? ''
+}
+
+// do the fields still match the saved preferences?
+const usingPrefs = computed(() => {
+  const prefs = savedPrefs.value
+  if (!prefs) return false
+  const needsMatch = needOptions.every(({ id }) => {
+    const level = prefs.needs[id] ?? 'off'
+    return level === 'off' ? !picked[id].on : picked[id].on && picked[id].level === level
+  })
+  return needsMatch && distanceImportance.value === prefs.distance && (seatsMin.value ?? null) === (prefs.seats ?? null)
+})
+
+// nothing changed from the defaults, so there's nothing to apply
+const prefsEmpty = computed(() => {
+  const prefs = savedPrefs.value
+  return !!prefs && Object.values(prefs.needs).every(level => level === 'off') && prefs.distance === 'medium' && prefs.seats == null
+})
+
+// "Quiet (must have), Power outlets (nice to have) · distance matters somewhat · 4+ seats"
+const prefsSummary = computed(() => {
+  const prefs = savedPrefs.value
+  if (!prefs) return ''
+  const levelText = level => NEED_LEVELS.find(l => l.value === level)?.label.toLowerCase()
+  const needs = needOptions.filter(({ id }) => (prefs.needs[id] ?? 'off') !== 'off').map(n => `${n.label} (${levelText(prefs.needs[n.id])})`)
+  const distance = `distance matters ${DISTANCE_LEVELS.find(l => l.value === prefs.distance)?.label.toLowerCase()}`
+  return [needs.join(', ') || 'No needs picked', distance, prefs.seats ? `${prefs.seats}+ seats` : 'any number of seats'].join(' · ')
+})
+
 onMounted(async () => {
   try {
-    const prefs = await api('/api/profile/preferences')
-    for (const [id, level] of Object.entries(prefs.needs)) {
-      if (picked[id]) picked[id] = { on: level !== 'off', level: level === 'off' ? 'important' : level }
-    }
-    distanceImportance.value = prefs.distance
-    seatsNeeded.value = prefs.seats ?? ''
+    savedPrefs.value = await api('/api/profile/preferences')
+    usePrefs()
   } catch (e) {
+    prefsError.value = true
     console.error('Could not load preferences:', e.message)
   }
 })
@@ -81,6 +121,26 @@ async function findNearby() {
   <main class="nearby">
     <h1>Find the right study spot</h1>
     <p class="lede">Pick what you need, share your location, and we'll rank nearby study spots for you.</p>
+
+    <!-- saved preferences from the profile page -->
+    <section v-if="savedPrefs || prefsError" class="prefs-bar" aria-label="Your saved preferences">
+      <template v-if="prefsError">
+        <p class="prefs-text">Couldn't load your saved preferences, so pick what you need below.</p>
+      </template>
+      <template v-else-if="prefsEmpty">
+        <p class="prefs-text">You haven't saved any study preferences yet.</p>
+        <RouterLink to="/profile" class="prefs-link">Set them on your profile →</RouterLink>
+      </template>
+      <template v-else>
+        <button type="button" class="use-prefs" :aria-pressed="usingPrefs" :disabled="usingPrefs" @click="usePrefs">
+          {{ usingPrefs ? '✓ Using your preferences' : 'Use my preferences' }}
+        </button>
+        <p class="prefs-text">
+          <span class="prefs-summary">{{ prefsSummary }}</span>
+          <RouterLink to="/profile" class="prefs-link">Edit in profile</RouterLink>
+        </p>
+      </template>
+    </section>
 
     <fieldset>
       <legend>What do you need?</legend>
@@ -230,6 +290,67 @@ h1 {
 .lede {
   margin: 0.6rem 0 1.2rem;
   color: var(--pencil);
+}
+
+/* ---------- Saved preferences, a sticky note above the form ---------- */
+.prefs-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 0 0 1.1rem;
+  padding: 0.7rem 1rem;
+  background: #fff8d6;
+  border: 2px dashed var(--ink);
+  border-radius: 6px 14px 5px 16px / 14px 6px 16px 5px;
+}
+
+.use-prefs {
+  flex: none;
+  padding: 0.15rem 1rem 0.25rem;
+  font-family: var(--hand);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--highlight);
+  border: 2px solid var(--ink);
+  border-radius: 14px 5px 16px 5px / 5px 14px 5px 16px;
+  box-shadow: 2px 2px 0 var(--ink);
+  cursor: pointer;
+}
+
+.use-prefs:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+/* already applied: drawn flat, like a ticked box */
+.use-prefs:disabled {
+  background: #fff;
+  box-shadow: none;
+  cursor: default;
+}
+
+.use-prefs:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 3px;
+}
+
+.prefs-text {
+  flex: 1 1 14rem;
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.prefs-summary {
+  color: var(--pencil);
+}
+
+.prefs-link {
+  margin-left: 0.5rem;
+  color: var(--blue);
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 /* ---------- Form, drawn in pen ---------- */
