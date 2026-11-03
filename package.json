@@ -8,6 +8,7 @@
     "build": "npm --prefix client ci && npm --prefix client run build",
     "geocode": "node scripts/geocode-buildings.js",
     "seed:spots": "node scripts/seed-floorplan-spots.js",
+    "seed:noise": "node scripts/seed-noise-reports.js",
     "test:unit": "vitest run",
     "test:e2e": "playwright test"
   },

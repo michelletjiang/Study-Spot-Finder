@@ -9,7 +9,10 @@ import { openStatus } from '../buildingHours'
 import { isGroupRoom, isQuiet } from '../roomTypes'
 import FloorPlan from '../components/FloorPlan.vue'
 import SpotPanel from '../components/SpotPanel.vue'
+import HeatPanel from '../components/HeatPanel.vue'
 import { seatsLevel, SEAT_LEVELS } from '../seats'
+import { heatEnabled, HEAT_GRADIENT, NOISE_LEVELS } from '../heatmap'
+import { timeAgo } from '../reviews'
 
 // A building: floor tabs, the chosen floor's plan (rooms coloured by rating), and a details card for the clicked room.
 // The floor and room are kept in ?floor= and ?spot=, so the back button and shared links come back to the same view.
@@ -57,8 +60,8 @@ function toggleFilter(key) {
     : [...activeFilters.value, key]
 }
 
-// ---------- room colours: by rating, or by seats free right now ----------
-const colourBy = ref('rating') // 'rating' | 'seats'
+// ---------- room colours: by rating, by seats free right now, or by the noise heatmap ----------
+const colourBy = ref('rating') // 'rating' | 'seats' | 'noise'
 
 function ratingTone(spot) {
   if (spot.avgRating == null) return 'none'
@@ -136,6 +139,41 @@ const listChosen = ref(false)
 const showList = computed(() => listChosen.value || !selectedPlan.value)
 watch(selectedFloor, () => (zoom.value = 1))
 
+// ---------- noise heatmap ----------
+const heatChosen = computed(() => colourBy.value === 'noise')
+const heat = ref(null) // spot _id -> { score, current, count }, null until loaded
+const heatError = ref('')
+const canShowHeat = computed(() => heatEnabled(buildingName.value, selectedFloor.value) && !showList.value)
+// if the reports can't load the plan keeps its rating colours, because all stripes would claim there are none
+const heatShown = computed(() => (canShowHeat.value && heatChosen.value ? heat.value : null))
+// the newest report on this floor, for the "Latest report" line
+const latestReport = computed(() => {
+  const times = floorSpots.value.map(s => heatShown.value?.[s._id]?.lastReportedAt).filter(Boolean)
+  return times.length ? times.reduce((a, b) => (new Date(a) > new Date(b) ? a : b)) : null
+})
+
+async function loadHeat() {
+  if (!canShowHeat.value || !heatChosen.value) return
+  const name = buildingName.value
+  try {
+    const data = await api(`/api/noise/heatmap?building=${encodeURIComponent(name)}`)
+    if (buildingName.value === name) {
+      heat.value = data
+      heatError.value = ''
+    }
+  } catch (e) {
+    if (buildingName.value === name) {
+      heat.value = null
+      heatError.value = e.message
+    }
+  }
+}
+watch([heatChosen, canShowHeat, now], loadHeat) // now ticks every minute, so the colours stay current
+// the Noise now option disappears on floors without a heatmap and in the list view
+watch(canShowHeat, can => {
+  if (!can && heatChosen.value) colourBy.value = 'rating'
+})
+
 // ← / → switch floors, unless you're typing somewhere
 function onKey(e) {
   if (e.target.closest('input, textarea, select, [contenteditable]') || e.altKey || e.ctrlKey || e.metaKey) return
@@ -163,7 +201,19 @@ onUnmounted(() => {
       <span v-if="status" class="status" :class="status.state">
         <span class="dot" aria-hidden="true"></span>{{ status.text }}
       </span>
+      <div v-if="floors.length" class="nb-segmented mode-switch" role="radiogroup" aria-label="Colour rooms by">
+        <label><input v-model="colourBy" type="radio" name="plan-mode" value="rating">Ratings</label>
+        <label><input v-model="colourBy" type="radio" name="plan-mode" value="seats">Seats free</label>
+        <label v-if="canShowHeat">
+          <input v-model="colourBy" type="radio" name="plan-mode" value="noise">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+            <circle cx="6" cy="12" r="2.5" fill="currentColor" stroke="none" /><path d="M12 8.5a5 5 0 0 1 0 7M16 5.5a9.5 9.5 0 0 1 0 13" />
+          </svg>
+          Noise now
+        </label>
+      </div>
     </header>
+    <p v-if="heatShown" class="heat-sub">{{ floorLabel(selectedFloor) }} · how loud it is right now</p>
 
     <p v-if="loading" class="nb-state">Loading floors and rooms…</p>
     <p v-else-if="error" class="nb-state nb-state--error">Couldn't load this building: {{ error }}</p>
@@ -178,13 +228,9 @@ onUnmounted(() => {
             :aria-pressed="activeFilters.includes(f.key)" @click="toggleFilter(f.key)"
           >{{ f.label }}</button>
         </div>
-        <div class="legend-wrap">
-          <div class="colour-by" role="group" aria-label="Colour rooms by">
-            <span class="label">Colour rooms by</span>
-            <button type="button" class="chip" :aria-pressed="colourBy === 'rating'" @click="colourBy = 'rating'">Rating</button>
-            <button type="button" class="chip" :aria-pressed="colourBy === 'seats'" @click="colourBy = 'seats'">Seats free now</button>
-          </div>
-          <div v-if="colourBy === 'rating'" class="legend" aria-label="Room colours: average rating">
+        <div v-if="!heatShown" class="legend-wrap">
+          <div v-if="colourBy !== 'seats'" class="legend" aria-label="Room colours: average rating">
+            <span class="label">Avg. rating</span>
             <span><i class="swatch top"></i>4.5 and up</span>
             <span><i class="swatch mid"></i>4.0 – 4.4</span>
             <span><i class="swatch low"></i>Under 4.0</span>
@@ -196,6 +242,19 @@ onUnmounted(() => {
             <span><i class="swatch none"></i>Nobody checked in</span>
             <span><i class="swatch alert"></i>Issue reported</span>
           </div>
+        </div>
+      </div>
+
+      <div v-if="heatShown" class="heat-strip">
+        <p class="live"><i class="live-dot" aria-hidden="true"></i><strong>Live · from checked-in students in the last 30 minutes</strong></p>
+        <p v-if="latestReport" class="muted">Latest report {{ timeAgo(latestReport) }}</p>
+        <div class="heat-legend" aria-label="Room colours: how loud, from Quiet to Loud">
+          <div class="heat-scale">
+            <i class="heat-bar" :style="{ background: HEAT_GRADIENT }"></i>
+            <div class="heat-levels"><span v-for="level in NOISE_LEVELS" :key="level.key">{{ level.label }}</span></div>
+          </div>
+          <span class="legend-item"><i class="swatch striped"></i>No recent reports</span>
+          <span class="legend-item"><i class="swatch alert"></i>Issue reported</span>
         </div>
       </div>
 
@@ -235,13 +294,14 @@ onUnmounted(() => {
               {{ matchCount }} of {{ floorSpots.length }} rooms match
               <button type="button" class="link" @click="activeFilters = []">Clear filters</button>
             </p>
+            <p v-if="canShowHeat && heatChosen && heatError" class="match-note">Couldn't load the noise heatmap: {{ heatError }}</p>
 
             <!-- plan -->
             <div v-if="!showList" class="plan-scroll">
               <div class="plan-inner" :style="{ width: `${zoom * 100}%` }">
                 <FloorPlan
                   :plan="selectedPlan" :spots="floorSpots" :selected-id="selectedSpot?._id ?? null"
-                  :tones="tones" :dimmed-ids="dimmedIds" :alerts="alertsBySpot" :checked-in="checkedInBySpot" @select="selectSpot"
+                  :tones="tones" :heat="heatShown" :dimmed-ids="dimmedIds" :alerts="alertsBySpot" :checked-in="checkedInBySpot" @select="selectSpot"
                 />
               </div>
             </div>
@@ -263,18 +323,27 @@ onUnmounted(() => {
               </button>
             </div>
 
-            <p class="footnote">
+            <p v-if="heatShown" class="footnote">
+              Each room shows the average of reports from the last 30 minutes, with newer reports counting more.
+              When reports expire, the room goes back to striped.
+            </p>
+            <p v-else class="footnote">
               Tap a room for seats and reviews. Use ← → to switch floors.
-              <template v-if="colourBy === 'rating' && !anyReviews"> Rooms get their colour once they have reviews.</template>
+              <template v-if="colourBy !== 'seats' && !anyReviews"> Rooms get their colour once they have reviews.</template>
               <template v-if="colourBy === 'seats' && !anyCheckIns"> Nobody on this floor is checked in right now. Pick the room you're in and tap Check in here.</template>
               <template v-if="colourBy === 'seats'"> Seats free only counts people who checked in through the app, so it's an estimate.</template>
             </p>
           </section>
         </div>
 
+        <HeatPanel
+          v-if="heatShown" :spot="selectedSpot" :spots="floorSpots" :heat="heatShown"
+          @close="closePanel" @rated="loadHeat" @select="selectSpot"
+          @alerts-change="onAlertsChange" @details="colourBy = 'seats'"
+        />
         <SpotPanel
-          v-if="selectedSpot" :spot="selectedSpot" class="panel"
-          @close="closePanel" @alerts-change="onAlertsChange" @checkins-change="onCheckinsChange"
+          v-else-if="selectedSpot" :spot="selectedSpot" class="panel"
+          @close="closePanel" @alerts-change="onAlertsChange" @checkins-change="onCheckinsChange" @noise-rated="loadHeat"
         />
         <aside v-else class="hint-card">
           <h2>{{ floorLabel(selectedFloor) }}</h2>
@@ -349,15 +418,39 @@ h1 {
 .swatch.mid { background: #a4d99c; }
 .swatch.low { background: #def3d6; }
 .swatch.none { background: transparent; border-style: dashed; }
-.swatch.alert { background: transparent; border: 2px dashed var(--nb-error); }
+/* margin and padding: Bootstrap has its own .alert */
+.swatch.alert { margin: 0; padding: 0; background: transparent; border: 2px dashed var(--nb-error); border-radius: 3px; }
 .swatch.plenty { background: #5fb36b; }
 .swatch.some { background: #f0c23a; }
 .swatch.few { background: #f0a23a; }
 .swatch.full { background: #e0606a; }
 .legend-wrap { display: grid; gap: 6px; justify-items: start; }
-.colour-by { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.colour-by .chip { padding: 0 12px; font-size: 0.92rem; }
 .alert-flag { color: var(--nb-error); }
+.swatch.striped { flex: none; width: 20px; height: 20px; border-style: dashed; background: repeating-linear-gradient(45deg, #d9d5e2 0 4px, #fffef9 4px 8px); }
+
+/* ---------- noise heatmap ---------- */
+.mode-switch { margin-left: auto; }
+.mode-switch label { display: inline-flex; align-items: center; gap: 7px; padding: 7px 16px; white-space: nowrap; }
+.heat-sub { margin: -10px 0 14px; color: var(--nb-muted); }
+.heat-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-bottom: 18px;
+  padding: 10px 14px;
+  background: var(--nb-card);
+  border: 2px solid var(--nb-ink);
+  border-radius: 4px;
+}
+.heat-strip p { margin: 0; }
+.live { display: flex; align-items: center; gap: 9px; }
+.live-dot { flex: none; width: 12px; height: 12px; border: 2px solid #28263f; border-radius: 50%; background: #b3263e; box-shadow: 0 0 0 3px var(--nb-note-pink); }
+.heat-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-left: auto; font-size: 0.85rem; }
+.heat-scale { width: 180px; max-width: 100%; }
+.heat-bar { display: block; height: 14px; border: 1.5px solid var(--nb-ink); border-radius: 999px; }
+.heat-levels { display: flex; justify-content: space-between; margin-top: 2px; font-weight: 700; }
+.legend-item { display: inline-flex; align-items: center; gap: 7px; }
 
 /* ---------- layout ---------- */
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 28px; align-items: start; }

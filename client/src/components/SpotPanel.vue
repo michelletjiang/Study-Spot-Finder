@@ -9,12 +9,14 @@ import { timeAgo } from '../reviews'
 import { myCheckIn } from '../stores/checkin'
 import { seatsLevel, seatsFreeText, peopleText, clockTime, busiestSummary, sgNow } from '../seats'
 import SpotAlerts from './SpotAlerts.vue'
+import NoiseRating from './NoiseRating.vue'
 
 // The details card beside the building page's floor plan, for the room that was clicked.
 // Shows rating, seats, sockets, reported issues (alerts), seats free right now (check-ins) and the latest reviews.
+// A student checked in here can also say how loud it is, in the check-in box and the check-in popup.
 const props = defineProps({ spot: { type: Object, required: true } })
-// alerts-change: (spotId, alerts) and checkins-change: ({ spotId: people checked in }) keep the floor plan up to date
-const emit = defineEmits(['close', 'alerts-change', 'checkins-change'])
+// alerts-change: (spotId, alerts), checkins-change: ({ spotId: people checked in }) and noise-rated keep the floor plan up to date
+const emit = defineEmits(['close', 'alerts-change', 'checkins-change', 'noise-rated'])
 
 const reviews = ref([])
 const reviewsLoading = ref(true)
@@ -173,6 +175,7 @@ async function toggleFavourite() {
         <p><strong>✓ You're checked in here</strong> until {{ clockTime(myCheckIn.current.endsAt) }}</p>
         <button type="button" class="nb-btn" :disabled="checkingIn" @click="checkOut">Check out</button>
       </div>
+      <NoiseRating v-if="hereNow" :spot-id="spot._id" @rated="emit('noise-rated')" />
       <template v-else>
         <button type="button" class="nb-btn nb-btn--primary" :disabled="checkingIn || isFull" @click="checkIn">
           {{ isFull ? 'No free seats' : 'Check in here' }}
@@ -196,6 +199,7 @@ async function toggleFavourite() {
           We'll check you out automatically at <strong>{{ clockTime(confirmed.endsAt) }}</strong>.
           Tap <strong>Check out</strong> when you leave so others can see the seat is free.
         </p>
+        <NoiseRating :spot-id="spot._id" class="confirm-noise" @rated="emit('noise-rated')" />
         <form method="dialog"><button class="nb-btn nb-btn--primary" autofocus>OK</button></form>
       </template>
     </dialog>
@@ -343,6 +347,7 @@ h2 {
   font-size: 1.5rem;
   font-weight: 700;
 }
+.confirm-noise { justify-items: center; padding-top: 12px; border-top: 1.5px dashed var(--nb-rule); text-align: center; }
 .confirm form { margin-top: 14px; }
 
 .reviews { display: grid; gap: 8px; }

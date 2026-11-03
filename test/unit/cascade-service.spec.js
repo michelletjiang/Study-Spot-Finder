@@ -21,6 +21,7 @@ const Report = require('../../models/reports')
 const Favourite = require('../../models/favourites-model')
 const AdminRequest = require('../../models/admin-request-model')
 const CheckIn = require('../../models/checkin-model')
+const NoiseReport = require('../../models/noise-report-model')
 const StudySpotAlert = require('../../models/studyspot-alert-model')
 const cascade = require('../../services/cascade-service')
 
@@ -72,6 +73,7 @@ describe('TestSuite2: deleteSpot', () => {
     const reviews = stub(Review, 'Review', 'deleteByRoom')
     const favs = stub(Favourite, 'Favourite', 'deleteBySpot')
     const crowd = stub(CheckIn, 'CheckIn', 'deleteMany')
+    const noiseReports = stub(NoiseReport, 'NoiseReport', 'deleteMany')
     const alerts = stub(StudySpotAlert, 'StudySpotAlert', 'deleteMany')
     const del = stub(StudySpot, 'StudySpot', 'deleteSpot')
 
@@ -79,6 +81,7 @@ describe('TestSuite2: deleteSpot', () => {
 
     // Check-ins and alerts are matched by the spot's ObjectId.
     expect(crowd).toHaveBeenCalledWith({ spot: { $in: ['spot1'] } })
+    expect(noiseReports).toHaveBeenCalledWith({ spot: { $in: ['spot1'] } })
     expect(alerts).toHaveBeenCalledWith({ spot: { $in: ['spot1'] } })
     // Reviews and favourites are matched by building + spot name.
     expect(find).toHaveBeenCalledWith('SCIS1', 'Pod A')
@@ -94,6 +97,7 @@ describe('TestSuite2: deleteSpot', () => {
     stub(Review, 'Review', 'deleteByRoom')
     stub(Favourite, 'Favourite', 'deleteBySpot')
     stub(CheckIn, 'CheckIn', 'deleteMany')
+    stub(NoiseReport, 'NoiseReport', 'deleteMany')
     stub(StudySpotAlert, 'StudySpotAlert', 'deleteMany')
     stub(StudySpot, 'StudySpot', 'deleteSpot')
 
@@ -110,6 +114,7 @@ describe('TestSuite2: deleteSpot', () => {
     stub(Review, 'Review', 'deleteByRoom')
     stub(Favourite, 'Favourite', 'deleteBySpot')
     stub(CheckIn, 'CheckIn', 'deleteMany')
+    stub(NoiseReport, 'NoiseReport', 'deleteMany')
     stub(StudySpotAlert, 'StudySpotAlert', 'deleteMany')
     const del = stub(StudySpot, 'StudySpot', 'deleteSpot')
 
@@ -128,6 +133,7 @@ describe('TestSuite3: deleteBuilding', () => {
     const favs = stub(Favourite, 'Favourite', 'deleteByBuilding')
     stub(StudySpot, 'StudySpot', 'findByBuilding', [{ _id: 'spot1' }, { _id: 'spot2' }])
     const crowd = stub(CheckIn, 'CheckIn', 'deleteMany')
+    const noiseReports = stub(NoiseReport, 'NoiseReport', 'deleteMany')
     const alerts = stub(StudySpotAlert, 'StudySpotAlert', 'deleteMany')
     const spots = stub(StudySpot, 'StudySpot', 'deleteByBuilding')
     const del = stub(Building, 'Building', 'deleteBuilding')
@@ -139,6 +145,7 @@ describe('TestSuite3: deleteBuilding', () => {
     expect(reviews).toHaveBeenCalledWith('SCIS1')
     expect(favs).toHaveBeenCalledWith('SCIS1')
     expect(crowd).toHaveBeenCalledWith({ spot: { $in: ['spot1', 'spot2'] } })
+    expect(noiseReports).toHaveBeenCalledWith({ spot: { $in: ['spot1', 'spot2'] } })
     expect(alerts).toHaveBeenCalledWith({ spot: { $in: ['spot1', 'spot2'] } })
     expect(spots).toHaveBeenCalledWith('SCIS1')
     expect(del).toHaveBeenCalledWith('178902')
@@ -154,6 +161,7 @@ describe('TestSuite4: deleteUserData', () => {
     const favs = stub(Favourite, 'Favourite', 'deleteByUser')
     const requests = stub(AdminRequest, 'AdminRequest', 'deleteByUser')
     const crowd = stub(CheckIn, 'CheckIn', 'deleteMany')
+    const noiseReports = stub(NoiseReport, 'NoiseReport', 'deleteMany')
     const alerts = stub(StudySpotAlert, 'StudySpotAlert', 'deleteMany')
     const votes = stub(StudySpotAlert, 'StudySpotAlert', 'updateMany')
 
@@ -166,6 +174,7 @@ describe('TestSuite4: deleteUserData', () => {
     expect(favs).toHaveBeenCalledWith('ziyuzhang')
     expect(requests).toHaveBeenCalledWith('user1')
     expect(crowd).toHaveBeenCalledWith({ userId: 'user1' })
+    expect(noiseReports).toHaveBeenCalledWith({ userId: 'user1' })
     expect(alerts).toHaveBeenCalledWith({ userId: 'user1' })
     // Their confirm/dispute votes on other people's alerts are removed too.
     expect(votes).toHaveBeenCalledWith({}, { $pull: { confirms: 'user1', disputes: 'user1' } })

@@ -3,6 +3,7 @@ import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import { alertLabel, alertIcon } from '../alerts'
 import { timeAgo } from '../reviews'
 import { seatsFreeText } from '../seats'
+import { heatColour, heatTextColour, heatLabel, reportCount, noiseLabel } from '../heatmap'
 
 // Clickable floorplan: clicking a room emits 'select' with its study spot, and selectedId highlights one room.
 // Hovering (or tabbing to) a room shows a popup with its seats free, power sockets and any reported issues.
@@ -19,6 +20,8 @@ const props = defineProps({
   alerts: { type: Object, default: null },
   // optional: spot _id -> people checked in right now (GET /api/checkins?spots=); the popup shows seats free
   checkedIn: { type: Object, default: null },
+  // optional (noise heatmap): spot _id -> { score, current, count }, and rooms not in it have no reports. Overrides tones.
+  heat: { type: Object, default: null },
 })
 const emit = defineEmits(['select'])
 
@@ -28,9 +31,14 @@ const rooms = computed(() => {
   return props.plan.rooms.filter(r => byName.has(r.spotName)).map(r => ({ ...r, spot: byName.get(r.spotName) }))
 })
 
+function toneClass(room) {
+  if (props.heat) return 'tone-heat'
+  return props.tones ? `tone-${props.tones[room.spot._id] || 'none'}` : ''
+}
+
 function roomClass(room) {
   return [
-    props.tones ? `tone-${props.tones[room.spot._id] || 'none'}` : '',
+    toneClass(room),
     {
       selected: props.selectedId === room.spot._id,
       dimmed: props.dimmedIds.includes(room.spot._id),
@@ -42,10 +50,39 @@ function roomClass(room) {
 const alertsFor = room => props.alerts?.[room.spot._id] || []
 const checkedInFor = room => props.checkedIn?.[room.spot._id] || 0
 
+// a room's colour, or the stripes when it has no reports
+function roomStyle(room) {
+  if (!props.heat) return null
+  const report = props.heat[room.spot._id]
+  return { '--heat': report ? heatColour(report.score) : 'url(#heat-stripes)' }
+}
+
+function noiseText(room) {
+  const report = props.heat[room.spot._id]
+  if (!report) return 'No recent noise reports'
+  return `Noise: ${noiseLabel(report.current)} (${reportCount(report.count)})`
+}
+
 function roomLabel(room) {
   const n = alertsFor(room).length
-  return `${room.spotName}, ${room.spot.seatCount} seats${n ? `, ${n} issue${n === 1 ? '' : 's'} reported` : ''} - show details`
+  const noise = props.heat ? `${noiseText(room)}, ` : ''
+  return `${room.spotName}, ${noise}${room.spot.seatCount} seats${n ? `, ${n} issue${n === 1 ? '' : 's'} reported` : ''} - show details`
 }
+
+// the text written on each room. Drawn after all the rooms, so a pod's label is never covered by a neighbour.
+const labels = computed(() => {
+  if (!props.heat) return []
+  return rooms.value.map(room => {
+    const report = props.heat[room.spot._id]
+    return {
+      key: room.spotName,
+      ...heatLabel(room.points, room.spotName, report?.count ?? 0, props.plan.width),
+      colour: report ? heatTextColour(report.score) : '#28263f',
+      striped: !report,
+      dimmed: props.dimmedIds.includes(room.spot._id),
+    }
+  })
+})
 
 // long descriptions are cut short in the popup; the room panel shows them in full
 const shorten = text => (text.length > 70 ? `${text.slice(0, 67)}…` : text)
@@ -91,12 +128,20 @@ const popupStyle = computed(() => ({
 <template>
   <div class="floorplan-wrap" @mouseleave="hidePopup">
     <svg class="floorplan" :viewBox="`0 0 ${plan.width} ${plan.height}`" role="group" aria-label="Floorplan">
-      <image :href="plan.image" :width="plan.width" :height="plan.height" />
+      <defs v-if="heat">
+        <pattern id="heat-stripes" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <rect width="12" height="12" fill="#fffef9" />
+          <rect width="5" height="12" fill="#d9d5e2" />
+        </pattern>
+      </defs>
+      <!-- heatmap: the plan fades back, so the rooms with reports stand out from the stairs and toilets -->
+      <image :class="{ 'plan-faded': heat }" :href="plan.image" :width="plan.width" :height="plan.height" />
       <polygon
         v-for="room in rooms"
         :key="room.spotName"
         :points="room.points"
         :class="roomClass(room)"
+        :style="roomStyle(room)"
         tabindex="0"
         role="button"
         :aria-label="roomLabel(room)"
@@ -107,6 +152,15 @@ const popupStyle = computed(() => ({
         @focus="showPopup(room, $event)"
         @blur="hidePopup"
       />
+      <g
+        v-for="label in labels" :key="label.key" class="heat-label"
+        :class="{ striped: label.striped, dimmed: label.dimmed }" :fill="label.colour" aria-hidden="true"
+      >
+        <text
+          v-for="row in label.rows" :key="row.text" :x="label.x" :y="row.y" :font-size="row.size"
+          :class="{ note: row.note }" text-anchor="middle" dominant-baseline="central"
+        >{{ row.text }}</text>
+      </g>
     </svg>
 
     <div v-if="hovered" ref="popup" class="popup" :style="popupStyle" aria-hidden="true">
@@ -114,6 +168,7 @@ const popupStyle = computed(() => ({
       <span v-if="checkedInFor(hovered)">{{ seatsFreeText(checkedInFor(hovered), hovered.spot.seatCount) }}</span>
       <span v-else>{{ hovered.spot.seatCount }} seats</span>
       <span>Power sockets: {{ hovered.spot.hasPowerSocket ? 'Yes' : 'No' }}</span>
+      <span v-if="heat">{{ noiseText(hovered) }}</span>
       <ul v-if="alertsFor(hovered).length" class="popup-alerts">
         <li v-for="alert in alertsFor(hovered).slice(0, 3)" :key="alert._id">
           <span>{{ alertIcon(alert.type) }} <strong>{{ alertLabel(alert.type) }}</strong> · {{ timeAgo(alert.createdAt) }}</span>
@@ -180,6 +235,24 @@ polygon.selected {
   stroke: var(--accent);
   stroke-width: 5;
 }
+
+/* noise heatmap: the room's colour from heatmap.js or the stripes. Hover and selection only change the outline, so the colour always means the noise */
+polygon.tone-heat,
+polygon.tone-heat:hover,
+polygon.tone-heat:focus-visible,
+polygon.tone-heat.selected { fill: var(--heat); stroke: #28263f; mix-blend-mode: normal; }
+polygon.tone-heat { stroke-width: 2; outline: none; }
+polygon.tone-heat:hover,
+polygon.tone-heat:focus-visible { stroke-width: 4; }
+polygon.tone-heat.selected { stroke-width: 5; filter: drop-shadow(5px 5px 0 #28263f); }
+/* a reported issue keeps its dashed red outline on the heatmap too */
+polygon.tone-heat.alerted { stroke: var(--nb-error); stroke-width: 4; stroke-dasharray: 12 6; }
+.plan-faded { opacity: 0.35; }
+.heat-label { font-family: system-ui, sans-serif; font-weight: 700; pointer-events: none; }
+.heat-label .note { font-weight: 500; }
+/* a paper outline keeps the text readable across the stripes */
+.heat-label.striped text { paint-order: stroke; stroke: #fffef9; stroke-width: 3px; }
+.heat-label.dimmed { opacity: 0.25; }
 
 .popup {
   position: fixed;
