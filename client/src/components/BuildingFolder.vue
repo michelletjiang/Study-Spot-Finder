@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { floorplans } from '../floorplans'
-import { floorOrder } from '../floors'
+import { floorOrder, levelsText } from '../floors'
 import { openStatus } from '../buildingHours'
 
 // One building on the home page, drawn as a manila folder.
@@ -44,7 +44,7 @@ const status = computed(() => openStatus(props.building.buildingname, props.now)
         <span class="dot" aria-hidden="true"></span>{{ status.text }}
       </span>
       <p class="meta">
-        <span>{{ building.floors }} floor{{ building.floors === 1 ? '' : 's' }}</span>
+        <span>{{ levelsText(building) }}</span>
         <template v-if="spotCount !== null">
           <span aria-hidden="true">·</span>
           <span>{{ spotCount }} study spot{{ spotCount === 1 ? '' : 's' }}</span>

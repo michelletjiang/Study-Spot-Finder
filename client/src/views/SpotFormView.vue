@@ -34,6 +34,13 @@ onMounted(async () => {
   }
 })
 
+// the floors the chosen building has, as a hint under the Floor box (only when adding, where the buildings are loaded)
+const floorHint = computed(() => {
+  const b = buildings.value.find(b => b.buildingname === form.value.buildingName)
+  if (!b) return ''
+  const basements = Array.from({ length: b.basements || 0 }, (_, i) => `B${i + 1}`)
+  return `This building has ${[...basements, `1–${b.floors}`].join(', ').replace(/, (?=[^,]*$)/, ' and ')}.`
+})
 const level = computed(() => (String(form.value.floor).trim() ? levelLabel(form.value.floor) : 'Level ?'))
 const noiseNote = computed(() => ({ Quiet: 'nb-note--blue', Moderate: '', Loud: 'nb-note--pink' })[form.value.noiseLevel])
 
@@ -89,7 +96,8 @@ async function save() {
         <div class="pair">
           <div class="nb-field">
             <label for="floor">Floor</label>
-            <input id="floor" v-model="form.floor" class="nb-input" placeholder="2 or B1" required>
+            <input id="floor" v-model="form.floor" class="nb-input" placeholder="2 or B1" required :aria-describedby="floorHint ? 'floor-hint' : undefined">
+            <small v-if="floorHint" id="floor-hint" class="nb-hint">{{ floorHint }}</small>
           </div>
           <div class="nb-field">
             <label for="seats">Seats</label>
@@ -142,7 +150,7 @@ async function save() {
 <style scoped>
 .nb-title { margin-bottom: 24px; }
 .layout { display: grid; grid-template-columns: minmax(300px, 620px) minmax(260px, 380px); gap: 56px; align-items: start; }
-.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 18px; }
 .choice { padding: 0; border: none; }
 .choice legend { float: none; margin-bottom: 6px; font-size: 1rem; }
 

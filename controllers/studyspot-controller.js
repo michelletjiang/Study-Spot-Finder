@@ -1,5 +1,6 @@
 // MIXED file: lines 13 to 148 are LEGACY EJS handlers (render pages, used only by routes/studyspot-routes.js). Lines from "JSON API" onward are ACTIVE and used by routes/api/spots-routes.js.
 // mongoose is used here only to test whether an id looks like a real ObjectId.
+const { isFloorOf, floorRange } = require('../lib/floors');
 const mongoose = require('mongoose');
 // StudySpot model: the database access for spots.
 const StudySpot = require('../models/studyspot-model');
@@ -203,11 +204,8 @@ function validateSpot({ name, floor, seatCount, noiseLevel }, building) {
     // Every field must be present (seatCount may be 0 only if provided, so it is compared with undefined and an empty string).
     if (!name?.trim() || !floor || seatCount === undefined || seatCount === '' || !noiseLevel)
         return 'All fields are required.';
-    // Normalise the floor to upper case so "b1" becomes "B1".
-    const f = String(floor).toUpperCase();
-    // The floor must be B1 or a whole number from 1 up to the building's floors.
-    if (f !== 'B1' && !(Number.isInteger(Number(f)) && f >= 1 && f <= building.floors))
-        return `Floor must be B1 or 1-${building.floors}.`;
+    // The floor must be one of the building's: a basement it has (B1, B2) or 1 up to its floors (lib/floors.js).
+    if (!isFloorOf(floor, building)) return `Floor must be ${floorRange(building)}.`;
     // Seat count must be at least 1.
     if (!(Number(seatCount) >= 1)) return 'Seat count must be at least 1.';
     // Noise level must be one of the allowed values.
