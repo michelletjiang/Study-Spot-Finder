@@ -20,7 +20,7 @@ const Review = require('../../models/reviews-model')
 const Report = require('../../models/reports')
 const Favourite = require('../../models/favourites-model')
 const AdminRequest = require('../../models/admin-request-model')
-const CrowdReport = require('../../models/crowd-report-model')
+const CheckIn = require('../../models/checkin-model')
 const StudySpotAlert = require('../../models/studyspot-alert-model')
 const cascade = require('../../services/cascade-service')
 
@@ -71,13 +71,13 @@ describe('TestSuite2: deleteSpot', () => {
     const reports = stub(Report, 'Report', 'deleteByReviews')
     const reviews = stub(Review, 'Review', 'deleteByRoom')
     const favs = stub(Favourite, 'Favourite', 'deleteBySpot')
-    const crowd = stub(CrowdReport, 'CrowdReport', 'deleteMany')
+    const crowd = stub(CheckIn, 'CheckIn', 'deleteMany')
     const alerts = stub(StudySpotAlert, 'StudySpotAlert', 'deleteMany')
     const del = stub(StudySpot, 'StudySpot', 'deleteSpot')
 
     await cascade.deleteSpot(spot)
 
-    // Crowd check-ins and alerts are matched by the spot's ObjectId.
+    // Check-ins and alerts are matched by the spot's ObjectId.
     expect(crowd).toHaveBeenCalledWith({ spot: { $in: ['spot1'] } })
     expect(alerts).toHaveBeenCalledWith({ spot: { $in: ['spot1'] } })
     // Reviews and favourites are matched by building + spot name.
@@ -93,7 +93,7 @@ describe('TestSuite2: deleteSpot', () => {
     stub(Report, 'Report', 'deleteByReviews')
     stub(Review, 'Review', 'deleteByRoom')
     stub(Favourite, 'Favourite', 'deleteBySpot')
-    stub(CrowdReport, 'CrowdReport', 'deleteMany')
+    stub(CheckIn, 'CheckIn', 'deleteMany')
     stub(StudySpotAlert, 'StudySpotAlert', 'deleteMany')
     stub(StudySpot, 'StudySpot', 'deleteSpot')
 
@@ -109,7 +109,7 @@ describe('TestSuite2: deleteSpot', () => {
     const reports = stub(Report, 'Report', 'deleteByReviews')
     stub(Review, 'Review', 'deleteByRoom')
     stub(Favourite, 'Favourite', 'deleteBySpot')
-    stub(CrowdReport, 'CrowdReport', 'deleteMany')
+    stub(CheckIn, 'CheckIn', 'deleteMany')
     stub(StudySpotAlert, 'StudySpotAlert', 'deleteMany')
     const del = stub(StudySpot, 'StudySpot', 'deleteSpot')
 
@@ -127,7 +127,7 @@ describe('TestSuite3: deleteBuilding', () => {
     const reviews = stub(Review, 'Review', 'deleteByBuilding')
     const favs = stub(Favourite, 'Favourite', 'deleteByBuilding')
     stub(StudySpot, 'StudySpot', 'findByBuilding', [{ _id: 'spot1' }, { _id: 'spot2' }])
-    const crowd = stub(CrowdReport, 'CrowdReport', 'deleteMany')
+    const crowd = stub(CheckIn, 'CheckIn', 'deleteMany')
     const alerts = stub(StudySpotAlert, 'StudySpotAlert', 'deleteMany')
     const spots = stub(StudySpot, 'StudySpot', 'deleteByBuilding')
     const del = stub(Building, 'Building', 'deleteBuilding')
@@ -153,7 +153,7 @@ describe('TestSuite4: deleteUserData', () => {
     const reviews = stub(Review, 'Review', 'deleteByUser')
     const favs = stub(Favourite, 'Favourite', 'deleteByUser')
     const requests = stub(AdminRequest, 'AdminRequest', 'deleteByUser')
-    const crowd = stub(CrowdReport, 'CrowdReport', 'deleteMany')
+    const crowd = stub(CheckIn, 'CheckIn', 'deleteMany')
     const alerts = stub(StudySpotAlert, 'StudySpotAlert', 'deleteMany')
     const votes = stub(StudySpotAlert, 'StudySpotAlert', 'updateMany')
 

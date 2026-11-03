@@ -1,15 +1,23 @@
 <script setup>
 // ACTIVE: the student's favourite spots, one manila folder each, plus a card that leads to more spots.
+// Each folder also shows the room's live status: reported issues (alerts) and seats free right now.
 import { ref, onMounted } from 'vue'
 import { api } from '../api'
 import { favourites } from '../stores/favourites'
 import { loadSpotIndex } from '../spotIndex'
 import { floorLabel, normalizeFloor } from '../floors'
+import { alertLabel, alertIcon } from '../alerts'
+import { timeAgo } from '../reviews'
+import { seatsLevel, seatsFreeText } from '../seats'
 
 const error = ref('')
 const loading = ref(true)
 // finds a favourite's spot (for "View room"); null until loaded, or if loading the spots failed
 const findSpot = ref(null)
+// live status, keyed by spot _id: people checked in and [active alerts]
+const checkedInBySpot = ref({})
+const alertsBySpot = ref({})
+const statusLoaded = ref(false)
 
 onMounted(async () => {
   try {
@@ -21,12 +29,32 @@ onMounted(async () => {
     loading.value = false
   }
   // without the spots, "View room" falls back to the building page
-  loadSpotIndex().then(find => (findSpot.value = find)).catch(e => console.error('Could not load spots:', e.message))
+  loadSpotIndex()
+    .then(find => {
+      findSpot.value = find
+      return loadLiveStatus()
+    })
+    .catch(e => console.error('Could not load spots:', e.message))
 })
+
+const spotFor = fav => findSpot.value?.(fav.buildingName, fav.spotName)
+
+// one request each for every saved room; either can fail without breaking the page
+async function loadLiveStatus() {
+  const ids = favourites.list.map(spotFor).filter(Boolean).map(s => s._id).join(',')
+  if (!ids) return
+  const [checkins, alerts] = await Promise.allSettled([api(`/api/checkins?spots=${ids}`), api(`/api/alerts?spots=${ids}`)])
+  if (checkins.status === 'fulfilled') checkedInBySpot.value = checkins.value
+  if (alerts.status === 'fulfilled') alertsBySpot.value = alerts.value
+  statusLoaded.value = checkins.status === 'fulfilled'
+}
+
+const checkedInFor = fav => checkedInBySpot.value[spotFor(fav)?._id] || 0
+const alertsFor = fav => alertsBySpot.value[spotFor(fav)?._id] || []
 
 // Favourites are copies of the spot's details taken when it was saved, so link by building + name.
 function roomLink(fav) {
-  const spot = findSpot.value?.(fav.buildingName, fav.spotName)
+  const spot = spotFor(fav)
   return spot ? `/spots/${spot._id}` : `/building/${fav.buildingName}`
 }
 
@@ -69,6 +97,16 @@ async function remove(fav) {
             <span v-if="fav.hasPowerSocket" class="nb-tag">Power sockets</span>
             <span v-if="fav.noiseLevel" class="nb-tag" :class="`nb-tag--${fav.noiseLevel.toLowerCase()}`">{{ fav.noiseLevel }}</span>
           </p>
+          <div class="live">
+            <p v-for="alert in alertsFor(fav)" :key="alert._id" class="live-alert">
+              <span aria-hidden="true">{{ alertIcon(alert.type) }}</span> <strong>{{ alertLabel(alert.type) }}</strong> · {{ timeAgo(alert.createdAt) }}
+            </p>
+            <p v-if="checkedInFor(fav)">
+              <span class="nb-dot" :class="`nb-dot--${seatsLevel(checkedInFor(fav), spotFor(fav).seatCount)}`" aria-hidden="true"></span>
+              <strong>{{ seatsFreeText(checkedInFor(fav), spotFor(fav).seatCount) }}</strong> right now
+            </p>
+            <p v-else-if="statusLoaded && spotFor(fav)" class="live-none">Nobody checked in right now</p>
+          </div>
           <RouterLink :to="roomLink(fav)" class="view">View room →</RouterLink>
         </div>
       </article>
@@ -93,6 +131,17 @@ async function remove(fav) {
   margin-bottom: 36px;
 }
 .nb-folder { min-height: 270px; }
+
+.live { display: grid; gap: 6px; margin-bottom: 10px; font-size: 0.92rem; }
+.live p { margin: 0; }
+.live-alert {
+  width: fit-content;
+  padding: 1px 8px;
+  border: 1.5px solid var(--nb-error);
+  border-radius: 6px;
+  background: var(--nb-note-pink);
+}
+.live-none { color: #4a4660; font-style: italic; }
 
 .title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; width: 100%; }
 h2 { margin: 4px 0 0; font: 700 1.9rem/1.1 var(--nb-heading); color: #28263f; overflow-wrap: anywhere; }

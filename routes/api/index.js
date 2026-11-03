@@ -25,7 +25,8 @@ router.use('/favourites', require('./favourites-routes'));
 // /api/directions: OneMap walking directions for the minimap.
 router.use('/directions', require('./directions-routes'));
 router.use('/nearby', require('./nearby-routes'));
-router.use('/crowd', require('./crowd-routes'));   
+// /api/checkins: check in to a spot, check out, and how many seats are free.
+router.use('/checkins', require('./checkins-routes'));   
 router.use('/alerts', require('./alerts-routes'));   
 
 

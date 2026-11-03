@@ -3,20 +3,39 @@
 
 // Each need turns a study spot into a "match" from 0 (not at all) to 1 (fully).
 // known(s) is false when we have no data for that spot yet (e.g. nobody has reviewed it):
-// it then scores a neutral 0.5, never counts as meeting the need, and is listed as "no reviews yet".
-// Only needs we have data for: noise and rating come from reviews, power from the spot itself.
+// it then scores a neutral 0.5, never counts as meeting the need, and is listed with its unknownNote.
+// Only needs we have data for: noise and rating come from reviews, power from the spot itself,
+// and "seats free" from the people checked in right now.
+
 export const NEEDS = {
   quiet: {
     label: 'Quiet',
+    unknownNote: 'no reviews yet',
     known: (s) => s.noiseLevel != null,
     match: (s) => (s.noiseLevel == null ? 0.5 : 1 - (s.noiseLevel - 1) / 4), // noiseLevel 1 (quiet) to 5 (loud) -> 1 to 0
   },
   power: { label: 'Power outlets', known: () => true, match: (s) => (s.hasPower ? 1 : 0) },
   rated: {
     label: 'Well reviewed (4★+)',
+    unknownNote: 'no reviews yet',
     known: (s) => s.avgRating != null,
     match: (s) => (s.avgRating == null ? 0.5 : (s.avgRating - 1) / 4), // rating 1 to 5 -> 0 to 1
   },
+  seatsFree: {
+    label: 'Seats free now',
+    unknownNote: 'nobody checked in via the app',
+    known: (s) => s.checkedIn > 0,
+    // share of seats free, where half or more free counts as fully met: 30 seats, 6 people -> 24 free -> 1; 27 people -> 0.2
+    match: (s) => (s.checkedIn > 0 ? Math.min(1, Math.max(0, s.seats - s.checkedIn) / s.seats / 0.5) : 0.5),
+  },
+}
+
+// Active alerts push a spot down instead of hiding it (an alert can be wrong or out of date).
+// Each alert multiplies the score; "Closed" counts most because the room can't be used at all.
+const ALERT_PENALTY = { Closed: 0.1, Event: 0.6, Aircon: 0.85, WiFi: 0.85, Other: 0.9 }
+
+function alertFactor(spot) {
+  return (spot.alerts || []).reduce((factor, type) => factor * (ALERT_PENALTY[type] ?? 0.9), 1)
 }
 
 // How much each importance level counts. "must" also removes spots that fail the need.
@@ -53,9 +72,10 @@ function needScore(spot, needs) {
 
 function scoreSpot(spot, needs, distanceShare) {
   const dist = distanceScore(spot.distanceMeters)
-  if (needs.length === 0) return { score: dist, needScore: null, distanceScore: dist } // nothing picked: nearest first
+  const alerts = alertFactor(spot)
+  if (needs.length === 0) return { score: dist * alerts, needScore: null, distanceScore: dist, alertFactor: alerts } // nothing picked: nearest first
   const need = needScore(spot, needs)
-  return { score: (1 - distanceShare) * need + distanceShare * dist, needScore: need, distanceScore: dist }
+  return { score: ((1 - distanceShare) * need + distanceShare * dist) * alerts, needScore: need, distanceScore: dist, alertFactor: alerts }
 }
 
 // Which of the user's picks does this spot meet, miss, or have no data for? (shown on each card)
@@ -65,7 +85,7 @@ function explain(spot, needs) {
   const unknown = []
   for (const n of needs) {
     const need = NEEDS[n.id]
-    if (!need.known(spot)) unknown.push(need.label)
+    if (!need.known(spot)) unknown.push(`${need.label} (${need.unknownNote})`)
     else (need.match(spot) >= MEETS ? matched : missing).push(need.label)
   }
   return { matched, missing, unknown }

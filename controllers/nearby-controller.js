@@ -1,6 +1,8 @@
 const Building = require('../models/building-model');
 const StudySpot = require('../models/studyspot-model');
 const Review = require('../models/reviews-model');
+const { countCheckedIn } = require('../services/checkin-service');
+const { getActiveAlertsBySpot } = require('../services/alert-service');
 
 // straight-line distance in metres between two lat/lng points (haversine)
 function distanceMeters(lat1, lng1, lat2, lng2) {
@@ -14,7 +16,8 @@ const WALK_METRES_PER_MINUTE = 80; // about 5 km/h
 const NOISE_SCALE = { Quiet: 1, Moderate: 3, Loud: 5 };
 
 // POST /api/nearby   body: { latitude, longitude }
-// Every study spot whose building has coordinates, with its distance from the user and its review summary.
+// Every study spot whose building has coordinates, with its distance from the user, its review summary,
+// how many people are checked in right now and any active alerts.
 // The client does the ranking, so changing a preference doesn't need another request.
 exports.nearby = async (req, res) => {
     const latitude = Number(req.body.latitude);
@@ -26,6 +29,8 @@ exports.nearby = async (req, res) => {
         const [buildings, spots, summaries] = await Promise.all([Building.retrieveAll(), StudySpot.retrieveAll(), Review.summariseAll()]);
         const byName = new Map(buildings.filter(b => b.lat != null && b.lng != null).map(b => [b.buildingname, b]));
         const reviews = new Map(summaries.map(r => [`${r._id.buildingName}|${r._id.roomId}`, r]));
+        const spotIds = spots.map(s => s._id);
+        const [checkedIn, alerts] = await Promise.all([countCheckedIn(spotIds), getActiveAlertsBySpot(spotIds)]);
 
         const results = [];
         for (const spot of spots) {
@@ -45,6 +50,8 @@ exports.nearby = async (req, res) => {
                 avgRating: summary?.avgRating ?? null,  // 1 .. 5, null = no reviews yet
                 reviewCount: summary?.count ?? 0,
                 distanceMeters: meters,
+                checkedIn: checkedIn[String(spot._id)] || 0,                  // people checked in right now (seats free = seats - this)
+                alerts: (alerts[String(spot._id)] || []).map(a => a.type),   // e.g. ['Aircon'], newest first
                 walkingMinutes: Math.max(1, Math.round(meters / WALK_METRES_PER_MINUTE)), // straight line, so a slight underestimate
             });
         }
