@@ -10,6 +10,9 @@ const router = express.Router();
 router.get('/', auth.apiLoggedIn, userController.apiGetProfile);
 // PUT updates the profile fields.
 router.put('/', auth.apiLoggedIn, userController.apiUpdateProfile);
+// GET and PUT the study preferences used to rank spots.
+router.get('/preferences', auth.apiLoggedIn, userController.apiGetPreferences);
+router.put('/preferences', auth.apiLoggedIn, userController.apiUpdatePreferences);
 // DELETE removes the account.
 router.delete('/', auth.apiLoggedIn, userController.apiDeleteAccount);
 

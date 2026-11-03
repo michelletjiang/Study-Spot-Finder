@@ -1,11 +1,11 @@
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { api } from '../api'
-import { mapStore } from '../stores/map'
 import { NEEDS, rankSpots } from '../ranking'
 import { levelLabel } from '../floors'
 import { alertLabel, alertIcon } from '../alerts'
 import { seatsLevel, seatsFreeText, peopleText } from '../seats'
+import { fetchNearby, walkText } from '../location'
 
 // /find - "Find the right study spot" (linked from the home page): pick needs, share your location,
 // get the top 10 spots ranked. The ranking itself lives in ranking.js; this file is the page around it.
@@ -44,36 +44,29 @@ const results = computed(() =>
 
 const buttonText = computed(() => status.value || (searched.value ? 'Search again' : 'Use my location'))
 
-function distanceText(meters) {
-  return meters < 1000 ? `${meters} m away` : `${(meters / 1000).toFixed(1)} km away`
-}
+// Start from the study preferences saved on the profile page. Changes here aren't saved back.
+onMounted(async () => {
+  try {
+    const prefs = await api('/api/profile/preferences')
+    for (const [id, level] of Object.entries(prefs.needs)) {
+      if (picked[id]) picked[id] = { on: level !== 'off', level: level === 'off' ? 'important' : level }
+    }
+    distanceImportance.value = prefs.distance
+    seatsNeeded.value = prefs.seats ?? ''
+  } catch (e) {
+    console.error('Could not load preferences:', e.message)
+  }
+})
 
 // ---------------------------------------------------------------------
-// Location + server request
+// Server request
 // ---------------------------------------------------------------------
-// The minimap is usually already following the user's location, so reuse that when we have it
-function getPosition() {
-  if (mapStore.userPos) return Promise.resolve({ latitude: mapStore.userPos[0], longitude: mapStore.userPos[1] })
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) return reject(new Error('Your browser does not support location access.'))
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => resolve({ latitude: coords.latitude, longitude: coords.longitude }),
-      () => reject(new Error('Could not get your location. Allow location access and try again.')),
-      { timeout: 10000 }
-    )
-  })
-}
 
 async function findNearby() {
   loading.value = true
   error.value = ''
   try {
-    status.value = 'Getting your location…'
-    const position = await getPosition()
-
-    status.value = 'Finding study spots…'
-    const data = await api('/api/nearby', { method: 'POST', body: position })
-    spots.value = data.spots
+    spots.value = await fetchNearby(message => (status.value = message))
     searched.value = true
   } catch (err) {
     error.value = err.message
@@ -155,7 +148,7 @@ async function findNearby() {
             </h3>
             <p class="meta">
               {{ r.buildingname }}, {{ levelLabel(r.floor) }} · {{ r.seats }} seats ·
-              {{ distanceText(r.distanceMeters) }} (about {{ r.walkingMinutes }} min walk)
+              {{ walkText(r.distanceMeters, r.walkingMinutes) }}
             </p>
             <p v-if="r.checkedIn" class="line seats">
               <span class="nb-dot" :class="`nb-dot--${seatsLevel(r.checkedIn, r.seats)}`" aria-hidden="true"></span>{{ seatsFreeText(r.checkedIn, r.seats) }}

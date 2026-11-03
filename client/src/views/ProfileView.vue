@@ -1,13 +1,16 @@
 <script setup>
 // ACTIVE: the profile page for students and admins, drawn as a notebook page:
 // a "student card" with the account details, a sticky note for admin requests,
-// and two folders (favourites, reviews) with a peek at what's inside.
+// two folders (favourites, reviews) with a peek at what's inside, and the study preferences with
+// the top picks they give.
 // Admins see the pending admin requests on the sticky note instead.
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../api'
 import { auth } from '../stores/auth'
 import { favourites } from '../stores/favourites'
+import StudyPreferences from '../components/StudyPreferences.vue'
+import TopPicks from '../components/TopPicks.vue'
 
 const router = useRouter()
 
@@ -19,6 +22,8 @@ const adminRequest = ref(null)
 const pendingRequests = ref([])
 // The user's reviews, newest first (only used for the folder's count and peek).
 const reviews = ref(null)
+// The saved study preferences, shared by the preferences sheet and the top picks.
+const prefs = ref(null)
 const error = ref('')
 const requesting = ref(false)
 
@@ -46,9 +51,18 @@ async function loadFolders() {
   }
 }
 
+async function loadPreferences() {
+  try {
+    prefs.value = await api('/api/profile/preferences')
+  } catch (e) {
+    console.error('Could not load preferences:', e.message)
+  }
+}
+
 onMounted(() => {
   load()
   loadFolders()
+  loadPreferences()
 })
 
 const initial = computed(() => user.value?.username?.[0]?.toLowerCase() || '?')
@@ -194,6 +208,11 @@ async function deleteAccount() {
         </div>
       </div>
 
+      <div v-if="prefs" class="layout lower">
+        <StudyPreferences v-model="prefs" />
+        <TopPicks :prefs="prefs" />
+      </div>
+
       <section class="danger" aria-labelledby="delete-title">
         <div>
           <h2 id="delete-title">Delete account</h2>
@@ -217,6 +236,9 @@ async function deleteAccount() {
   gap: 48px;
   align-items: start;
 }
+
+/* preferences on the left, top picks on the right */
+.lower { grid-template-columns: minmax(300px, 460px) 1fr; margin-top: 48px; }
 
 /* ---------- student card ---------- */
 .id-card {
