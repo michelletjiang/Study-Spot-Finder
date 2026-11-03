@@ -1,7 +1,13 @@
 // The noise heatmap on the floorplans: which floors have it, its colours and the labels on its rooms.
 
-// building name -> floors. To roll it out further, add them here.
-const HEATMAP_FLOORS = { CONNEX: ['4'] }
+// building name -> floors. To roll it out further, add them here (names and floors as in floorplans.js).
+const HEATMAP_FLOORS = {
+  CONNEX: ['4'],
+  'Lee Kong Chian School of Business': ['1', '2', '3'],
+  'School of Accountancy': ['1', '2', '3'],
+  'Yong Pung How School of Law': ['B2', 'B1', '1', '2', '3'],
+  'School of Social Sciences / College of Integrative Studies': ['B1', '1', '2', '3'],
+}
 
 export const heatEnabled = (buildingName, floor) => !!HEATMAP_FLOORS[buildingName]?.includes(floor)
 
