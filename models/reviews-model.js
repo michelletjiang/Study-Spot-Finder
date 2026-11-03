@@ -48,7 +48,16 @@ const reviewSchema = new mongoose.Schema({
     rating:{
         type:Number,
         default:3.0
-    }
+    },
+    // How loud the reviewer found the spot. Optional so older reviews without it stay valid.
+    // The study spot finder averages it per spot (summariseAll below).
+    noiseLevel:{
+        type:String,
+        enum:['Quiet', 'Moderate', 'Loud']
+    },
+    // Usernames of students who found the review helpful / unhelpful. A user is in at most one list.
+    upvotes:   { type:[String], default:[] },
+    downvotes: { type:[String], default:[] }
 // timestamps adds createdAt and updatedAt.
 }, {timestamps:true}); // auto gives createdAt, updatedAt
 
@@ -93,14 +102,11 @@ exports.findByreviewId = function (reviewId) {
 };
 
 // Update the title, content and rating of a review.
-exports.editReview = function(reviewId, title, content, rating){ // first parameter = primary key users shld input
-    return Review.findByIdAndUpdate(reviewId, // primary key. this is the query object passed to updateOne. it tells mongoDB to find a review where _id=reviewId & userId=the logged-in user
-        {
-            title:title, 
-            content:content, 
-            rating:rating
-        }
-    )
+exports.editReview = function(reviewId, title, content, rating, noiseLevel){ // first parameter = primary key users shld input
+    const update = { title:title, content:content, rating:rating }
+    // The legacy EJS form has no noise field, so only change it when one is given.
+    if (noiseLevel) update.noiseLevel = noiseLevel
+    return Review.findByIdAndUpdate(reviewId, update) // primary key. this is the query object passed to updateOne. it tells mongoDB to find a review where _id=reviewId & userId=the logged-in user
 };
 
 // Delete a review by id.
@@ -129,6 +135,22 @@ exports.renameRoom = function(buildingName, oldRoomId, newRoomId){
     return Review.updateMany({ buildingName: buildingName, roomId: oldRoomId }, { roomId: newRoomId });
 };
 // Keep a user's reviews when they change their username.
-exports.renameUser = function(oldUsername, newUsername){
-    return Review.updateMany({ userId: oldUsername }, { userId: newUsername });
+exports.renameUser = async function(oldUsername, newUsername){
+    await Review.updateMany({ userId: oldUsername }, { userId: newUsername });
+    // Votes are stored by username too.
+    await Review.updateMany({ upvotes: oldUsername }, { $set: { 'upvotes.$': newUsername } });
+    await Review.updateMany({ downvotes: oldUsername }, { $set: { 'downvotes.$': newUsername } });
+};
+// Record a user's vote: 'up', 'down' or 'none' (take the vote back). Returns the updated review.
+// One atomic update per vote, so two quick clicks can never leave the user in both lists.
+exports.voteReview = function(reviewId, username, vote){
+    let update;
+    if (vote === 'up')        update = { $addToSet: { upvotes: username },   $pull: { downvotes: username } };
+    else if (vote === 'down') update = { $addToSet: { downvotes: username }, $pull: { upvotes: username } };
+    else                      update = { $pull: { upvotes: username, downvotes: username } };
+    return Review.findByIdAndUpdate(reviewId, update, { returnDocument: 'after' });
+};
+// Remove a deleted account's votes from every review.
+exports.removeVotesByUser = function(username){
+    return Review.updateMany({}, { $pull: { upvotes: username, downvotes: username } });
 };

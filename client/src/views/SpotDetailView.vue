@@ -39,6 +39,20 @@ const floorLink = computed(() => spot.value && { path: `/building/${spot.value.b
 const average = computed(() => averageRating(reviews.value))
 const isMine = review => review.userId === auth.user?.username
 
+// Send a vote. Clicking the arrow you already chose takes the vote back.
+// The list is not re-sorted straight away, so the review does not jump away from under the mouse.
+async function vote(review, direction) {
+  const next = review.myVote === direction ? 'none' : direction
+  try {
+    const updated = await api(`/api/reviews/${review._id}/vote`, { method: 'POST', body: { vote: next } })
+    Object.assign(review, updated)
+    // A later success clears an earlier vote error.
+    error.value = ''
+  } catch (e) {
+    error.value = e.message
+  }
+}
+
 // Delete one of your reviews.
 async function deleteReview(review) {
   if (!confirm(`Delete your review "${review.title}"?`)) return
@@ -103,6 +117,14 @@ async function deleteReview(review) {
         <p v-if="!reviews.length" class="nb-state">No reviews yet. Be the first to say what this room is like.</p>
         <article v-for="review in reviews" :key="review._id" class="nb-sheet nb-review review">
           <h3 class="nb-review-title">{{ review.title }} <StarRating :rating="review.rating" /></h3>
+          <p v-if="review.noiseLevel">Noise: {{ review.noiseLevel }}</p>
+          <div class="review-votes" role="group" :aria-label="`Votes for ${review.title}`">
+            <template v-if="!isMine(review)">
+              <button type="button" class="nb-btn" :aria-pressed="review.myVote === 'up'" aria-label="Upvote" @click="vote(review, 'up')">▲ {{ review.upvoteCount }}</button>
+              <button type="button" class="nb-btn" :aria-pressed="review.myVote === 'down'" aria-label="Downvote" @click="vote(review, 'down')">▼ {{ review.downvoteCount }}</button>
+            </template>
+            <span v-else>▲ {{ review.upvoteCount }} ▼ {{ review.downvoteCount }}</span>
+          </div>
           <p>{{ review.content }}</p>
           <footer>
             <span class="author">{{ review.userId }} <span v-if="isMine(review)" class="you">You</span></span>
@@ -124,6 +146,9 @@ async function deleteReview(review) {
 </template>
 
 <style scoped>
+.review-votes { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.review-votes button[aria-pressed="true"] { background: var(--nb-highlight); font-weight: 700; }
+
 .crumbs { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 8px; color: var(--nb-muted); }
 .crumbs a { color: var(--nb-ink); font-weight: 700; text-decoration: none; }
 .crumbs a:hover { text-decoration: underline; }

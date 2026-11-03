@@ -60,6 +60,7 @@ async function deleteReview(review) {
         <span v-else class="nb-folder-tab">{{ review.buildingName }} · {{ review.roomId }}</span>
         <div class="nb-sheet nb-review review">
           <h2 class="nb-review-title">{{ review.title }} <StarRating :rating="review.rating" /></h2>
+          <p v-if="review.noiseLevel">Noise: {{ review.noiseLevel }}</p>
           <p>{{ review.content }}</p>
           <div class="actions">
             <!-- ReviewFormView.vue; it comes back here after saving -->

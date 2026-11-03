@@ -16,7 +16,7 @@ const RATING_WORDS = ['', 'Not good', 'Okay', 'Good', 'Really good', 'Excellent'
 // "Building · Room", showing which spot this review is for.
 const spotLabel = ref('')
 // The form fields. The rating starts at 3.
-const form = ref({ title: '', content: '', rating: 3 })
+const form = ref({ title: '', content: '', rating: 3, noiseLevel: '' })
 const error = ref('')
 const saving = ref(false)
 
@@ -25,7 +25,7 @@ onMounted(async () => {
     if (isEdit.value) {
       // Editing: load the existing review (GET /api/reviews/:id).
       const review = await api(`/api/reviews/${route.params.id}`)
-      form.value = { title: review.title, content: review.content, rating: review.rating }
+      form.value = { title: review.title, content: review.content, rating: review.rating, noiseLevel: review.noiseLevel || '' }
       spotLabel.value = `${review.buildingName} · ${review.roomId}`
     } else {
       // Adding: load the spot to show its name (GET /api/spots/:id).
@@ -45,6 +45,10 @@ async function save() {
   error.value = ''
   if (!form.value.title.trim() || !form.value.content.trim()) {
     error.value = 'Please give your review a title and say something about the room.'
+    return
+  }
+  if (!['Quiet', 'Moderate', 'Loud'].includes(form.value.noiseLevel)) {
+    error.value = 'Please choose a noise level.'
     return
   }
   saving.value = true
@@ -104,6 +108,16 @@ async function save() {
           <small id="content-hint" class="nb-hint">Tip: mention noise, sockets, wifi or how busy it gets.</small>
           <small class="nb-hint" aria-live="polite">{{ form.content.length }} / {{ MAX_LENGTH }}</small>
         </div>
+      </div>
+
+      <div class="nb-field">
+        <label for="noise-level">Noise level</label>
+        <select id="noise-level" v-model="form.noiseLevel" class="nb-input" required>
+          <option value="" disabled>Choose one</option>
+          <option>Quiet</option>
+          <option>Moderate</option>
+          <option>Loud</option>
+        </select>
       </div>
 
       <p v-if="error" class="nb-errors single" role="alert">{{ error }}</p>

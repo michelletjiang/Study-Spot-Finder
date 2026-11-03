@@ -51,24 +51,24 @@ async function resolve(report, action) {
 
     <template v-else>
       <div class="nb-table-wrap">
-        <table class="nb-table">
+        <table class="nb-table report-table">
           <thead>
             <tr><th>Review</th><th>Reason</th><th>Details</th><th>Reported by</th><th><span class="visually-hidden">Actions</span></th></tr>
           </thead>
           <tbody>
             <!-- A review that was deleted in the meantime shows a placeholder. -->
             <tr v-for="report in reports" :key="report._id">
-              <td class="review">
+              <td class="review" data-label="Review">
                 <template v-if="report.reviewId">
                   <q>{{ report.reviewId.content }}</q>
                   <small>by {{ report.reviewId.userId }}</small>
                 </template>
                 <em v-else class="muted">(review deleted)</em>
               </td>
-              <td><span class="nb-tag nb-tag--loud">{{ report.reason }}</span></td>
-              <td class="details">{{ report.description || '–' }}</td>
-              <td>{{ report.reportedBy }}</td>
-              <td>
+              <td data-label="Reason"><span class="nb-tag nb-tag--loud">{{ report.reason }}</span></td>
+              <td class="details" data-label="Details">{{ report.description || '–' }}</td>
+              <td data-label="Reported by">{{ report.reportedBy }}</td>
+              <td data-label="Actions">
                 <div class="nb-actions">
                   <button type="button" class="nb-btn nb-btn--danger" @click="resolve(report, 'approve')">Delete review</button>
                   <button type="button" class="nb-btn" @click="resolve(report, 'decline')">Keep review</button>
@@ -90,4 +90,37 @@ async function resolve(report, action) {
 .review small, .muted { color: var(--nb-muted); }
 .details { max-width: 280px; }
 .note { max-width: 1140px; margin: 16px 0 0; color: var(--nb-muted); font-size: 0.92rem; }
+/* Phones: one card per report, each value labelled, so nothing runs off the screen. */
+@media (max-width: 650px) {
+  .report-table thead {
+    display: none;
+  }
+  .report-table,
+  .report-table tbody,
+  .report-table tr,
+  .report-table td {
+    min-width: 0;
+    max-width: none;
+    display: block;
+    width: 100%;
+  }
+  .report-table tr {
+    margin-bottom: 12px;
+    border: 1px solid var(--accent-border);
+    border-radius: 8px;
+    padding: 6px 0;
+  }
+  .report-table td {
+    border-bottom: none;
+    padding: 4px 12px;
+  }
+  .report-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.8em;
+    font-weight: 600;
+    opacity: 0.75;
+  }
+}
+
 </style>

@@ -1,219 +1,168 @@
 # StudySpot Finder
 
-A dynamic, data-driven web application that helps students discover, review, and save study spots across different buildings. Built with Node.js, Express.js, and MongoDB as part of the IS113 Web Application Development I group project.
+An IS216 Web Application Development 2 project for discovering, comparing, reviewing and saving
+study spots. The current website uses Vue 3; Express provides its JSON API and serves the built website.
+MongoDB stores accounts, buildings, study spots, reviews, favourites, check-ins and alerts.
 
----
+## Application and repository
 
-## About the Project
-
-StudySpot Finder allows students to browse study spots organized by building, leave reviews, report inappropriate reviews, and save their favourite spots. Admins can manage buildings, study spots, and moderate reported reviews. The app includes role-based access control with a student to admin  request system.
-
----
-
-## Codebase Guide
-
-A full walkthrough of the Vue + Express structure (every file, every `/api` endpoint, every page, the legacy EJS backup, and known limits):
-
-- **In the repo:** [docs/codebase-guide.html](docs/codebase-guide.html) (download or clone, then open it in a browser)
-- **Live version:** https://claude.ai/artifact/7m8xgVB5WyMME8ZfhgqAn7 (only opens for people it has been shared with)
-
----
+- Local first page: http://localhost:8000 (sign in when prompted).
+- Repository: https://github.com/michelletjiang/Study-Spot-Finder (currently private; assessors need access).
+- Hosted URL: not recorded here yet. Add the final deployed first-page URL before submission.
 
 ## Features
 
-**Student Features:**
-- Register and log in with secure password hashing (bcrypt)
-- Edit profile (username, email, password)
-- Browse buildings and view available study spots in each building
-- Add, edit, and delete reviews for study spots
-- Report inappropriate reviews with reason and description
-- Edit submitted reports before admin review
-- Save study spots to a personal favourites list
-- Request admin privileges
-- Delete own account
+- Browse buildings and interactive floorplans; inspect study-spot details.
+- Rank nearby spots by preferences and compare a shortlist.
+- View OneMap directions and recent crowd check-ins in the building interface.
+- Save favourites; write reviews with ratings and noise reports; vote on and report reviews.
+- Register, sign in and manage a profile.
+- Admins manage buildings and spots, moderate reported reviews and approve admin requests.
 
-**Admin Features:**
-- Create, update, and delete buildings
-- Create, update, and delete study spots in building
-- View and moderate reported reviews (approve report to delete review, or decline report)
-- Approve or deny student admin requests
-- Admin navigation bar and profile page
+## Technology and files
 
-**Security & Authentication:**
-- Session-based authentication using express-session
-- Password encryption with bcrypt
-- Middleware-protected routes (isLoggedIn, isAdmin)
-- Role-based authorisation (Student vs Admin)
-- Form validation and error handling on all forms
+- Frontend: Vue 3, Vue Router, Bootstrap, Leaflet and Vite.
+- Backend: Node.js, Express 5, MongoDB/Mongoose, express-session and bcrypt password hashing.
+- External API: OneMap, requested asynchronously through the Express backend.
 
----
-
-## Tech Stack
-
-- **Runtime:** Node.js
-- **Framework:** Express.js 
-- **Database:** MongoDB Atlas
-- **Templating Engine:** EJS
-- **Authentication:** express-session + bcrypt
-- **Environment Variables:** dotenv
-
----
-
-## Project Structure
-
-```
-├── server.js                  # Main entry point, Express app setup, DB connection
-├── config.env                 # Environment variables (DB connection string, session secret)
-├── package.json               # Dependencies
-│
-├── controllers/               # Business logic
-│   ├── admin-request-controller.js
-│   ├── building-controller.js
-│   ├── favourites-controller.js
-│   ├── report-controller.js
-│   ├── reviews-controller.js
-│   ├── studyspot-controller.js
-│   └── user-controller.js
-│
-├── models/                    # MongoDB schemas and data operations
-│   ├── admin-request-model.js
-│   ├── building-model.js
-│   ├── favourites-model.js
-│   ├── reports.js
-│   ├── reviews-model.js
-│   ├── studyspot-model.js
-│   └── user-model.js
-│
-├── routes/                    # Express route definitions
-│   ├── admin-request-routes.js
-│   ├── buildings-routes.js
-│   ├── favourites-routes.js
-│   ├── report-routes.js
-│   ├── reviews-route.js
-│   ├── studyspot-routes.js
-│   └── user-routes.js
-│
-├── middleware/                # Authentication middleware
-│   └── auth-middleware.js
-│
-├── views/                     # EJS templates
-│   ├── home.ejs               # Home page (building list)
-│   ├── login.ejs              # Login page
-│   ├── register.ejs           # Registration page
-│   ├── profile.ejs            # Student profile
-│   ├── admin-profile.ejs      # Admin profile with pending requests
-│   ├── edit-profile.ejs       # Edit profile form
-│   ├── add-building.ejs       # Add building form (admin)
-│   ├── edit-building.ejs      # Building list for editing (admin)
-│   ├── update-building.ejs    # Update building form (admin)
-│   ├── delete-building.ejs    # Delete building confirmation (admin)
-│   ├── building-spots.ejs     # Study spots in a building
-│   ├── studyspot-list.ejs     # All study spots list (admin)
-│   ├── studyspot-details.ejs  # Study spot detail view (admin)
-│   ├── add-studyspot.ejs      # Add study spot form (admin)
-│   ├── edit-studyspot.ejs     # Edit study spot form (admin)
-│   ├── delete-studyspot.ejs   # Delete study spot confirmation (admin)
-│   ├── display-reviews.ejs    # Reviews for a study spot
-│   ├── add-review.ejs         # Add review form
-│   ├── user-reviews.ejs       # User's own reviews
-│   ├── update-review.ejs      # Edit review form
-│   ├── show-marked-review.ejs # Review marked for deletion
-│   ├── favourites.ejs         # User's favourite spots
-│   ├── new-report.ejs         # Submit a report form
-│   ├── edit-report.ejs        # Edit report form
-│   ├── report-outcome.ejs     # Report submission result
-│   ├── admin-reports.ejs      # Admin view of pending reports
-│   └── error.ejs              # Error page 
-│
-├── public/                    # Static assets
-│   └── styles.css             # CSS stylesheet
+```text
+server.js             Express setup, JSON API, Vue hosting and database startup
+client/src/           Active Vue pages, components, stores and styles
+client/public/        Frontend assets, including floorplans
+client/dist/          Generated production website (run npm run build; not committed)
+routes/api/           Active JSON API routes
+controllers/          Request handlers; legacy handlers remain for reference
+models/, services/    Data models and shared logic
+middleware/           Server-side authentication and authorisation
+config.env.example    Configuration template without real credentials
+test/                 Database-free HTTP and unit tests
+e2e/                  Playwright browser tests
+views/, public/       Historical EJS templates and styles; no longer served
+routes/*-routes.js    Historical page routers; no longer mounted by server.js
 ```
 
----
+The older `docs/codebase-guide.html` describes the migration and may contain outdated routing and
+feature details. Use this README for the current setup and startup instructions.
 
-## Setup Instructions
+## Setup
 
-### Prerequisites
+Use Node.js 22.12 or newer (Node.js 24 was used for verification), npm, and a reachable MongoDB
+instance. MongoDB Atlas requires network access and an allowed IP address. OneMap directions need
+internet access and a OneMap account.
 
-- **Node.js** 
-- **npm**
-- An internet connection (the app connects to MongoDB Atlas)
+1. Extract or clone the project and open a terminal in the folder containing `server.js` and `package.json`.
+2. Install backend and test dependencies:
 
-### Step-by-Step Setup
-
-1. **Extract the zip file** to a folder of your choice.
-
-2. **Open a terminal** and navigate to the project root folder:
-   ```bash
-   cd "IS113_G1_Group2_Project"
+   ```sh
+   npm ci
    ```
 
-3. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-   This will install the following packages: express, mongoose, ejs, dotenv, express-session, bcrypt.
+3. If `config.env` does not already exist, copy the example:
 
-4. **Verify the `config.env` file** exists in the root folder with the following contents:
-   ```
-   DB=mongodb+srv://ilovewad:ilovewad@waddev.pebolad.mongodb.net/wad
-   SECRET=studyspotsecret
+   ```sh
+   cp config.env.example config.env
    ```
 
----
+   Edit `config.env` with your own values. Keep an existing working configuration rather than
+   replacing it with the example. Hosted environment variables can supply these settings instead.
 
-## How to Run
+   | Setting | Purpose |
+   |---------|---------|
+   | `DB` | MongoDB connection URI for the project's populated database. A new empty database has no study spots or pre-created accounts. |
+   | `SECRET` | A long random session-signing secret. Generate one with `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`. |
+   | `PORT` | Express port; defaults to `8000`. |
+   | `ONEMAP_EMAIL` | OneMap account email for directions and geocoding. |
+   | `ONEMAP_PASSWORD` | OneMap account password. Without OneMap credentials, routing/geocoding cannot succeed; the rest of the application can run. |
 
-1. **Start the server:**
-   ```bash
-   nodemon server.js
+   Do not commit `config.env` or put database/provider credentials in the README.
+
+4. Install the frontend dependencies and build the website:
+
+   ```sh
+   npm run build
    ```
 
-2. You should see the following output in the terminal:
-   ```
-   MongoDB connected successfully
-   Server running at http://localhost:8000/
-   ```
+   This runs `npm ci` inside `client`, then generates `client/dist/index.html` and its assets.
 
-3. **Open your browser** and go to:
-   ```
-   http://localhost:8000/index.html
-   ```
-   This will redirect you to the home page (you will need to log in first).
+## Run for assessment / production
 
----
+From the project root:
 
-## How to Test
+```sh
+npm start
+```
 
-Install the dev tools once (Vitest and Playwright) and Playwright's browser:
-```bash
-npm ci
+After MongoDB connects, open **http://localhost:8000** (or the configured `PORT`).
+Express serves both the Vue website and `/api` from this address. No Vite development server is needed.
+`/index.html` also loads the Vue website. Direct links such as `/find`, `/building/SCIS%201` and
+`/spots/<spot-id>` load the same website shell; Vue Router displays the requested screen after login.
+
+After frontend source changes, run `npm run build` again. Backend changes require restarting Express.
+Sessions currently live in memory, so restarting Express signs users out.
+
+For a Node.js hosting service, use the project root as its working directory, provide the environment
+settings above, run `npm ci` followed by `npm run build` during deployment, and use `npm start` as the
+start command. Route the public website to Express's configured port. Use HTTPS for browser location
+access outside localhost. Verify the deployed first page and refresh a nested URL before submission.
+
+The production build contains frontend files only. Keep the API server and its configuration available;
+opening `client/dist/index.html` directly as a local file does not run the application.
+
+## Development
+
+Complete Setup first, then run:
+
+```sh
+npm run dev
+```
+
+Open **http://localhost:5173** (or the address Vite prints if that port is occupied).
+Vite updates Vue pages while editing and proxies `/api` to Express on port 8000. The development
+proxy assumes Express uses port 8000; a custom backend port also needs a matching proxy setting in
+`client/vite.config.js`.
+
+The Mac `run-study-spot.command` launcher starts this development setup.
+
+## Tests
+
+After Setup (including the frontend build), run:
+
+```sh
+npm test
+```
+
+These tests need no database connection. They cover comparison helpers and API handlers, review
+validation/votes, ownership checks, cascade cleanup, OneMap token handling and theme contrast.
+`test/frontend-serving.test.js` starts Express on a temporary local port and checks the actual built
+homepage, login/registration and nested URLs, frontend assets, JSON API responses and rejection of
+legacy form posts. It reads `client/dist`, so build the frontend before running it.
+
+For just the Vitest suites in `test/unit`:
+
+```sh
+npm run test:unit
+```
+
+For browser tests, use a dedicated test database with study spots. These tests create accounts and
+reviews and delete their test data; interrupted runs may need cleanup.
+
+```sh
 npx playwright install chromium
+npm run dev                  # terminal 1
+npm run test:e2e              # terminal 2: desktop Chrome and Pixel 7 sizes
+npx playwright show-report   # optional
 ```
-(`npm ci` installs exactly what is in package-lock.json. On npm 10, `npm install` can fail with
-"Cannot read properties of null (reading 'edgesOut')"; `npm ci` or npm 11 avoids it.)
 
-**Unit tests (Vitest + node:test)**: no database needed.
-```bash
-npm test          # all unit tests
-npm run test:unit # only the Vitest tests in test/unit
-```
-`test/unit/cascade-service.spec.js` checks that deleting a review, study spot, building or account also
-deletes the records that depend on it (reports, reviews, favourites, admin requests), in the right order,
-and that renaming a spot or username keeps reviews and favourites attached. Model calls are replaced
-with `vi.spyOn` stubs, so the tests are repeatable and never touch the real data.
+- `student-journey.spec.mjs`: registration, login, favourites, review noise/editing, reporting and cleanup.
+- `review-votes.spec.mjs`: upvote/downvote switching, removing votes, reload persistence and author restrictions.
+- `admin-moderation.spec.mjs`: delete or keep reported reviews. Skipped unless an existing admin is supplied:
 
-**End-to-end tests (Playwright)**: drive the real app in a browser.
-```bash
-npm run dev       # terminal 1: start the app
-npm run test:e2e  # terminal 2: run the browser tests (desktop and mobile sizes)
-npx playwright show-report   # optional: open the HTML report
-```
-`e2e/student-journey.spec.mjs` registers a throw-away account, logs in, favourites a spot, writes, edits
-and reports a review, deletes the review (and checks its report is gone), then deletes the account.
-It cleans up after itself, so it is safe to run against the shared database.
+  ```sh
+  ADMIN_EMAIL=your-test-admin-email ADMIN_PASSWORD=your-test-admin-password npm run test:e2e
+  ```
 
----
+The browser suite currently targets the development address on port 5173; the database-free HTTP test
+checks production serving separately.
 
 ## User Accounts & Roles
 
@@ -241,7 +190,7 @@ It cleans up after itself, so it is safe to run against the shared database.
 
 ## Database Design
 
-The application uses **7 MongoDB schemas** with relationships between them:
+The application uses **9 MongoDB schemas** with relationships between them:
 
 | Schema           | Key Fields                                                                     | Relationships                             |
 |------------------|--------------------------------------------------------------------------------|-------------------------------------------|
@@ -253,7 +202,8 @@ The application uses **7 MongoDB schemas** with relationships between them:
 | **AdminRequest** | userId (ObjectId ref), username, status                                        | References User                           |
 | **Favourite**    | userName, spotName, buildingName, floor, seatCount, hasPowerSocket, noiseLevel | Linked to User and StudySpot by name      |
 
-All schemas include timestamps (createdAt, updatedAt).
+The other two schemas are `CrowdReport` (recent crowd check-ins linked to a spot and user) and
+`StudySpotAlert` (spot alerts and their confirm/dispute votes).
 
 ---
 
@@ -265,3 +215,7 @@ AI/LLM tools were used for the following lower-order thinking tasks:
 - CSS styling suggestions
 - Outlining the structure for the README file
 
+
+This deployment update also used AI assistance to configure Express to serve the Vue build, write the
+HTTP regression test, and update setup documentation. Review the full disclosure against the team's
+actual use and the course requirements before submission.
