@@ -48,9 +48,9 @@ test('API parser rejects malformed, duplicate, and four-item selections', () => 
   assert.equal(parseComparisonIds('507f1f77bcf86cd799439011,507f1f77bcf86cd799439012,507f1f77bcf86cd799439013,507f1f77bcf86cd799439014').valid, false);
 });
 
-// The stylesheet must have the narrow-screen rules, so the comparison stacks on a phone.
+// The compare page must have narrow-screen rules: on a phone the table scrolls inside its sheet with the row labels pinned.
 test('comparison layout includes a narrow-screen breakpoint', () => {
-  const css = fs.readFileSync('client/src/style.css', 'utf8');
-  assert.match(css, /@media \(max-width: 650px\)/);
-  assert.match(css, /grid-template-columns: 1fr/);
+  const view = fs.readFileSync('client/src/views/CompareView.vue', 'utf8');
+  assert.match(view, /@media \(max-width: 650px\)/);
+  assert.match(view, /position: sticky; left: 0/);
 });

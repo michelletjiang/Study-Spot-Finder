@@ -13,3 +13,6 @@ export function floorOrder(floor) {
 export function floorLabel(floor) {
   return floor.startsWith('B') ? floor : `Level ${floor}`
 }
+
+// the label for a floor as stored on a spot: " l3" -> "Level 3", "b1" -> "B1"
+export const levelLabel = floor => floorLabel(normalizeFloor(floor))

@@ -70,7 +70,7 @@ async function remove(spot) {
     <p v-if="error" class="nb-state nb-state--error" role="alert">{{ error }}</p>
     <p v-if="loading" class="nb-state">Loading study spots…</p>
     <p v-else-if="!spots.length && !error" class="nb-state">No study spots yet. Add the first one.</p>
-    <p v-else-if="!shown.length" class="nb-state">No study spots match. <button type="button" class="link" @click="search = ''; building = ''">Clear the filters</button></p>
+    <p v-else-if="!shown.length" class="nb-state">No study spots match. <button type="button" class="nb-link" @click="search = ''; building = ''">Clear the filters</button></p>
 
     <div v-else class="nb-table-wrap">
       <table class="nb-table">
@@ -111,5 +111,4 @@ async function remove(spot) {
 .chips { display: flex; flex-wrap: wrap; gap: 8px; max-width: 1140px; margin: -8px 0 24px; }
 .nb-table-wrap { max-width: 1140px; }
 .missing { color: var(--nb-muted); font-size: 0.88rem; font-style: italic; }
-.link { padding: 0; border: none; background: none; color: inherit; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
 </style>
