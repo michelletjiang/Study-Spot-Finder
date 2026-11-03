@@ -1,5 +1,8 @@
 // ACTIVE (mixed file): app entry point. Starts the Express server that the Vue client talks to through /api.
 // Express is the web framework: it routes each HTTP request to a handler function.
+const dns = require('dns');
+dns.setServers(['8.8.8.8', '1.1.1.1']);
+
 const express = require('express');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');

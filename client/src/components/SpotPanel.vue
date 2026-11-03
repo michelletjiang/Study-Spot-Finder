@@ -38,6 +38,8 @@ myCheckIn.load().catch(() => {}) // logged out or offline: the buttons still wor
 const hereNow = computed(() => myCheckIn.isAt(props.spot._id))
 const elsewhere = computed(() => (myCheckIn.active && !hereNow.value ? myCheckIn.current : null))
 const isFull = computed(() => checkedIn.value !== null && checkedIn.value >= props.spot.seatCount && !hereNow.value)
+// "Seminar Room 2-1 (School of Computing & Information Systems 1)", or just the room if its building isn't known
+const placeName = place => (place.buildingName ? `${place.spotName} (${place.buildingName})` : place.spotName)
 
 // reload everything when another room is picked; ignore answers for a room that's no longer shown
 watch(() => props.spot._id, async id => {
@@ -177,7 +179,7 @@ async function toggleFavourite() {
         <button type="button" class="nb-btn nb-btn--primary" :disabled="checkingIn || isFull" @click="checkIn">
           {{ isFull ? 'No free seats' : 'Check in here' }}
         </button>
-        <p v-if="elsewhere" class="note">You're checked in at {{ elsewhere.spotName }}. Checking in here will move you.</p>
+        <p v-if="elsewhere" class="note">You're checked in at {{ placeName(elsewhere) }}. Checking in here will move you.</p>
       </template>
       <p v-if="checkInMessage" class="note">{{ checkInMessage }}</p>
       <p v-if="busiestToday" class="note">
@@ -191,7 +193,7 @@ async function toggleFavourite() {
         <p class="tick" aria-hidden="true">✓</p>
         <h3 id="confirm-title">{{ confirmed.alreadyHere ? "You're already checked in" : "You're checked in!" }}</h3>
         <p><strong>{{ confirmed.spotName }}</strong><br>{{ confirmed.buildingName }}</p>
-        <p v-if="confirmed.previous">We've checked you out of {{ confirmed.previous.spotName }}.</p>
+        <p v-if="confirmed.previous">We've checked you out of {{ placeName(confirmed.previous) }}.</p>
         <p>
           We'll check you out automatically at <strong>{{ clockTime(confirmed.endsAt) }}</strong>.
           Tap <strong>Check out</strong> when you leave so others can see the seat is free.
