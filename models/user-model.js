@@ -1,5 +1,6 @@
 // ACTIVE: model for user accounts. Used by controllers/user-controller.js. Exports the model itself, not a set of helper functions.
 const mongoose = require('mongoose');
+const { NEED_IDS, NEED_LEVELS, DISTANCE_LEVELS, DEFAULT_PREFERENCES } = require('../lib/preferences');
 
 // Schema: the fields of each user.
 const userSchema = new mongoose.Schema({
@@ -41,6 +42,12 @@ const userSchema = new mongoose.Schema({
     role:{
         type: String,
         required: true
+    },
+    // Study preferences from the profile page, used to rank spots. Missing on older accounts (lib/preferences.js fills defaults).
+    preferences: {
+        needs: Object.fromEntries(NEED_IDS.map(id => [id, { type: String, enum: NEED_LEVELS, default: DEFAULT_PREFERENCES.needs[id] }])),
+        distance: { type: String, enum: DISTANCE_LEVELS, default: DEFAULT_PREFERENCES.distance },
+        seats: { type: Number, default: DEFAULT_PREFERENCES.seats },
     },
     // Sign-up date, set automatically.
     createdAt: {

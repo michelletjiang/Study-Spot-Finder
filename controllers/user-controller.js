@@ -6,6 +6,7 @@ const AdminRequest = require('../models/admin-request-model');
 const cascade = require('../services/cascade-service'); // deletes child records with their parent
 // bcrypt hashes passwords, so the database never holds the real password.
 const bcrypt = require('bcrypt');
+const { parsePreferences, withDefaults } = require('../lib/preferences');
 
 // LEGACY - not used by the Vue demo: shows the EJS register form.
 exports.registerGet = (req, res) => {
@@ -342,6 +343,32 @@ exports.apiGetProfile = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error loading profile' });
+    }
+};
+
+// GET /api/profile/preferences: the study preferences, with defaults for anything not saved yet.
+exports.apiGetPreferences = async (req, res) => {
+    try {
+        const user = await User.findById(req.session.user.id, { preferences: 1 }).lean();
+        if (!user) return res.status(401).json({ message: 'Account no longer exists' });
+        res.json(withDefaults(user.preferences));
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error loading preferences' });
+    }
+};
+
+// PUT /api/profile/preferences   body: { needs: { quiet, power, rated, seatsFree }, distance, seats }
+exports.apiUpdatePreferences = async (req, res) => {
+    const { preferences, errors } = parsePreferences(req.body);
+    if (errors) return res.status(400).json({ message: errors.join(' '), errors });
+    try {
+        const user = await User.findByIdAndUpdate(req.session.user.id, { preferences }, { new: true, runValidators: true }).lean();
+        if (!user) return res.status(401).json({ message: 'Account no longer exists' });
+        res.json(withDefaults(user.preferences));
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error saving preferences' });
     }
 };
 

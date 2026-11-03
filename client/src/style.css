@@ -512,6 +512,9 @@ p {
 .nb-segmented label:has(input:checked) { background: var(--nb-highlight); color: #28263f; }
 .nb-segmented label:has(input:focus-visible) { outline: 3px solid var(--nb-focus); outline-offset: -5px; }
 
+/* a handwritten heading for a section of a page: "My study preferences", "Top picks for you" */
+.nb-section-title { margin: 0; font: 700 2.2rem/1.1 var(--nb-heading); color: var(--nb-ink); letter-spacing: 0; }
+
 /* ---------- page header with tools ---------- */
 /* the title on the left, search and an "+ Add" button on the right (admin lists) */
 .nb-page-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; max-width: 1140px; margin-bottom: 8px; }
