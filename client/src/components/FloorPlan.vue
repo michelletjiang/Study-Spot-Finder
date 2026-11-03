@@ -1,8 +1,11 @@
 <script setup>
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
+import { alertLabel, alertIcon } from '../alerts'
+import { timeAgo } from '../reviews'
+import { seatsFreeText } from '../seats'
 
 // Clickable floorplan: clicking a room emits 'select' with its study spot, and selectedId highlights one room.
-// Hovering (or tabbing to) a room shows a popup with its seats and power sockets.
+// Hovering (or tabbing to) a room shows a popup with its seats free, power sockets and any reported issues.
 // plan comes from floorplans.js, spots are the building's study spots on this floor.
 const props = defineProps({
   plan: { type: Object, required: true },
@@ -12,6 +15,10 @@ const props = defineProps({
   tones: { type: Object, default: null },
   // optional: spot _ids to fade out, e.g. rooms that don't match the chosen filters
   dimmedIds: { type: Array, default: () => [] },
+  // optional: spot _id -> active alerts (GET /api/alerts?spots=); rooms with alerts get a red outline
+  alerts: { type: Object, default: null },
+  // optional: spot _id -> people checked in right now (GET /api/checkins?spots=); the popup shows seats free
+  checkedIn: { type: Object, default: null },
 })
 const emit = defineEmits(['select'])
 
@@ -24,9 +31,24 @@ const rooms = computed(() => {
 function roomClass(room) {
   return [
     props.tones ? `tone-${props.tones[room.spot._id] || 'none'}` : '',
-    { selected: props.selectedId === room.spot._id, dimmed: props.dimmedIds.includes(room.spot._id) },
+    {
+      selected: props.selectedId === room.spot._id,
+      dimmed: props.dimmedIds.includes(room.spot._id),
+      alerted: alertsFor(room).length > 0,
+    },
   ]
 }
+
+const alertsFor = room => props.alerts?.[room.spot._id] || []
+const checkedInFor = room => props.checkedIn?.[room.spot._id] || 0
+
+function roomLabel(room) {
+  const n = alertsFor(room).length
+  return `${room.spotName}, ${room.spot.seatCount} seats${n ? `, ${n} issue${n === 1 ? '' : 's'} reported` : ''} - show details`
+}
+
+// long descriptions are cut short in the popup; the room panel shows them in full
+const shorten = text => (text.length > 70 ? `${text.slice(0, 67)}…` : text)
 
 // the room under the mouse (or keyboard focus), and where its popup goes.
 // The popup is fixed to the screen rather than the plan, so a scrolling/zoomed plan can't cut it off:
@@ -77,7 +99,7 @@ const popupStyle = computed(() => ({
         :class="roomClass(room)"
         tabindex="0"
         role="button"
-        :aria-label="`${room.spotName}, ${room.spot.seatCount} seats - show details`"
+        :aria-label="roomLabel(room)"
         @click="emit('select', room.spot)"
         @keydown.enter.prevent="emit('select', room.spot)"
         @keydown.space.prevent="emit('select', room.spot)"
@@ -89,8 +111,16 @@ const popupStyle = computed(() => ({
 
     <div v-if="hovered" ref="popup" class="popup" :style="popupStyle" aria-hidden="true">
       <strong>{{ hovered.spotName }}</strong>
-      <span>{{ hovered.spot.seatCount }} seats</span>
+      <span v-if="checkedInFor(hovered)">{{ seatsFreeText(checkedInFor(hovered), hovered.spot.seatCount) }}</span>
+      <span v-else>{{ hovered.spot.seatCount }} seats</span>
       <span>Power sockets: {{ hovered.spot.hasPowerSocket ? 'Yes' : 'No' }}</span>
+      <ul v-if="alertsFor(hovered).length" class="popup-alerts">
+        <li v-for="alert in alertsFor(hovered).slice(0, 3)" :key="alert._id">
+          <span>{{ alertIcon(alert.type) }} <strong>{{ alertLabel(alert.type) }}</strong> · {{ timeAgo(alert.createdAt) }}</span>
+          <em v-if="alert.description">"{{ shorten(alert.description) }}"</em>
+        </li>
+        <li v-if="alertsFor(hovered).length > 3" class="more">+{{ alertsFor(hovered).length - 3 }} more</li>
+      </ul>
       <small>Click for details</small>
     </div>
   </div>
@@ -129,13 +159,21 @@ polygon.tone-none { fill: rgba(214, 240, 208, 0.35); stroke: #28263f; stroke-wid
 polygon.tone-low { fill: rgba(222, 243, 214, 0.85); stroke: #28263f; stroke-width: 2; }
 polygon.tone-mid { fill: rgba(164, 217, 156, 0.85); stroke: #28263f; stroke-width: 2; }
 polygon.tone-top { fill: rgba(92, 176, 104, 0.85); stroke: #28263f; stroke-width: 2; }
-/* hover and selection use the page's yellow highlighter, so green always means a rating */
+/* or by seats free right now (same colours as the .nb-dot seat dots in style.css) */
+polygon.tone-plenty { fill: rgba(95, 179, 107, 0.85); stroke: #28263f; stroke-width: 2; }
+polygon.tone-some { fill: rgba(240, 194, 58, 0.8); stroke: #28263f; stroke-width: 2; }
+polygon.tone-few { fill: rgba(240, 162, 58, 0.85); stroke: #28263f; stroke-width: 2; }
+polygon.tone-full { fill: rgba(224, 96, 106, 0.85); stroke: #28263f; stroke-width: 2; }
+/* hover and selection are purple (the app's accent), so they can't be mistaken for a rating or seats colour.
+   Hover is the lighter wash and keeps the room's outline, so a reported issue's red dashes stay visible. */
 polygon[class*='tone-']:hover,
-polygon[class*='tone-']:focus-visible { fill: rgba(255, 229, 138, 0.9); stroke-width: 3; }
-polygon[class*='tone-'].selected { fill: rgba(255, 210, 70, 0.95); stroke: #28263f; stroke-width: 5; }
+polygon[class*='tone-']:focus-visible { fill: rgba(225, 221, 248, 0.9); stroke-width: 3; }
+polygon[class*='tone-'].selected { fill: rgba(201, 195, 240, 0.95); stroke: #4b3fb5; stroke-width: 5; }
 /* multiply lets the room labels drawn in the plan image show through the colour */
 polygon[class*='tone-'] { mix-blend-mode: multiply; }
 polygon.dimmed { opacity: 0.25; }
+/* a reported issue: dashed red outline (after the tone rules so it wins over their stroke colour) */
+polygon.alerted { stroke: var(--nb-error); stroke-width: 4; stroke-dasharray: 12 6; }
 
 polygon.selected {
   fill: var(--accent-border);
@@ -165,6 +203,24 @@ polygon.selected {
 .popup strong {
   color: var(--nb-ink);
 }
+
+.popup-alerts {
+  display: grid;
+  gap: 4px;
+  max-width: 240px;
+  margin: 4px 0 2px;
+  padding: 6px 8px;
+  border: 1.5px solid var(--nb-error);
+  border-radius: 6px;
+  background: var(--nb-note-pink);
+  color: #28263f;
+  list-style: none;
+  white-space: normal; /* descriptions wrap, unlike the rest of the popup */
+}
+.popup-alerts li { display: grid; }
+.popup-alerts strong { color: #28263f; }
+.popup-alerts em { overflow-wrap: anywhere; }
+.popup-alerts .more { font-style: italic; }
 
 .popup small {
   font-style: italic;

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { api } from '../api'
 import { useBuildingSpots } from '../buildingSpots'
 import { normalizeFloor, floorOrder, floorLabel } from '../floors'
 import { floorplans, findFloorplan } from '../floorplans'
@@ -8,6 +9,7 @@ import { openStatus } from '../buildingHours'
 import { isGroupRoom, isQuiet } from '../roomTypes'
 import FloorPlan from '../components/FloorPlan.vue'
 import SpotPanel from '../components/SpotPanel.vue'
+import { seatsLevel, SEAT_LEVELS } from '../seats'
 
 // A building: floor tabs, the chosen floor's plan (rooms coloured by rating), and a details card for the clicked room.
 // The floor and room are kept in ?floor= and ?spot=, so the back button and shared links come back to the same view.
@@ -55,15 +57,55 @@ function toggleFilter(key) {
     : [...activeFilters.value, key]
 }
 
-// ---------- rating colours ----------
-function tone(spot) {
+// ---------- room colours: by rating, or by seats free right now ----------
+const colourBy = ref('rating') // 'rating' | 'seats'
+
+function ratingTone(spot) {
   if (spot.avgRating == null) return 'none'
   if (spot.avgRating >= 4.5) return 'top'
   if (spot.avgRating >= 4) return 'mid'
   return 'low'
 }
+// 'plenty' | 'some' | 'few' | 'full', or 'none' when nobody is checked in (so we don't know)
+const seatsTone = spot => (checkedInBySpot.value[spot._id] ? seatsLevel(checkedInBySpot.value[spot._id], spot.seatCount) : 'none')
+const tone = spot => (colourBy.value === 'seats' ? seatsTone(spot) : ratingTone(spot))
+
 const tones = computed(() => Object.fromEntries(floorSpots.value.map(s => [s._id, tone(s)])))
 const anyReviews = computed(() => spots.value.some(s => s.reviewCount > 0))
+const anyCheckIns = computed(() => Object.values(checkedInBySpot.value).some(n => n > 0))
+
+// ---------- live data for this floor's rooms: check-ins and reported issues (alerts) ----------
+// spot _id -> people checked in, and spot _id -> active alerts. Rooms missing from a map have nothing to show.
+const checkedInBySpot = ref({})
+const alertsBySpot = ref({})
+const floorSpotIds = computed(() => floorSpots.value.map(s => s._id).join(','))
+
+// loads one map for the current floor; the plan works fine without it, so errors are ignored
+async function loadFloorData(path, target, ids) {
+  try {
+    const data = await api(`${path}?spots=${ids}`)
+    if (floorSpotIds.value === ids) target.value = data // still on the same floor
+  } catch {
+    // nothing to show
+  }
+}
+
+watch(floorSpotIds, ids => {
+  checkedInBySpot.value = {}
+  alertsBySpot.value = {}
+  if (!ids) return
+  loadFloorData('/api/checkins', checkedInBySpot, ids)
+  loadFloorData('/api/alerts', alertsBySpot, ids)
+}, { immediate: true })
+
+// the room panel posted, voted on or resolved an alert, or you checked in / out ({ spotId: people } for each room that changed)
+function onAlertsChange(spotId, list) {
+  alertsBySpot.value = { ...alertsBySpot.value, [spotId]: list }
+}
+function onCheckinsChange(counts) {
+  checkedInBySpot.value = { ...checkedInBySpot.value, ...counts }
+}
+const hasAlerts = spot => alertsBySpot.value[spot._id]?.length > 0
 
 // ---------- floors, rooms, zoom, list ----------
 function chooseFloor(floor) {
@@ -136,12 +178,24 @@ onUnmounted(() => {
             :aria-pressed="activeFilters.includes(f.key)" @click="toggleFilter(f.key)"
           >{{ f.label }}</button>
         </div>
-        <div class="legend" aria-label="Room colours: average rating">
-          <span class="label">Avg. rating</span>
-          <span><i class="swatch top"></i>4.5 and up</span>
-          <span><i class="swatch mid"></i>4.0 – 4.4</span>
-          <span><i class="swatch low"></i>Under 4.0</span>
-          <span><i class="swatch none"></i>No reviews yet</span>
+        <div class="legend-wrap">
+          <div class="colour-by" role="group" aria-label="Colour rooms by">
+            <span class="label">Colour rooms by</span>
+            <button type="button" class="chip" :aria-pressed="colourBy === 'rating'" @click="colourBy = 'rating'">Rating</button>
+            <button type="button" class="chip" :aria-pressed="colourBy === 'seats'" @click="colourBy = 'seats'">Seats free now</button>
+          </div>
+          <div v-if="colourBy === 'rating'" class="legend" aria-label="Room colours: average rating">
+            <span><i class="swatch top"></i>4.5 and up</span>
+            <span><i class="swatch mid"></i>4.0 – 4.4</span>
+            <span><i class="swatch low"></i>Under 4.0</span>
+            <span><i class="swatch none"></i>No reviews yet</span>
+            <span><i class="swatch alert"></i>Issue reported</span>
+          </div>
+          <div v-else class="legend" aria-label="Room colours: seats free right now">
+            <span v-for="level in SEAT_LEVELS" :key="level.key"><i class="swatch" :class="level.key"></i>{{ level.label }}</span>
+            <span><i class="swatch none"></i>Nobody checked in</span>
+            <span><i class="swatch alert"></i>Issue reported</span>
+          </div>
         </div>
       </div>
 
@@ -187,7 +241,7 @@ onUnmounted(() => {
               <div class="plan-inner" :style="{ width: `${zoom * 100}%` }">
                 <FloorPlan
                   :plan="selectedPlan" :spots="floorSpots" :selected-id="selectedSpot?._id ?? null"
-                  :tones="tones" :dimmed-ids="dimmedIds" @select="selectSpot"
+                  :tones="tones" :dimmed-ids="dimmedIds" :alerts="alertsBySpot" :checked-in="checkedInBySpot" @select="selectSpot"
                 />
               </div>
             </div>
@@ -201,26 +255,33 @@ onUnmounted(() => {
                 :class="[`tone-${tone(spot)}`, { dimmed: dimmedIds.includes(spot._id), selected: selectedSpot?._id === spot._id }]"
                 @click="selectSpot(spot)"
               >
-                <strong>{{ spot.name }}</strong>
+                <strong>{{ spot.name }}<span v-if="hasAlerts(spot)" class="alert-flag" title="Issue reported"> ⚠</span></strong>
                 <span>{{ spot.seatCount }} seats</span>
                 <span>{{ spot.hasPowerSocket ? '🔌 Sockets' : 'No sockets' }}</span>
-                <span>{{ spot.avgRating != null ? `★ ${spot.avgRating.toFixed(1)}` : 'No reviews' }}</span>
+                <span v-if="colourBy === 'seats'">{{ checkedInBySpot[spot._id] ? `~${Math.max(0, spot.seatCount - checkedInBySpot[spot._id])} free` : 'Nobody checked in' }}</span>
+                <span v-else>{{ spot.avgRating != null ? `★ ${spot.avgRating.toFixed(1)}` : 'No reviews' }}</span>
               </button>
             </div>
 
             <p class="footnote">
               Tap a room for seats and reviews. Use ← → to switch floors.
-              <template v-if="!anyReviews"> Rooms get their colour once they have reviews.</template>
+              <template v-if="colourBy === 'rating' && !anyReviews"> Rooms get their colour once they have reviews.</template>
+              <template v-if="colourBy === 'seats' && !anyCheckIns"> Nobody on this floor is checked in right now. Pick the room you're in and tap Check in here.</template>
+              <template v-if="colourBy === 'seats'"> Seats free only counts people who checked in through the app, so it's an estimate.</template>
             </p>
           </section>
         </div>
 
-        <SpotPanel v-if="selectedSpot" :spot="selectedSpot" class="panel" @close="closePanel" />
+        <SpotPanel
+          v-if="selectedSpot" :spot="selectedSpot" class="panel"
+          @close="closePanel" @alerts-change="onAlertsChange" @checkins-change="onCheckinsChange"
+        />
         <aside v-else class="hint-card">
           <h2>{{ floorLabel(selectedFloor) }}</h2>
           <p>{{ floorSpots.length }} study spot{{ floorSpots.length === 1 ? '' : 's' }} ·
             {{ floorSpots.filter(s => s.hasPowerSocket).length }} with power sockets</p>
           <p class="muted">Pick a room on the plan to see its seats, how busy it is and what people say about it.</p>
+          <p class="muted">Something wrong in a room (aircon, Wi-Fi, locked)? Pick it and tap <strong>Report an issue</strong> to warn others.</p>
         </aside>
       </div>
     </template>
@@ -288,6 +349,15 @@ h1 {
 .swatch.mid { background: #a4d99c; }
 .swatch.low { background: #def3d6; }
 .swatch.none { background: transparent; border-style: dashed; }
+.swatch.alert { background: transparent; border: 2px dashed var(--nb-error); }
+.swatch.plenty { background: #5fb36b; }
+.swatch.some { background: #f0c23a; }
+.swatch.few { background: #f0a23a; }
+.swatch.full { background: #e0606a; }
+.legend-wrap { display: grid; gap: 6px; justify-items: start; }
+.colour-by { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.colour-by .chip { padding: 0 12px; font-size: 0.92rem; }
+.alert-flag { color: var(--nb-error); }
 
 /* ---------- layout ---------- */
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 28px; align-items: start; }
@@ -360,6 +430,10 @@ h1 {
 .room.tone-top { background: #5cb068; color: #28263f; }
 .room.tone-mid { background: #a4d99c; color: #28263f; }
 .room.tone-low { background: #def3d6; color: #28263f; }
+.room.tone-plenty { background: #5fb36b; color: #28263f; }
+.room.tone-some { background: #f0c23a; color: #28263f; }
+.room.tone-few { background: #f0a23a; color: #28263f; }
+.room.tone-full { background: #e0606a; color: #28263f; }
 .room[class*='tone-']:not(.tone-none) span { color: #4a4660; }
 .room.selected { box-shadow: 4px 4px 0 var(--nb-ink); }
 .room.dimmed { opacity: 0.35; }

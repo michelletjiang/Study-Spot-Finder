@@ -12,6 +12,7 @@ import { averageRating } from '../reviews'
 import { floorLabel, normalizeFloor } from '../floors'
 import FavouriteButton from '../components/FavouriteButton.vue'
 import StarRating from '../components/StarRating.vue'
+import BusyTimesChart from '../components/BusyTimesChart.vue'
 
 const route = useRoute()
 // The spot, empty until loaded.
@@ -102,6 +103,11 @@ async function deleteReview(review) {
         </li>
       </ul>
 
+      <!-- when it's usually busy, from check-ins -->
+      <div class="nb-sheet busy-sheet">
+        <BusyTimesChart :spot-id="spot._id" />
+      </div>
+
       <section class="reviews" aria-labelledby="reviews-title">
         <div class="reviews-head">
           <h2 id="reviews-title">Reviews</h2>
@@ -165,6 +171,8 @@ async function deleteReview(review) {
 .facts .nb-note:nth-child(2) { transform: rotate(-0.6deg); }
 .facts .nb-note:nth-child(3) { transform: rotate(0.8deg); }
 .facts .white { background: #fffef9; transform: rotate(-0.4deg); }
+
+.busy-sheet { max-width: 1000px; margin-bottom: 36px; }
 
 .reviews { max-width: 1000px; padding-top: 22px; border-top: 2px solid var(--nb-ink); }
 .reviews-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }

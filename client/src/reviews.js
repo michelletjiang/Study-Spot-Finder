@@ -4,6 +4,20 @@ export function formatDate(date) {
   return new Date(date).toLocaleString('en-SG', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
+// "12 min ago", "2 days ago"
+export function timeAgo(date) {
+  const minutes = Math.round((Date.now() - new Date(date).getTime()) / 60000)
+  if (minutes < 1) return 'just now'
+  if (minutes < 60) return `${minutes} min ago`
+  const hours = Math.round(minutes / 60)
+  if (hours < 24) return `${hours} h ago`
+  const days = Math.round(hours / 24)
+  if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`
+  const weeks = Math.round(days / 7)
+  if (weeks < 5) return `${weeks} week${weeks === 1 ? '' : 's'} ago`
+  return new Date(date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
 // most common noise level across a spot's reviews (older reviews may not have one)
 export function noiseSummary(reviews) {
   const counts = {}

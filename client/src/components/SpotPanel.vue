@@ -5,41 +5,61 @@ import { favourites } from '../stores/favourites'
 import { comparison } from '../stores/compare.js'
 import { floorLabel, normalizeFloor } from '../floors'
 import { roomType } from '../roomTypes'
+import { timeAgo } from '../reviews'
+import { myCheckIn } from '../stores/checkin'
+import { seatsLevel, seatsFreeText, peopleText, clockTime, busiestSummary, sgNow } from '../seats'
+import SpotAlerts from './SpotAlerts.vue'
 
 // The details card beside the building page's floor plan, for the room that was clicked.
-// Shows rating, seats, sockets, how busy it is right now (crowd check-ins) and the latest reviews.
+// Shows rating, seats, sockets, reported issues (alerts), seats free right now (check-ins) and the latest reviews.
 const props = defineProps({ spot: { type: Object, required: true } })
-const emit = defineEmits(['close'])
+// alerts-change: (spotId, alerts) and checkins-change: ({ spotId: people checked in }) keep the floor plan up to date
+const emit = defineEmits(['close', 'alerts-change', 'checkins-change'])
 
 const reviews = ref([])
 const reviewsLoading = ref(true)
 const reviewsError = ref('')
 
-const crowd = ref(null)      // { current, lastReportedAt, count } or null while loading
-const crowdError = ref('')
+const checkedIn = ref(null)  // people checked in here right now, or null while loading
+const countError = ref('')
 const checkInMessage = ref('')
 const checkingIn = ref(false)
+const busiestToday = ref(null) // "On Tuesdays it's usually busiest around 2 pm (~40% of seats taken)." once there's enough data
+
+// the "You're checked in" popup: { spotName, buildingName, endsAt, previous, alreadyHere } while it's open
+const confirmDialog = ref(null)
+const confirmed = ref(null)
 
 const favBusy = ref(false)
 const favError = ref('')
 
-const CROWD_LEVELS = ['Quiet', 'Moderate', 'Busy', 'Full']
+// where the user is checked in (loaded once per page, shared with other panels)
+myCheckIn.load().catch(() => {}) // logged out or offline: the buttons still work and report their own errors
+const hereNow = computed(() => myCheckIn.isAt(props.spot._id))
+const elsewhere = computed(() => (myCheckIn.active && !hereNow.value ? myCheckIn.current : null))
+const isFull = computed(() => checkedIn.value !== null && checkedIn.value >= props.spot.seatCount && !hereNow.value)
 
 // reload everything when another room is picked; ignore answers for a room that's no longer shown
 watch(() => props.spot._id, async id => {
   reviews.value = []
-  reviewsError.value = crowdError.value = checkInMessage.value = favError.value = ''
+  reviewsError.value = countError.value = checkInMessage.value = favError.value = ''
   reviewsLoading.value = true
-  crowd.value = null
+  checkedIn.value = null
+  busiestToday.value = null
+
+  // the full chart is on the room page; the panel only has room for one line
+  api(`/api/checkins/${id}/pattern`)
+    .then(data => { if (props.spot._id === id) busiestToday.value = busiestSummary(data, sgNow().day) })
+    .catch(() => {}) // optional extra, so nothing to show
 
   api(`/api/reviews?spotId=${id}`)
     .then(data => { if (props.spot._id === id) reviews.value = data })
     .catch(e => { if (props.spot._id === id) reviewsError.value = e.message })
     .finally(() => { if (props.spot._id === id) reviewsLoading.value = false })
 
-  api(`/api/crowd/${id}`)
-    .then(data => { if (props.spot._id === id) crowd.value = data.summary })
-    .catch(e => { if (props.spot._id === id) crowdError.value = e.message })
+  api(`/api/checkins?spots=${id}`)
+    .then(data => { if (props.spot._id === id) checkedIn.value = data[id] || 0 })
+    .catch(e => { if (props.spot._id === id) countError.value = e.message })
 }, { immediate: true })
 
 const average = computed(() => {
@@ -49,34 +69,43 @@ const average = computed(() => {
 const isFavourite = computed(() => !!favourites.find(props.spot))
 const inComparison = computed(() => comparison.has(props.spot._id))
 
-// "12 min ago", "2 days ago"
-function timeAgo(date) {
-  const minutes = Math.round((Date.now() - new Date(date).getTime()) / 60000)
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes} min ago`
-  const hours = Math.round(minutes / 60)
-  if (hours < 24) return `${hours} h ago`
-  const days = Math.round(hours / 24)
-  if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`
-  const weeks = Math.round(days / 7)
-  if (weeks < 5) return `${weeks} week${weeks === 1 ? '' : 's'} ago`
-  return new Date(date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })
-}
-
 const stars = rating => '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating))
 
-async function checkIn(status) {
+// the server sends fresh counts for every spot a check-in or check-out changed (e.g. the room you moved out of too)
+function applyCounts(counts) {
+  if (props.spot._id in counts) checkedIn.value = counts[props.spot._id]
+  emit('checkins-change', counts)
+}
+
+async function checkIn() {
   checkingIn.value = true
   checkInMessage.value = ''
   const id = props.spot._id
   try {
-    const data = await api(`/api/crowd/${id}`, { method: 'POST', body: { status } })
-    if (props.spot._id === id) {
-      crowd.value = data.summary
-      checkInMessage.value = 'Thanks! Your check-in was added.'
-    }
+    const data = await api(`/api/checkins/${id}`, { method: 'POST' })
+    myCheckIn.current = data.checkIn
+    applyCounts(data.counts)
+    if (props.spot._id !== id) return
+    confirmed.value = { ...data.checkIn, previous: data.previous, alreadyHere: !!data.alreadyHere }
+    confirmDialog.value?.showModal()
   } catch (e) {
-    if (props.spot._id === id) checkInMessage.value = e.message // e.g. "You already checked in here. Try again in 9 min."
+    if (props.spot._id === id) checkInMessage.value = e.message // e.g. "All 6 seats here are taken by people who checked in."
+  } finally {
+    checkingIn.value = false
+  }
+}
+
+async function checkOut() {
+  checkingIn.value = true
+  checkInMessage.value = ''
+  try {
+    const data = await api('/api/checkins/me', { method: 'DELETE' })
+    myCheckIn.current = null
+    applyCounts(data.counts)
+    checkInMessage.value = "You've checked out. Thanks for freeing up the seat!"
+  } catch (e) {
+    if (e.status === 404) myCheckIn.current = null // the 3 hours were already up
+    checkInMessage.value = e.message
   } finally {
     checkingIn.value = false
   }
@@ -123,26 +152,53 @@ async function toggleFavourite() {
       </div>
     </div>
 
+    <!-- the room's usual noise level (from the spot itself), not how busy it is right now -->
     <div v-if="spot.noiseLevel" class="tags">
-      <span class="tag">{{ spot.noiseLevel }}</span>
+      <span class="tag">{{ spot.noiseLevel }} noise</span>
     </div>
 
-    <section class="crowd" aria-live="polite">
-      <p v-if="crowdError" class="muted">Couldn't load how busy it is.</p>
-      <p v-else-if="!crowd" class="muted">Checking how busy it is…</p>
-      <p v-else-if="crowd.current">
-        <span class="dot" :class="crowd.current.toLowerCase()" aria-hidden="true"></span>
-        <strong>{{ crowd.current }}</strong> · reported {{ timeAgo(crowd.lastReportedAt) }}
+    <SpotAlerts :spot="spot" @change="list => emit('alerts-change', spot._id, list)" />
+
+    <section class="checkin" aria-live="polite">
+      <p v-if="countError" class="muted">Couldn't load how many seats are free.</p>
+      <p v-else-if="checkedIn === null" class="muted">Counting free seats…</p>
+      <p v-else-if="checkedIn > 0">
+        <span class="nb-dot" :class="`nb-dot--${seatsLevel(checkedIn, spot.seatCount)}`" aria-hidden="true"></span>
+        <strong>{{ seatsFreeText(checkedIn, spot.seatCount) }}</strong>
+        <span class="muted"> · {{ peopleText(checkedIn) }} checked in via the app</span>
       </p>
-      <p v-else class="muted">No one has said how busy it is in the last 2 hours.</p>
-      <div class="check-in">
-        <span>Here now? It's</span>
-        <button v-for="level in CROWD_LEVELS" :key="level" type="button" :disabled="checkingIn" @click="checkIn(level)">
-          {{ level }}
-        </button>
+      <p v-else class="muted">Nobody has checked in here through the app right now.</p>
+
+      <div v-if="hereNow" class="here">
+        <p><strong>✓ You're checked in here</strong> until {{ clockTime(myCheckIn.current.endsAt) }}</p>
+        <button type="button" class="nb-btn" :disabled="checkingIn" @click="checkOut">Check out</button>
       </div>
+      <template v-else>
+        <button type="button" class="nb-btn nb-btn--primary" :disabled="checkingIn || isFull" @click="checkIn">
+          {{ isFull ? 'No free seats' : 'Check in here' }}
+        </button>
+        <p v-if="elsewhere" class="note">You're checked in at {{ elsewhere.spotName }}. Checking in here will move you.</p>
+      </template>
       <p v-if="checkInMessage" class="note">{{ checkInMessage }}</p>
+      <p v-if="busiestToday" class="note">
+        {{ busiestToday }} <RouterLink :to="`/spots/${spot._id}`" class="busy-link">Busiest times →</RouterLink>
+      </p>
     </section>
+
+    <!-- confirmation after checking in (a modal dialog, so it can't be missed) -->
+    <dialog ref="confirmDialog" class="confirm" aria-labelledby="confirm-title" @close="confirmed = null">
+      <template v-if="confirmed">
+        <p class="tick" aria-hidden="true">✓</p>
+        <h3 id="confirm-title">{{ confirmed.alreadyHere ? "You're already checked in" : "You're checked in!" }}</h3>
+        <p><strong>{{ confirmed.spotName }}</strong><br>{{ confirmed.buildingName }}</p>
+        <p v-if="confirmed.previous">We've checked you out of {{ confirmed.previous.spotName }}.</p>
+        <p>
+          We'll check you out automatically at <strong>{{ clockTime(confirmed.endsAt) }}</strong>.
+          Tap <strong>Check out</strong> when you leave so others can see the seat is free.
+        </p>
+        <form method="dialog"><button class="nb-btn nb-btn--primary" autofocus>OK</button></form>
+      </template>
+    </dialog>
 
     <section class="reviews">
       <h3>Latest reviews</h3>
@@ -249,7 +305,7 @@ h2 {
   font-size: 0.82rem;
 }
 
-.crowd {
+.checkin {
   display: grid;
   gap: 8px;
   padding: 10px 12px;
@@ -257,34 +313,37 @@ h2 {
   background: var(--nb-paper);
   font-size: 0.88rem;
 }
-.crowd p { margin: 0; }
-.dot {
-  display: inline-block;
-  width: 11px;
-  height: 11px;
-  margin-right: 6px;
-  border: 1.5px solid var(--nb-ink);
-  border-radius: 50%;
-  vertical-align: -1px;
-}
-.dot.quiet { background: #5fb36b; }
-.dot.moderate { background: #f0c23a; }
-.dot.busy { background: #f0a23a; }
-.dot.full { background: #e0606a; }
+.checkin p { margin: 0; }
+.checkin .nb-btn { justify-self: start; padding: 6px 16px; border-radius: 8px; font-size: 0.92rem; }
+.here { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 
-.check-in { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
-.check-in span { flex-basis: 100%; color: var(--nb-muted); }
-.check-in button {
-  padding: 1px 9px;
-  border: 1.5px solid var(--nb-ink);
-  border-radius: 999px;
+.confirm {
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 22px 24px 20px;
+  border: 2px solid var(--nb-ink);
+  border-radius: 10px;
   background: var(--nb-card);
+  box-shadow: 6px 6px 0 var(--nb-ink);
   color: var(--nb-ink);
-  font: inherit;
-  font-size: 0.8rem;
-  cursor: pointer;
+  text-align: center;
 }
-.check-in button:hover { background: var(--nb-highlight); color: #28263f; }
+.confirm::backdrop { background: rgba(40, 38, 63, 0.35); }
+.confirm h3 { margin: 0 0 8px; font: 700 1.9rem/1.1 var(--nb-heading); color: var(--nb-ink); }
+.confirm p { margin: 0 0 10px; font-size: 0.95rem; }
+.confirm .tick {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin: 0 auto 8px;
+  border: 2px solid var(--nb-ink);
+  border-radius: 50%;
+  background: #5fb36b;
+  color: #28263f;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.confirm form { margin-top: 14px; }
 
 .reviews { display: grid; gap: 8px; }
 .reviews h3 { margin: 0; font-size: 1rem; color: var(--nb-ink); }
@@ -309,6 +368,7 @@ h2 {
 
 .muted { color: var(--nb-muted); }
 .note { color: var(--nb-muted); font-size: 0.82rem; }
+.busy-link { color: var(--nb-ink); font-weight: 700; white-space: nowrap; }
 .error { margin: 0; color: var(--nb-error); font-size: 0.88rem; }
 
 button:focus-visible, a:focus-visible { outline: 3px solid var(--nb-focus); outline-offset: 2px; }

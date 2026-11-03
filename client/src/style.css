@@ -388,6 +388,22 @@ p {
 .nb-tag--moderate { background: var(--nb-highlight); }
 .nb-tag--loud { background: var(--nb-note-pink); }
 
+/* ---------- seats free right now ---------- */
+/* <span class="nb-dot nb-dot--few"></span>: how many seats are free (check-ins), on the room panel, floor plan, /find and favourites */
+.nb-dot {
+  display: inline-block;
+  width: 0.7em;
+  height: 0.7em;
+  margin-right: 0.4em;
+  border: 1.5px solid #28263f;
+  border-radius: 50%;
+  vertical-align: -0.05em;
+}
+.nb-dot--plenty { background: #5fb36b; } /* half or more free */
+.nb-dot--some { background: #f0c23a; }
+.nb-dot--few { background: #f0a23a; }
+.nb-dot--full { background: #e0606a; }
+
 /* ---------- folders ---------- */
 /* <div class="nb-folder"><span class="nb-folder-paper">peeking text</span><div class="nb-folder-front">…</div></div> */
 .nb-folder {

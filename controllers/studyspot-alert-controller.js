@@ -4,43 +4,17 @@
 
 const mongoose = require('mongoose');
 const StudySpotAlert = require('../models/studyspot-alert-model');
-const StudySpot = require('../models/studyspot-model'); 
+const StudySpot = require('../models/studyspot-model');
+const { isActive, toPublic, getActiveAlertsBySpot } = require('../services/alert-service');
 
 const ALERT_TYPES = ['Closed', 'Aircon', 'WiFi', 'Event', 'Other'];
 const ALERT_LIFETIME_MS = 2 * 60 * 60 * 1000;   // a new alert lasts 2 hours
 const CONFIRM_EXTENDS_MS = 60 * 60 * 1000;      // a confirm keeps it alive at least 1 more hour
 const MAX_LIFETIME_MS = 6 * 60 * 60 * 1000;     // but never longer than 6 hours after it was posted
-const HIDE_MARGIN = 2;                          // hide once disputes beat confirms by 2
 const CREATE_COOLDOWN_MS = 30 * 60 * 1000;      // one new alert per user per spot every 30 min
+// (isActive / toPublic and the "hide when disputed" rule live in services/alert-service.js)
 
 // ---------- helpers ----------
-
-// Is this alert still worth showing?
-function isActive(alert) {
-  return !alert.resolved
-    && alert.expiresAt > new Date()
-    && (alert.disputes.length - alert.confirms.length) < HIDE_MARGIN;
-}
-
-// What the frontend gets: counts instead of user id lists, plus how *this* user voted.
-function toPublic(alert, currentUserId) {
-  const me = currentUserId ? String(currentUserId) : null;
-  return {
-    _id: alert._id,
-    spot: alert.spot,
-    type: alert.type,
-    description: alert.description,
-    createdAt: alert.createdAt,
-    expiresAt: alert.expiresAt,
-    confirmCount: alert.confirms.length,
-    disputeCount: alert.disputes.length,
-    myVote: !me ? null
-      : alert.confirms.some(id => String(id) === me) ? 'confirm'
-      : alert.disputes.some(id => String(id) === me) ? 'dispute'
-      : null,
-    isMine: me !== null && String(alert.userId) === me, // lets the page show a "Mark resolved" button
-  };
-}
 
 function currentUserId(req) {
   return req.session.user ? req.session.user.id : null;
@@ -70,19 +44,37 @@ exports.apiGetAlerts = async (req, res) => {
   }
 };
 
-// POST /api/alerts/spot/:spotId — report an issue (logged in)
-// Body: { "type": "Aircon", "description": "Room is really warm" }
+// GET /api/alerts?spots=id1,id2,... — active alerts for several spots at once (public).
+// The floor plan uses this to mark rooms with issues and show them in the hover popup.
+// Answers { spotId: [alerts...] }, leaving out spots with no active alerts.
+exports.apiGetAlertsForSpots = async (req, res) => {
+  try {
+    const spotIds = String(req.query.spots || '')
+      .split(',')
+      .filter(id => mongoose.isValidObjectId(id))
+      .slice(0, 200); // a floor never has this many rooms
+    res.json(await getActiveAlertsBySpot(spotIds, currentUserId(req)));
+  } catch (err) {
+    console.error('Fetching alerts failed:', err);
+    res.status(500).json({ message: 'Could not load alerts' });
+  }
+};
+
+// POST /api/alerts/spot/:spotId — report one or more issues at once (logged in)
+// Body: { "types": ["Aircon", "WiFi"], "description": "Room is really warm" }   (a single "type" also works)
+// Each type becomes its own alert, so people can confirm or dispute them separately.
+// Answers { results: [{ merged, alert }], message }
 exports.apiCreateAlert = async (req, res) => {
   try {
     const { spotId } = req.params;
     const userId = currentUserId(req);
-    const { type } = req.body;
+    const types = [...new Set(Array.isArray(req.body.types) ? req.body.types : [req.body.type])];
     const description = (req.body.description || '').trim().slice(0, 300);
 
     if (!mongoose.isValidObjectId(spotId)) {
       return res.status(400).json({ message: 'Invalid study spot id' });
     }
-    if (!ALERT_TYPES.includes(type)) {
+    if (!types.length || !types.every(type => ALERT_TYPES.includes(type))) {
       return res.status(400).json({ message: `Type must be one of: ${ALERT_TYPES.join(', ')}` });
     }
     const spot = await StudySpot.findById(spotId);
@@ -91,43 +83,60 @@ exports.apiCreateAlert = async (req, res) => {
     }
 
     // Same issue already reported and still active? Count this as a confirm instead of a duplicate.
-    const existing = await StudySpotAlert.findOne({
+    const existing = await StudySpotAlert.find({
       spot: spotId,
-      type,
+      type: { $in: types },
       resolved: false,
       expiresAt: { $gt: new Date() },
-    });
-    if (existing && isActive(existing)) {
-      applyVote(existing, userId, 'confirm');
-      await existing.save();
-      return res.status(200).json({
-        merged: true,
-        message: 'Someone already reported this, so we added your confirmation.',
-        alert: toPublic(existing, userId),
+    }).sort({ createdAt: -1 });
+    const existingByType = new Map();
+    for (const alert of existing.filter(isActive)) {
+      if (!existingByType.has(alert.type)) existingByType.set(alert.type, alert);
+    }
+    const newTypes = types.filter(type => !existingByType.has(type));
+
+    // Anti-spam: one new report per user per spot every 30 minutes (one report can hold several types).
+    if (newTypes.length) {
+      const recent = await StudySpotAlert.findOne({
+        spot: spotId,
+        userId,
+        createdAt: { $gte: new Date(Date.now() - CREATE_COOLDOWN_MS) },
       });
+      if (recent) {
+        return res.status(429).json({ message: 'You reported an issue here recently. Please try again later.' });
+      }
     }
 
-    // Anti-spam: one new alert per user per spot every 30 minutes.
-    const recent = await StudySpotAlert.findOne({
-      spot: spotId,
-      userId,
-      createdAt: { $gte: new Date(Date.now() - CREATE_COOLDOWN_MS) },
-    });
-    if (recent) {
-      return res.status(429).json({ message: 'You reported an issue here recently. Please try again later.' });
+    const merged = [...existingByType.values()];
+    for (const alert of merged) {
+      // applyVote toggles, so only call it if this user hasn't confirmed yet (otherwise re-reporting would un-confirm)
+      const alreadyConfirmed = alert.confirms.some(id => String(id) === String(userId));
+      if (!alreadyConfirmed) applyVote(alert, userId, 'confirm');
+      await alert.save();
     }
 
-    const alert = await StudySpotAlert.create({
-      spot: spotId,
-      userId,
-      type,
-      description,
-      confirms: [userId], // the reporter counts as the first confirm
-      disputes: [],
-      expiresAt: new Date(Date.now() + ALERT_LIFETIME_MS),
-    });
+    const created = [];
+    for (const type of newTypes) {
+      created.push(await StudySpotAlert.create({
+        spot: spotId,
+        userId,
+        type,
+        description,
+        confirms: [userId], // the reporter counts as the first confirm
+        disputes: [],
+        expiresAt: new Date(Date.now() + ALERT_LIFETIME_MS),
+      }));
+    }
 
-    res.status(201).json({ merged: false, alert: toPublic(alert, userId) });
+    res.status(created.length ? 201 : 200).json({
+      results: [
+        ...created.map(alert => ({ merged: false, alert: toPublic(alert, userId) })),
+        ...merged.map(alert => ({ merged: true, alert: toPublic(alert, userId) })),
+      ],
+      message: merged.length
+        ? `${merged.map(a => a.type).join(', ')} ${merged.length === 1 ? 'was' : 'were'} already reported, so we added your confirmation.`
+        : null,
+    });
   } catch (err) {
     console.error('Creating alert failed:', err);
     res.status(500).json({ message: 'Could not create alert' });
