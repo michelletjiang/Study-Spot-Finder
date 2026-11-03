@@ -62,27 +62,8 @@ body {
     font-family: Arial, sans-serif;
 }
 
-/* Comparison feature styles start here. The tray is a bar stuck to the bottom of the screen by CompareTray.vue. */
-.compare-tray {
-  position: sticky;
-  bottom: 0;
-  z-index: 20;
-  width: min(100% - 32px, 720px);
-  margin: 16px auto 0;
-  padding: 14px 16px;
-  box-sizing: border-box;
-  background: var(--bg);
-  border: 1px solid var(--accent-border);
-  box-shadow: var(--shadow);
-  text-align: left;
-}
-.compare-tray p { margin: 4px 0 10px; }
-.compare-tray-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-/* The tray's limit message is bold so it stands out. */
-.comparison-limit { color: var(--text-h); font-weight: 600; }
-/* Buttons in the tray, on comparison cards and the Compare buttons on spot lists share one look. */
-.compare-tray button,
-.comparison-card button,
+/* Comparison feature styles. The tray styles itself in CompareTray.vue. */
+/* The Compare buttons on spot lists. */
 .compare-button {
   padding: 7px 11px;
   border: 1px solid var(--accent-border);
@@ -95,31 +76,8 @@ body {
 button { cursor: pointer; }
 /* A clear outline for keyboard users. */
 button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-/* Small spacing for secondary buttons such as Clear and Remove. */
+/* Small spacing for secondary buttons such as Compare on the spot list. */
 .secondary { margin: 6px 6px 6px 0; }
-/* The comparison page is centred with a maximum width. */
-.comparison-page { width: min(100% - 40px, 1020px); margin: 32px auto 120px; text-align: left; }
-/* Three equal columns, one per spot. */
-.comparison-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 24px 0; }
-/* Each spot is a bordered card. */
-.comparison-card { border: 1px solid var(--border); border-radius: 10px; padding: 18px; min-width: 0; background: var(--bg); }
-/* Long names wrap instead of overflowing. */
-.comparison-card h3 { overflow-wrap: anywhere; }
-/* The facts list inside a card. */
-.comparison-card dl { margin: 0 0 12px; }
-/* A line between facts. */
-.comparison-card dl > div { border-top: 1px solid var(--border); padding: 10px 0; }
-/* Labels are bold. */
-.comparison-card dt { font-weight: 600; color: var(--text-h); }
-.comparison-card dd { margin: 2px 0 0; }
-/* Messages such as errors on the comparison page. */
-.comparison-message { color: var(--text-h); margin: 12px 0; }
-/* On phones the cards stack in one column and the tray fills the width, which keeps 320px screens free of sideways scrolling. */
-@media (max-width: 650px) {
-  .comparison-page { width: min(100% - 24px, 520px); margin-top: 20px; }
-  .comparison-grid { grid-template-columns: 1fr; }
-  .compare-tray { width: calc(100% - 24px); position: relative; }
-}
 
 /* Headings use the notebook heading font and the heading text colour. */
 h1,
@@ -499,6 +457,29 @@ p {
 .nb-table tr:last-child td { border-bottom: none; }
 .nb-table .nb-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .nb-table .nb-actions .nb-btn { padding: 4px 14px; font-size: 0.92rem; white-space: nowrap; }
+
+/* ---------- small buttons ---------- */
+/* a square button holding one icon (✕, ♥); --round makes it a circle. Set width/height where it's used if 36px doesn't fit. */
+.nb-icon-btn {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 2px solid #28263f;
+  border-radius: 8px;
+  background: #fffef9;
+  color: #28263f;
+  cursor: pointer;
+}
+.nb-icon-btn--round { border-radius: 50%; }
+.nb-icon-btn:hover { background: var(--nb-note-pink); }
+.nb-icon-btn:focus-visible { outline: 3px solid var(--nb-focus); outline-offset: 2px; }
+
+/* a button that looks like an underlined link: "Clear", "Clear filters" */
+.nb-link { padding: 0; border: none; background: none; color: inherit; font: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.nb-link:focus-visible { outline: 3px solid var(--nb-focus); outline-offset: 2px; }
 
 /* ---------- filter chips ---------- */
 /* <button class="nb-chip" aria-pressed="true|false"> — dashed until picked, then solid yellow */

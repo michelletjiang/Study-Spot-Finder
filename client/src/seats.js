@@ -46,7 +46,7 @@ export function sgNow() {
 }
 
 // a spot needs this many check-ins before we'll say when it's usually busiest
-const MIN_FOR_SUMMARY = 5
+export const MIN_FOR_SUMMARY = 5
 
 // the hour with the most seats usually taken on that day (earlier wins a tie), or null
 export function busiestHour(pattern, day) {

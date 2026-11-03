@@ -9,7 +9,7 @@ import { auth } from '../stores/auth'
 import { favourites } from '../stores/favourites'
 import { comparison } from '../stores/compare'
 import { averageRating } from '../reviews'
-import { floorLabel, normalizeFloor } from '../floors'
+import { levelLabel, normalizeFloor } from '../floors'
 import FavouriteButton from '../components/FavouriteButton.vue'
 import StarRating from '../components/StarRating.vue'
 import BusyTimesChart from '../components/BusyTimesChart.vue'
@@ -33,7 +33,7 @@ onMounted(async () => {
   }
 })
 
-const level = computed(() => spot.value && floorLabel(normalizeFloor(spot.value.floor)))
+const level = computed(() => spot.value && levelLabel(spot.value.floor))
 // the building page opens on this spot's floor
 const floorLink = computed(() => spot.value && { path: `/building/${spot.value.buildingName}`, query: { floor: normalizeFloor(spot.value.floor) } })
 const average = computed(() => averageRating(reviews.value))

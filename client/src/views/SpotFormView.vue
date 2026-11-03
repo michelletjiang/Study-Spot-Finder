@@ -3,7 +3,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../api'
-import { floorLabel, normalizeFloor } from '../floors'
+import { levelLabel } from '../floors'
 
 const route = useRoute()
 const router = useRouter()
@@ -34,7 +34,7 @@ onMounted(async () => {
   }
 })
 
-const level = computed(() => (String(form.value.floor).trim() ? floorLabel(normalizeFloor(String(form.value.floor).trim())) : 'Level ?'))
+const level = computed(() => (String(form.value.floor).trim() ? levelLabel(form.value.floor) : 'Level ?'))
 const noiseNote = computed(() => ({ Quiet: 'nb-note--blue', Moderate: '', Loud: 'nb-note--pink' })[form.value.noiseLevel])
 
 function check() {

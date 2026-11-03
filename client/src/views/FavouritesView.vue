@@ -5,7 +5,7 @@ import { ref, onMounted } from 'vue'
 import { api } from '../api'
 import { favourites } from '../stores/favourites'
 import { loadSpotIndex } from '../spotIndex'
-import { floorLabel, normalizeFloor } from '../floors'
+import { levelLabel } from '../floors'
 import { alertLabel, alertIcon } from '../alerts'
 import { timeAgo } from '../reviews'
 import { seatsLevel, seatsFreeText } from '../seats'
@@ -85,13 +85,13 @@ async function remove(fav) {
         <div class="nb-folder-front">
           <div class="title-row">
             <h2>{{ fav.spotName }}</h2>
-            <button type="button" class="heart" :aria-label="`Remove ${fav.spotName} from favourites`" @click="remove(fav)">
+            <button type="button" class="nb-icon-btn nb-icon-btn--round heart" :aria-label="`Remove ${fav.spotName} from favourites`" @click="remove(fav)">
               <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
                 <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" fill="#f5a0a6" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
               </svg>
             </button>
           </div>
-          <p class="where">{{ fav.buildingName }} · {{ floorLabel(normalizeFloor(fav.floor)) }}</p>
+          <p class="where">{{ fav.buildingName }} · {{ levelLabel(fav.floor) }}</p>
           <p class="tags">
             <span class="nb-tag">{{ fav.seatCount }} seats</span>
             <span v-if="fav.hasPowerSocket" class="nb-tag">Power sockets</span>
@@ -145,20 +145,7 @@ async function remove(fav) {
 
 .title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; width: 100%; }
 h2 { margin: 4px 0 0; font: 700 1.9rem/1.1 var(--nb-heading); color: #28263f; overflow-wrap: anywhere; }
-.heart {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 42px;
-  height: 42px;
-  border: 2px solid #28263f;
-  border-radius: 50%;
-  background: #fffef9;
-  color: #28263f;
-  cursor: pointer;
-}
-.heart:hover { background: var(--nb-note-pink); }
-.heart:focus-visible { outline: 3px solid var(--nb-focus); outline-offset: 2px; }
+.heart { width: 42px; height: 42px; }
 .where { margin: 8px 0 10px; color: #5e5a73; font-size: 0.92rem; }
 .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
 .view { margin-top: auto; padding-top: 16px; color: #28263f; font-weight: 700; text-underline-offset: 3px; }

@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { api } from '../api'
 import { favourites } from '../stores/favourites'
 import { comparison } from '../stores/compare.js'
-import { floorLabel, normalizeFloor } from '../floors'
+import { levelLabel } from '../floors'
 import { roomType } from '../roomTypes'
 import { timeAgo } from '../reviews'
 import { myCheckIn } from '../stores/checkin'
@@ -130,7 +130,7 @@ async function toggleFavourite() {
     <header>
       <div>
         <h2>{{ spot.name }}</h2>
-        <p class="kind">{{ roomType(spot) }} · {{ floorLabel(normalizeFloor(spot.floor)) }}</p>
+        <p class="kind">{{ roomType(spot) }} · {{ levelLabel(spot.floor) }}</p>
       </div>
       <button type="button" class="close" aria-label="Close room details" @click="emit('close')">✕</button>
     </header>

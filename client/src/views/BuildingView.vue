@@ -233,7 +233,7 @@ onUnmounted(() => {
 
             <p v-if="activeFilters.length" class="match-note">
               {{ matchCount }} of {{ floorSpots.length }} rooms match
-              <button type="button" class="link" @click="activeFilters = []">Clear filters</button>
+              <button type="button" class="nb-link" @click="activeFilters = []">Clear filters</button>
             </p>
 
             <!-- plan -->
@@ -406,7 +406,6 @@ h1 {
 .sheet-tools { position: absolute; top: 14px; right: 14px; z-index: 2; display: flex; flex-direction: column; gap: 6px; }
 
 .match-note { margin: 0 56px 8px 0; font-size: 0.95rem; }
-.link { border: none; background: none; color: var(--nb-ink); font: inherit; text-decoration: underline; cursor: pointer; }
 
 .plan-scroll { overflow: auto; max-height: 72vh; margin-right: 52px; border-radius: 6px; }
 .plan-inner { min-width: 100%; }

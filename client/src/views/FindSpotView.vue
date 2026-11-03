@@ -3,7 +3,7 @@ import { ref, reactive, computed } from 'vue'
 import { api } from '../api'
 import { mapStore } from '../stores/map'
 import { NEEDS, rankSpots } from '../ranking'
-import { normalizeFloor, floorLabel } from '../floors'
+import { levelLabel } from '../floors'
 import { alertLabel, alertIcon } from '../alerts'
 import { seatsLevel, seatsFreeText, peopleText } from '../seats'
 
@@ -154,7 +154,7 @@ async function findNearby() {
               </RouterLink>
             </h3>
             <p class="meta">
-              {{ r.buildingname }}, {{ floorLabel(normalizeFloor(r.floor)) }} · {{ r.seats }} seats ·
+              {{ r.buildingname }}, {{ levelLabel(r.floor) }} · {{ r.seats }} seats ·
               {{ distanceText(r.distanceMeters) }} (about {{ r.walkingMinutes }} min walk)
             </p>
             <p v-if="r.checkedIn" class="line seats">
