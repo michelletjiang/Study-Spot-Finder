@@ -10,6 +10,7 @@ import { favourites } from '../stores/favourites'
 import { comparison } from '../stores/compare'
 import { averageRating } from '../reviews'
 import { levelLabel, normalizeFloor } from '../floors'
+import { sectionOf } from '../floorplans'
 import FavouriteButton from '../components/FavouriteButton.vue'
 import StarRating from '../components/StarRating.vue'
 import BusyTimesChart from '../components/BusyTimesChart.vue'
@@ -34,8 +35,12 @@ onMounted(async () => {
 })
 
 const level = computed(() => spot.value && levelLabel(spot.value.floor))
-// the building page opens on this spot's floor
-const floorLink = computed(() => spot.value && { path: `/building/${spot.value.buildingName}`, query: { floor: normalizeFloor(spot.value.floor) } })
+// the building page opens on this spot's floor (in its section's tab, e.g. KGC Law Library, when it has one)
+const floorLink = computed(() => {
+  if (!spot.value) return null
+  const section = sectionOf(spot.value.buildingName, spot.value.name)
+  return { path: `/building/${spot.value.buildingName}`, query: { ...(section && { section: section.key }), floor: normalizeFloor(spot.value.floor) } }
+})
 const average = computed(() => averageRating(reviews.value))
 const isMine = review => review.userId === auth.user?.username
 
