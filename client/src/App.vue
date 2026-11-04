@@ -6,11 +6,14 @@ import NavBar from './components/NavBar.vue'
 import MiniMap from './components/MiniMap.vue'
 // CompareTray is the bar at the bottom of the screen that shows the comparison shortlist.
 import CompareTray from './components/CompareTray.vue'
+// Doodles are the crayon drawings in the empty paper either side of the page.
+import Doodles from './components/Doodles.vue'
 // auth says who is logged in.
 import { auth } from './stores/auth'
 </script>
 
 <template>
+  <Doodles />
   <!-- NavBar shows different links for guests, students and admins. -->
   <NavBar />
   <!-- RouterView is where router.js puts the current page. -->

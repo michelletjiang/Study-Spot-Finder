@@ -110,7 +110,7 @@ const sentOn = report => new Date(report.createdAt).toLocaleDateString('en-SG', 
 .status { padding: 2px 12px; border: 2px solid #28263f; border-radius: 999px; color: #28263f; font-size: 0.88rem; font-weight: 700; }
 .status--pending { background: var(--nb-highlight); }
 .status--approved { background: #def3d6; }
-.status--declined { border-style: dashed; background: transparent; color: var(--nb-ink); }
+.status--declined { border-style: dashed; border-color: var(--nb-ink); background: transparent; color: var(--nb-ink); }
 
 .quoted { margin: 0 0 12px; padding: 10px 14px; border-left: 4px solid var(--nb-rule); background: var(--nb-paper); }
 .quoted p { margin: 0 0 6px; overflow-wrap: anywhere; white-space: pre-line; }

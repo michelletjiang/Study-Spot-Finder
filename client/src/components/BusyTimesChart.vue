@@ -208,7 +208,7 @@ svg { display: block; width: 100%; height: auto; overflow: visible; font-family:
   border: 2px solid var(--nb-ink);
   border-radius: 8px;
   background: var(--nb-card);
-  box-shadow: 3px 3px 0 var(--nb-ink);
+  box-shadow: 3px 3px 0 var(--nb-shadow);
   color: var(--nb-ink);
   font-size: 0.85rem;
   white-space: nowrap;

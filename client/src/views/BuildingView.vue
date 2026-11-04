@@ -495,7 +495,7 @@ h1 {
   background: var(--nb-sheet);
   border: 2px solid var(--nb-ink);
   border-radius: 4px;
-  box-shadow: 7px 7px 0 var(--nb-ink);
+  box-shadow: 7px 7px 0 var(--nb-shadow);
 }
 .sheet-tools { position: absolute; top: 14px; right: 14px; z-index: 2; display: flex; flex-direction: column; gap: 6px; }
 
@@ -528,7 +528,7 @@ h1 {
 .room.tone-few { background: var(--nb-seats-few); color: #28263f; }
 .room.tone-full { background: var(--nb-seats-full); color: #28263f; }
 .room[class*='tone-']:not(.tone-none) span { color: #4a4660; }
-.room.selected { box-shadow: 4px 4px 0 var(--nb-ink); }
+.room.selected { box-shadow: 4px 4px 0 var(--nb-shadow); }
 .room.dimmed { opacity: 0.35; }
 .no-plan { margin: 0; padding: 12px; border: 1.5px dashed var(--nb-rule); border-radius: 6px; color: var(--nb-muted); }
 

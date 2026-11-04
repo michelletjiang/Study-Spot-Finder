@@ -5,6 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { Collapse } from 'bootstrap'
 import { auth } from '../stores/auth'
 import { favourites } from '../stores/favourites'
+import { daynight } from '../stores/daynight'
 
 // The current route lets the shell close its mobile menu after navigation.
 const route = useRoute()
@@ -17,6 +18,10 @@ const menu = ref(null)
 watch(() => route.fullPath, () => {
   if (menu.value?.classList.contains('show')) Collapse.getOrCreateInstance(menu.value).hide()
 })
+
+// the theme button: what it shows now, and what a click switches to (Auto -> Day -> Night -> Auto)
+const THEME_LABELS = { auto: 'Auto', day: 'Day', night: 'Night' }
+const NEXT_THEME = { auto: 'day', day: 'night', night: 'auto' }
 
 async function logout() {
   // Destroy the server session and clear the local account copy.
@@ -66,10 +71,18 @@ async function logout() {
           <li class="nav-item"><RouterLink class="nav-link" to="/login">Login</RouterLink></li>
           <li class="nav-item"><RouterLink class="nav-link" to="/register">Register</RouterLink></li>
         </ul>
-        <!-- The account label and logout button remain visible beside the menu. -->
-        <div v-if="auth.user" class="d-flex align-items-center gap-2">
-          <span class="navbar-text">Logged in as {{ auth.user.username }}</span>
-          <button class="btn btn-outline-secondary btn-sm" type="button" @click="logout">Logout</button>
+        <!-- The theme button, then the account label and logout button, beside the menu. -->
+        <div class="d-flex align-items-center gap-2">
+          <!-- Auto follows the time in Singapore: day 7am-7pm, night after (stores/daynight.js) -->
+          <button type="button" class="btn btn-sm theme-btn" :title="`Theme: ${THEME_LABELS[daynight.mode.value]}. Click for ${THEME_LABELS[NEXT_THEME[daynight.mode.value]]}.`"
+                  :aria-label="`Theme: ${THEME_LABELS[daynight.mode.value]}${daynight.mode.value === 'auto' ? ', follows Singapore time' : ''}. Switch to ${THEME_LABELS[NEXT_THEME[daynight.mode.value]]}`"
+                  @click="daynight.cycle()">
+            <span aria-hidden="true">{{ daynight.isNight.value ? '☾' : '☀' }}</span> {{ THEME_LABELS[daynight.mode.value] }}
+          </button>
+          <template v-if="auth.user">
+            <span class="navbar-text">Logged in as {{ auth.user.username }}</span>
+            <button class="btn btn-outline-secondary btn-sm" type="button" @click="logout">Logout</button>
+          </template>
         </div>
       </div>
     </div>
@@ -81,6 +94,11 @@ async function logout() {
 .navbar-brand { display: flex; align-items: center; gap: 4px; }
 .navbar-brand h2 { margin: 0; }
 .brand-logo { width: 52px; height: auto; }
+/* the navy logo needs a thin light outline on the night theme's dark paper */
+:root[data-theme='night'] .brand-logo { filter: drop-shadow(0 0 1px #fffef9) drop-shadow(0 0 1px #fffef9); }
+/* the Auto / Day / Night theme button: a small dashed pill */
+.theme-btn { border: 1.5px dashed currentColor; border-radius: 999px; color: var(--nb-ink); white-space: nowrap; }
+.theme-btn:hover { border-style: solid; color: var(--nb-ink); }
 /* Highlight the current route for keyboard and visual orientation. */
 /* a yellow highlighter stroke behind the link (yellow text would be too faint on the cream page) */
 .nav-link.router-link-active {
@@ -90,4 +108,6 @@ async function logout() {
   background-size: calc(100% - 2 * var(--bs-navbar-nav-link-padding-x, 0.5rem)) 100%;
   background-position: center;
 }
+/* at night dark text can't sit half on the dark navbar, so the current page gets a whole yellow pill */
+:root[data-theme='night'] .nav-link.router-link-active { border-radius: 999px; background: var(--nb-highlight); color: #28263f; }
 </style>

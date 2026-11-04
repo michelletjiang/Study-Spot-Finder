@@ -248,7 +248,7 @@ async function toggleFavourite() {
   background: var(--nb-card);
   border: 2px solid var(--nb-ink);
   border-radius: 6px;
-  box-shadow: 6px 6px 0 var(--nb-ink);
+  box-shadow: 6px 6px 0 var(--nb-shadow);
   color: var(--nb-ink);
   text-align: left;
 }
@@ -329,7 +329,7 @@ h2 {
   border: 2px solid var(--nb-ink);
   border-radius: 10px;
   background: var(--nb-card);
-  box-shadow: 6px 6px 0 var(--nb-ink);
+  box-shadow: 6px 6px 0 var(--nb-shadow);
   color: var(--nb-ink);
   text-align: center;
 }
