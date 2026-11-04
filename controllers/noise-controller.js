@@ -1,9 +1,12 @@
 // controllers/noise-controller.js
 // How loud a study spot is right now. Anyone can read it, but only a student checked in to the spot can report it.
+// Each report also updates the spot's noiseLevel (and favourites' copies of it), so pages without live data show
+// the level from the most recent ratings.
 
 const mongoose = require('mongoose');
 const StudySpot = require('../models/studyspot-model');
-const { LEVELS, getRecentReports, summarise, getNoiseHeat, addReport } = require('../services/noise-service');
+const Favourite = require('../models/favourites-model');
+const { LEVELS, getRecentReports, summarise, noiseScore, getNoiseHeat, addReport } = require('../services/noise-service');
 const { getMyCheckIn } = require('../services/checkin-service');
 
 // POST /api/noise/:id  body: { status }  — report how loud a spot is (checked in here only)
@@ -31,9 +34,19 @@ exports.apiReport = async (req, res) => {
     }
 
     await addReport(userId, id, status);
+    const reports = await getRecentReports(id);
+
+    // The spot's stored level becomes the average of the last hour's ratings, rounded to the nearest level
+    // (0.5 and up is Some chatter, 1.5 and up is Loud). It stays put when the ratings expire, so it means
+    // "how loud it was when last rated". Favourites keep their own copy, so they're updated too.
+    const level = LEVELS[Math.round(noiseScore(reports))];
+    if (level !== spot.noiseLevel) {
+      await StudySpot.editSpot(id, { noiseLevel: level });
+      await Favourite.updateSpotDetails(spot.buildingName, spot.name, { noiseLevel: level });
+    }
 
     // Send back the updated summary so the page can refresh straight away.
-    res.status(201).json({ summary: summarise(await getRecentReports(id)), mine: status });
+    res.status(201).json({ summary: summarise(reports), mine: status, noiseLevel: level });
   } catch (err) {
     console.error('Noise report failed:', err);
     res.status(500).json({ message: 'Could not save your noise rating' });

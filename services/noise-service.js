@@ -1,14 +1,14 @@
 // services/noise-service.js
 // Live noise levels: students checked in to a spot say how loud it is, and the floor plan's heatmap
-// shows the average of the last 30 minutes. Who may report is checked in controllers/noise-controller.js.
+// shows the average of the last hour. Who may report is checked in controllers/noise-controller.js.
 
 const NoiseReport = require('../models/noise-report-model');
 
 const LEVELS = ['Quiet', 'Moderate', 'Loud'];
-const FRESH_WINDOW_MS = 30 * 60 * 1000; // only count reports from the last 30 minutes
+const FRESH_WINDOW_MS = 60 * 60 * 1000; // only count reports from the last hour
 const CHANGE_WINDOW_MS = 10 * 60 * 1000; // a new answer within 10 minutes replaces your last one
 
-// Reports for one spot from the last 30 minutes, newest first.
+// Reports for one spot from the last hour, newest first.
 async function getRecentReports(spotId) {
   const since = new Date(Date.now() - FRESH_WINDOW_MS);
   return NoiseReport.find({ spot: spotId, createdAt: { $gte: since } })
@@ -17,7 +17,7 @@ async function getRecentReports(spotId) {
 }
 
 // Newer reports count more: a report from just now has weight 1,
-// one from 30 minutes ago has weight 0.25.
+// one from an hour ago has weight 0.25.
 function reportWeight(report, now) {
   const age = now - new Date(report.createdAt).getTime();
   return Math.max(0.25, 1 - 0.75 * (age / FRESH_WINDOW_MS));

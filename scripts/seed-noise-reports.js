@@ -1,5 +1,5 @@
 // Adds dummy noise reports for the heatmap: Connexion level 4 and every floor of LKCSB, SOA, YPHSL and SOSS/CIS.
-// Reports only count for 30 minutes (services/noise-service.js), so re-run this to refresh them.
+// Reports only count for an hour (services/noise-service.js), so re-run this to refresh them.
 // Every dummy report has the same made-up userId, so re-running replaces them and real reports are never touched.
 // Usage: npm run seed:noise             (add or refresh)
 //        npm run seed:noise -- --remove (delete them all)
@@ -82,7 +82,7 @@ async function main() {
   }
 
   await NoiseReport.insertMany(docs);
-  console.log(`Added ${docs.length} dummy reports. They expire in 30 minutes or less.`);
+  console.log(`Added ${docs.length} dummy reports. They expire within the hour.`);
 }
 
 main()
