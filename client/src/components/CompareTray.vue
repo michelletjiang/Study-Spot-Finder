@@ -42,7 +42,8 @@ function compare() { if (comparison.canCompare) router.push({ path: '/compare', 
 
 <template>
   <aside v-if="ids.length && route.path !== '/compare'" class="compare-tray" aria-label="Selected spots for comparison">
-    <span class="tab" aria-hidden="true"><span class="tab-icon">▯▯</span> Compare</span>
+    <!-- The inline cards icon stays crisp at small sizes and inherits the notebook ink colour. -->
+    <span class="tab" aria-hidden="true"><svg class="tab-icon" viewBox="0 0 16 14" focusable="false"><rect x="1" y="2" width="9" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="6" y="1" width="9" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/></svg> Compare</span>
     <div class="tray card">
       <div class="summary">
         <!-- Bootstrap's card layout gives the tray a clear summary before its slots. -->
@@ -102,7 +103,7 @@ function compare() { if (comparison.canCompare) router.push({ path: '/compare', 
   font-size: 0.82rem;
   font-weight: 700;
 }
-.tab-icon { font-size: 0.7rem; letter-spacing: -2px; }
+.tab-icon { width: 16px; height: 14px; flex: none; vertical-align: middle; }
 
 .tray {
   display: flex;
