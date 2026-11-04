@@ -278,7 +278,9 @@ const suggestion = computed(() => {
 .comparison-list { margin: 0; }
 .comparison-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 58px; padding: 10px 0; border-bottom: 1.5px dashed var(--nb-rule); }
 .comparison-row:last-child { border-bottom: 0; }
-.comparison-row dt { min-width: 0; font-weight: 700; }
+.comparison-row dt { min-width: max-content; font-weight: 700; white-space: nowrap; }
+.comparison-row dt small { white-space: normal; }
+.comparison-row dd { min-width: 0; overflow-wrap: anywhere; }
 .comparison-row dt small { display: block; color: var(--nb-muted); font-size: .78rem; font-weight: 400; line-height: 1.2; }
 .comparison-row dd { flex: 0 1 auto; margin: 0; text-align: right; }
 /* Catalogue rows retain the subdued tint and muted values from the original comparison table. */
