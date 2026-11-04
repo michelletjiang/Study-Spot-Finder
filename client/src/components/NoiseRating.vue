@@ -33,7 +33,7 @@ async function rate(status) {
   try {
     const { mine } = await api(`/api/noise/${id}`, { method: 'POST', body: { status } })
     myCheckIn.noiseRatings[id] = mine
-    if (props.spotId === id) message.value = 'Thanks! Your rating counts for 30 minutes.'
+    if (props.spotId === id) message.value = 'Thanks! Your rating counts for an hour.'
     emit('rated')
   } catch (e) {
     if (props.spotId === id) message.value = e.message // e.g. "Check in to this room to rate how loud it is."

@@ -29,7 +29,9 @@ const studySpotSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    // Noise level is the stored catalogue field "Quiet", "Moderate" or "Loud". The comparison view shows it as is; nothing is computed from reviews.
+    // Noise level "Quiet", "Moderate" or "Loud". An admin sets the starting value; after that every noise rating from a
+    // checked-in student replaces it with the average of the last hour's ratings (controllers/noise-controller.js).
+    // It keeps the last value when the ratings expire, so it's how loud the spot was when last rated.
     noiseLevel: {
         type: String,
         enum: ['Quiet','Moderate','Loud'],

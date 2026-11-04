@@ -117,6 +117,7 @@ async function save() {
           <div class="nb-segmented">
             <label v-for="n in NOISE_LEVELS" :key="n"><input v-model="form.noiseLevel" type="radio" name="noise" :value="n">{{ n }}</label>
           </div>
+          <small class="nb-hint">A starting value: noise ratings from checked-in students replace it.</small>
         </fieldset>
 
         <p v-if="error" class="nb-errors single" role="alert">{{ error }}</p>

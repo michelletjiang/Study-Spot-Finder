@@ -4,15 +4,15 @@
 // Each need turns a study spot into a "match" from 0 (not at all) to 1 (fully).
 // known(s) is false when we have no data for that spot yet (e.g. nobody has reviewed it):
 // it then scores a neutral 0.5, never counts as meeting the need, and is listed with its unknownNote.
-// Only needs we have data for: noise and rating come from reviews, power from the spot itself,
-// and "seats free" from the people checked in right now.
+// Only needs we have data for: noise from what checked-in students rated it in the last hour, rating from reviews,
+// power from the spot itself, and "seats free" from the people checked in right now.
 
 export const NEEDS = {
   quiet: {
     label: 'Quiet',
-    unknownNote: 'no reviews yet',
-    known: (s) => s.noiseLevel != null,
-    match: (s) => (s.noiseLevel == null ? 0.5 : 1 - (s.noiseLevel - 1) / 4), // noiseLevel 1 (quiet) to 5 (loud) -> 1 to 0
+    unknownNote: 'no noise ratings in the last hour',
+    known: (s) => s.liveNoise != null,
+    match: (s) => (s.liveNoise == null ? 0.5 : 1 - s.liveNoise / 2), // liveNoise 0 (Quiet) to 2 (Loud) -> 1 to 0
   },
   power: { label: 'Power outlets', known: () => true, match: (s) => (s.hasPower ? 1 : 0) },
   rated: {

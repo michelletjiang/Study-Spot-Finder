@@ -14,6 +14,7 @@ const { apiReport } = require('../../controllers/noise-controller')
 const NoiseReport = require('../../models/noise-report-model')
 const CheckIn = require('../../models/checkin-model')
 const StudySpot = require('../../models/studyspot-model')
+const Favourite = require('../../models/favourites-model')
 
 const minutesAgo = minutes => new Date(Date.now() - minutes * 60 * 1000)
 
@@ -47,17 +48,20 @@ describe('apiReport: only students checked in to the room can rate it', () => {
 
   afterEach(() => vi.restoreAllMocks())
 
-  // runs the controller with the database replaced; checkedInAt is the spot the user is checked in to, or null
-  async function report(checkedInAt, status = 'Quiet') {
-    vi.spyOn(StudySpot, 'findById').mockResolvedValue({ _id: SPOT, seatCount: 6 })
+  // runs the controller with the database replaced; checkedInAt is the spot the user is checked in to, or null.
+  // recent: the last hour's reports for the spot after this one is saved; stored: the spot's noiseLevel before it.
+  async function report(checkedInAt, status = 'Quiet', recent = [{ status, createdAt: new Date() }], stored = 'Moderate') {
+    vi.spyOn(StudySpot, 'findById').mockResolvedValue({ _id: SPOT, name: 'Pod A', buildingName: 'CONNEX', seatCount: 6, noiseLevel: stored })
     vi.spyOn(CheckIn, 'findOne').mockResolvedValue(checkedInAt && { spot: checkedInAt })
     const removed = vi.spyOn(NoiseReport, 'deleteMany').mockResolvedValue({ deletedCount: 0 })
     const created = vi.spyOn(NoiseReport, 'create').mockResolvedValue({})
-    vi.spyOn(NoiseReport, 'find').mockReturnValue({ sort: () => ({ lean: async () => [] }) })
+    vi.spyOn(NoiseReport, 'find').mockReturnValue({ sort: () => ({ lean: async () => recent }) })
+    const spotSaved = vi.spyOn(StudySpot, 'editSpot').mockResolvedValue({})
+    const favsSaved = vi.spyOn(Favourite, 'updateSpotDetails').mockResolvedValue({})
 
     const res = { status: vi.fn(() => res), json: vi.fn() }
     await apiReport({ params: { id: SPOT }, body: { status }, session: { user: { id: 'user1' } } }, res)
-    return { res, created, removed }
+    return { res, created, removed, spotSaved, favsSaved }
   }
 
   it('refuses someone who is not checked in anywhere', async () => {
@@ -77,6 +81,27 @@ describe('apiReport: only students checked in to the room can rate it', () => {
     expect(res.status).toHaveBeenCalledWith(201)
     expect(removed).toHaveBeenCalledTimes(1)
     expect(created).toHaveBeenCalledWith({ spot: SPOT, userId: 'user1', status: 'Loud' })
+  })
+
+  it("updates the spot's stored noise level, and favourites' copies, to the last hour's average", async () => {
+    const now = new Date()
+    // two Loud and one Quiet, all just now: average 1.33, rounded to Some chatter (Moderate); was Quiet
+    const recent = [{ status: 'Loud', createdAt: now }, { status: 'Loud', createdAt: now }, { status: 'Quiet', createdAt: now }]
+    const { res, spotSaved, favsSaved } = await report(SPOT, 'Loud', recent, 'Quiet')
+    expect(spotSaved).toHaveBeenCalledWith(SPOT, { noiseLevel: 'Moderate' })
+    expect(favsSaved).toHaveBeenCalledWith('CONNEX', 'Pod A', { noiseLevel: 'Moderate' })
+    expect(res.json.mock.calls[0][0].noiseLevel).toBe('Moderate')
+  })
+
+  it("leaves the spot alone when its stored level already matches", async () => {
+    const { spotSaved, favsSaved } = await report(SPOT, 'Loud', [{ status: 'Loud', createdAt: new Date() }], 'Loud')
+    expect(spotSaved).not.toHaveBeenCalled()
+    expect(favsSaved).not.toHaveBeenCalled()
+  })
+
+  it('does not touch the spot when the rating is refused', async () => {
+    const { spotSaved } = await report(null, 'Loud')
+    expect(spotSaved).not.toHaveBeenCalled()
   })
 
   it('rejects a level that is not a noise level', async () => {
@@ -151,5 +176,26 @@ describe('heatEnabled', () => {
     expect(heatEnabled('School of Accountancy', '4')).toBe(false) // no level 4 plan
     expect(heatEnabled('Some New Building', '1')).toBe(false)
     expect(heatEnabled('SCIS 1', '2')).toBe(false) // the building's old name
+  })
+})
+
+describe('the Quiet need on the find-a-spot ranking', async () => {
+  const { NEEDS, rankSpots } = await import('../../client/src/ranking.js')
+  const spot = (name, liveNoise) => ({ _id: name, name, liveNoise, distanceMeters: 100, seats: 10, alerts: [] })
+
+  it('scores from the live noise: Quiet 1, Some chatter 0.5, Loud 0', () => {
+    expect(NEEDS.quiet.match(spot('a', 0))).toBe(1)
+    expect(NEEDS.quiet.match(spot('b', 1))).toBe(0.5)
+    expect(NEEDS.quiet.match(spot('c', 2))).toBe(0)
+  })
+
+  it('treats a spot nobody rated in the last hour as unknown', () => {
+    const { ranked } = rankSpots([spot('unrated', null)], [{ id: 'quiet', level: 'important' }])
+    expect(ranked[0].unknown[0]).toMatch(/no noise ratings in the last hour/)
+  })
+
+  it('puts the quieter spot first', () => {
+    const { ranked } = rankSpots([spot('loud', 2), spot('quiet', 0)], [{ id: 'quiet', level: 'important' }])
+    expect(ranked.map(r => r.name)).toEqual(['quiet', 'loud'])
   })
 })

@@ -19,6 +19,7 @@ const Building = require('../../models/building-model')
 const StudySpot = require('../../models/studyspot-model')
 const CheckIn = require('../../models/checkin-model')
 const StudySpotAlert = require('../../models/studyspot-alert-model')
+const NoiseReport = require('../../models/noise-report-model')
 const cascade = require('../../services/cascade-service')
 const reviewsController = require('../../controllers/reviews-controller')
 const reportController = require('../../controllers/report-controller')
@@ -179,7 +180,7 @@ describe('TestSuite4: POST /api/reports', () => {
   })
 })
 
-describe('TestSuite5: review noise feeds the find-a-spot ranking', () => {
+describe('TestSuite5: live noise from checked-in students feeds the find-a-spot ranking', () => {
   beforeEach(() => {
     vi.spyOn(CheckIn, 'find').mockReturnValue({ lean: vi.fn().mockResolvedValue([{ spot: 's1' }]) })
     vi.spyOn(StudySpotAlert, 'find').mockReturnValue({ sort: vi.fn().mockResolvedValue([
@@ -190,20 +191,24 @@ describe('TestSuite5: review noise feeds the find-a-spot ranking', () => {
       { _id: 's1', name: 'Lounge', buildingName: 'SCIS 1', noiseLevel: 'Quiet' },
       { _id: 's2', name: 'Pod', buildingName: 'SCIS 1', noiseLevel: 'Moderate' }
     ])
+    // Reviewers called the Pod Quiet; that must no longer count.
+    vi.spyOn(Review, 'summariseAll').mockResolvedValue([{ _id: { buildingName: 'SCIS 1', roomId: 'Pod' }, count: 2, avgRating: 3, avgNoise: 1 }])
   })
 
-  it('Test1: when reviewers reported noise, their average is used instead of the catalogue value', async () => {
-    // Lounge is listed as Quiet (1) but reviewers found it Loud (5).
-    vi.spyOn(Review, 'summariseAll').mockResolvedValue([{ _id: { buildingName: 'SCIS 1', roomId: 'Lounge' }, count: 2, avgRating: 3, avgNoise: 5 }])
+  it('Test1: a spot gets the live noise score, and a spot nobody rated lately is unknown', async () => {
+    // Lounge is listed as Quiet, but the student checked in there just rated it Loud (2).
+    vi.spyOn(NoiseReport, 'find').mockReturnValue({ sort: () => ({ lean: async () => [
+      { spot: 's1', status: 'Loud', createdAt: new Date() }
+    ] }) })
     const res = fakeRes()
     await nearbyController.nearby(fakeReq(alice, { body: { latitude: 1.296, longitude: 103.85 } }), res)
     expect(res.statusCode).toBe(200)
     const spots = res.json.mock.calls[0][0].spots
-    expect(spots.find(s => s.name === 'Lounge').noiseLevel).toBe(5)
+    expect(spots.find(s => s.name === 'Lounge').liveNoise).toBe(2)
     expect(spots.find(s => s.name === 'Lounge').checkedIn).toBe(1)
     expect(spots.find(s => s.name === 'Lounge').alerts).toEqual(['Aircon'])
-    // Pod has no reviews, so it keeps its catalogue value (Moderate = 3).
-    expect(spots.find(s => s.name === 'Pod').noiseLevel).toBe(3)
+    // Pod has quiet reviews and a Moderate label, but no live ratings, so its noise is unknown.
+    expect(spots.find(s => s.name === 'Pod').liveNoise).toBeNull()
     expect(spots.find(s => s.name === 'Pod').checkedIn).toBe(0)
     expect(spots.find(s => s.name === 'Pod').alerts).toEqual([])
   })

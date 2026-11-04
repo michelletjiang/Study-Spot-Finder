@@ -247,7 +247,7 @@ onUnmounted(() => {
       </div>
 
       <div v-if="heatShown" class="heat-strip">
-        <p class="live"><i class="live-dot" aria-hidden="true"></i><strong>Live · from checked-in students in the last 30 minutes</strong></p>
+        <p class="live"><i class="live-dot" aria-hidden="true"></i><strong>Live · from checked-in students in the last hour</strong></p>
         <p v-if="latestReport" class="muted">Latest report {{ timeAgo(latestReport) }}</p>
         <div class="heat-legend" aria-label="Room colours: how loud, from Quiet to Loud">
           <div class="heat-scale">
@@ -325,7 +325,7 @@ onUnmounted(() => {
             </div>
 
             <p v-if="heatShown" class="footnote">
-              Each room shows the average of reports from the last 30 minutes, with newer reports counting more.
+              Each room shows the average of reports from the last hour, with newer reports counting more.
               When reports expire, the room goes back to striped.
             </p>
             <p v-else class="footnote">

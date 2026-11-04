@@ -66,7 +66,7 @@ const quietest = computed(() => props.spots
       <p v-if="noiseError" class="muted">Couldn't load this room's reports.</p>
       <p v-else-if="!noise" class="muted">Loading reports…</p>
       <template v-else-if="noise.recent.length">
-        <p class="muted">{{ reportCount(noise.summary.count) }} in the last 30 min, newest first</p>
+        <p class="muted">{{ reportCount(noise.summary.count) }} in the last hour, newest first</p>
         <ul class="reports">
           <li v-for="item in noise.recent.slice(0, 3)" :key="item.createdAt">
             <span class="pill" :style="noiseStyle(item.status)">{{ noiseLabel(item.status) }}</span>
@@ -74,7 +74,7 @@ const quietest = computed(() => props.spots
           </li>
         </ul>
       </template>
-      <p v-else class="muted">No one checked in here has rated the noise in the last 30 minutes.</p>
+      <p v-else class="muted">No one checked in here has rated the noise in the last hour.</p>
 
       <div class="alerts"><SpotAlerts :spot="spot" @change="list => emit('alerts-change', spot._id, list)" /></div>
 

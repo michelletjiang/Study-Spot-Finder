@@ -3,6 +3,7 @@ const StudySpot = require('../models/studyspot-model');
 const Review = require('../models/reviews-model');
 const { countCheckedIn } = require('../services/checkin-service');
 const { getActiveAlertsBySpot } = require('../services/alert-service');
+const { getNoiseHeat } = require('../services/noise-service');
 
 // straight-line distance in metres between two lat/lng points (haversine)
 function distanceMeters(lat1, lng1, lat2, lng2) {
@@ -13,11 +14,10 @@ function distanceMeters(lat1, lng1, lat2, lng2) {
 }
 
 const WALK_METRES_PER_MINUTE = 80; // about 5 km/h
-const NOISE_SCALE = { Quiet: 1, Moderate: 3, Loud: 5 };
 
 // POST /api/nearby   body: { latitude, longitude }
 // Every study spot whose building has coordinates, with its distance from the user, its review summary,
-// how many people are checked in right now and any active alerts.
+// how many people are checked in right now, how loud they say it is, and any active alerts.
 // The client does the ranking, so changing a preference doesn't need another request.
 exports.nearby = async (req, res) => {
     const latitude = Number(req.body.latitude);
@@ -30,7 +30,7 @@ exports.nearby = async (req, res) => {
         const byName = new Map(buildings.filter(b => b.lat != null && b.lng != null).map(b => [b.buildingname, b]));
         const reviews = new Map(summaries.map(r => [`${r._id.buildingName}|${r._id.roomId}`, r]));
         const spotIds = spots.map(s => s._id);
-        const [checkedIn, alerts] = await Promise.all([countCheckedIn(spotIds), getActiveAlertsBySpot(spotIds)]);
+        const [checkedIn, alerts, noise] = await Promise.all([countCheckedIn(spotIds), getActiveAlertsBySpot(spotIds), getNoiseHeat(spotIds)]);
 
         const results = [];
         for (const spot of spots) {
@@ -45,10 +45,9 @@ exports.nearby = async (req, res) => {
                 floor: spot.floor,
                 seats: spot.seatCount,
                 hasPower: spot.hasPowerSocket,
-                // 1 (quiet) .. 5 (loud): what reviewers reported if any review gave a noise level, else the
-                // spot's catalogue value; null = unknown. Every spot has a catalogue value, so it must come second
-                // or the reviews would never count.
-                noiseLevel: summary?.avgNoise ?? NOISE_SCALE[spot.noiseLevel] ?? null,
+                // 0 (Quiet) .. 2 (Loud): the average of what students checked in here rated it in the last hour,
+                // newer ratings counting more (services/noise-service.js); null = nobody has rated it lately.
+                liveNoise: noise[String(spot._id)]?.score ?? null,
                 avgRating: summary?.avgRating ?? null,  // 1 .. 5, null = no reviews yet
                 reviewCount: summary?.count ?? 0,
                 distanceMeters: meters,

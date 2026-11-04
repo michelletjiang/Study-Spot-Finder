@@ -83,7 +83,12 @@ onMounted(() => {
   // The home page registered its box before the map mounted, so move in now.
   if (mapStore.dockEl) mapStore.dockEl.appendChild(boxEl.value)
   // The box changes size when it docks/undocks, expands or the window resizes, so Leaflet has to re-measure.
-  resizeObserver = new ResizeObserver(() => map.invalidateSize())
+  // Coming back into view, it also catches up on any move it missed while hidden.
+  resizeObserver = new ResizeObserver(() => {
+    if (!hasSize()) return
+    map.invalidateSize()
+    if (viewPending) recentre()
+  })
   resizeObserver.observe(mapEl.value)
 
   // Start watching the browser's location.
@@ -157,7 +162,7 @@ watch(visible, isVisible => {
   // Reload the buildings.
   loadBuildings()
   // Existing note: tell Leaflet to re-measure its container.
-  setTimeout(() => map.invalidateSize(), 0) // Leaflet measured a hidden (0×0) container
+  setTimeout(() => { if (hasSize()) map.invalidateSize() }, 0) // Leaflet measured a hidden (0×0) container
 })
 
 // Move the box into the home page's map box and back. 'sync' so it moves out before that page's DOM is removed.
@@ -169,9 +174,21 @@ watch(() => mapStore.dockEl, dockEl => {
 // Moving between page sections: re-centre on whatever is shown.
 watch(docked, async () => {
   await nextTick()
-  map.invalidateSize()
+  if (hasSize()) map.invalidateSize()
   recentre()
 })
+
+// Leaflet can't move or zoom a map with no size: on phones the map is display:none until "Show map".
+// Its centre would become NaN and every later move would throw, which also stopped Vue updating the page
+// (the home page then kept the "Show map" button and an empty map box). So a move made while hidden is
+// remembered, and the map recentres when it's shown again (the ResizeObserver in onMounted).
+let viewPending = false
+const hasSize = () => mapEl.value?.clientWidth > 0 && mapEl.value?.clientHeight > 0
+function canMove() {
+  if (hasSize()) return true
+  viewPending = true
+  return false
+}
 
 // ---------- user location ----------
 
@@ -188,7 +205,7 @@ function drawUser(centre) {
     userMarker.setLatLng(pos)
   }
   // Optionally centre the map on the user.
-  if (centre) map.setView(pos, 16)
+  if (centre && canMove()) map.setView(pos, 16)
 }
 
 // Redraw when the user's position changes.
@@ -202,6 +219,8 @@ watch(() => mapStore.userPos, (pos, oldPos) => {
 
 // Recentre the map on the route, the destination or the user, whichever is available.
 function recentre() {
+  if (!canMove()) return
+  viewPending = false
   if (mapStore.activeRoute) fitRoute()
   else if (mapStore.destination) map.setView([mapStore.destination.lat, mapStore.destination.lng], 17)
   else if (mapStore.userPos) map.setView(mapStore.userPos, 16)
@@ -212,12 +231,14 @@ function recentre() {
 // When the destination changes, redraw the markers and fly to it (or back to the user).
 watch(() => mapStore.destination, dest => {
   drawBuildings()
+  if (!canMove()) return
   if (dest) map.flyTo([dest.lat, dest.lng], 17, { duration: 0.8 })
   else if (mapStore.userPos) map.flyTo(mapStore.userPos, 16, { duration: 0.8 })
 })
 
 // Zoom the map to fit the whole route.
 function fitRoute() {
+  if (!canMove()) return
   // Collect every point of every leg.
   const points = mapStore.activeRoute.legs.flatMap(leg => leg.points)
   // Fit the map to those points.
@@ -250,7 +271,7 @@ function onResized(e) {
   // Ignore transitions of child elements.
   if (e.target !== e.currentTarget) return
   // Tell Leaflet the box has a new size.
-  map.invalidateSize()
+  if (hasSize()) map.invalidateSize()
   // Re-fit the view.
   recentre()
 }
