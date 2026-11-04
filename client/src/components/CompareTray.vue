@@ -14,6 +14,7 @@ const ids = computed(() => comparison.selectedIds.value)
 const notice = computed(() => comparison.notice.value)
 // The store only keeps ids, so the name and place of each picked spot are fetched once and kept here.
 const info = ref({})
+const expanded = ref(false)
 
 watch(ids, list => {
   for (const id of list) {
@@ -42,37 +43,37 @@ function compare() { if (comparison.canCompare) router.push({ path: '/compare', 
 
 <template>
   <aside v-if="ids.length && route.path !== '/compare'" class="compare-tray" aria-label="Selected spots for comparison">
-    <!-- The inline cards icon stays crisp at small sizes and inherits the notebook ink colour. -->
-    <span class="tab" aria-hidden="true"><svg class="tab-icon" viewBox="0 0 16 14" focusable="false"><rect x="1" y="2" width="9" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="6" y="1" width="9" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/></svg> Compare</span>
+    <!-- The compact bar keeps browsing clear; the selected spot cards appear only on request. -->
     <div class="tray card">
       <div class="summary">
-        <!-- Bootstrap's card layout gives the tray a clear summary before its slots. -->
+        <span class="tab" aria-hidden="true"><svg class="tab-icon" viewBox="0 0 16 14" focusable="false"><rect x="1" y="2" width="9" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="6" y="1" width="9" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/></svg> Compare</span>
+        <!-- Bootstrap's card layout keeps the count and primary action available in the compact state. -->
         <h2 aria-live="polite">{{ ids.length }} of {{ MAX_COMPARISON_SPOTS }} picked</h2>
-        <!-- The store's notice, for example when a fourth spot is refused. -->
         <p v-if="notice" class="limit" role="status">{{ notice }}</p>
-        <p v-else>{{ hint }}</p>
+        <p v-else class="hint">{{ hint }}</p>
       </div>
-
-      <!-- Vue transitions make adding and removing a shortlist slot feel immediate without changing store behavior. -->
-      <TransitionGroup tag="ul" name="tray-slot" class="slots">
-        <li v-for="spot in picked" :key="spot.id" class="slot">
-          <div class="slot-text">
-            <strong :title="spot.name">{{ spot.loading ? 'Loading…' : spot.name }}</strong>
-            <small>{{ where(spot) }}</small>
-          </div>
-          <button type="button" class="nb-icon-btn remove" :aria-label="`Remove ${spot.name || 'this spot'} from the comparison`" @click="comparison.remove(spot.id)">✕</button>
-        </li>
-        <li v-for="n in emptySlots" :key="`empty-${n}`" class="slot slot--empty">
-          + {{ n === 2 ? 'Pick a 2nd spot' : 'Optional 3rd spot' }}
-        </li>
-      </TransitionGroup>
-
-      <div class="actions">
+      <div class="compact-actions">
         <button type="button" class="btn nb-link clear" @click="comparison.clear">Clear</button>
-        <button type="button" class="btn nb-btn nb-btn--primary" :disabled="!comparison.canCompare" @click="compare">
-          Compare {{ ids.length >= 2 ? `${ids.length} spots` : '' }} →
+        <button type="button" class="btn nb-btn tray-toggle" :aria-expanded="expanded" aria-controls="compare-tray-details" @click="expanded = !expanded">
+          {{ expanded ? 'Hide picked' : 'Show picked' }}
         </button>
+        <button type="button" class="btn nb-btn nb-btn--primary" :disabled="!comparison.canCompare" @click="compare">Compare {{ ids.length >= 2 ? `${ids.length} spots` : '' }} →</button>
       </div>
+
+      <!-- Vue transitions make the optional shortlist details feel immediate without changing store behavior. -->
+      <Transition name="tray-details">
+        <div v-if="expanded" id="compare-tray-details" class="tray-details">
+          <TransitionGroup tag="ul" name="tray-slot" class="slots">
+            <li v-for="spot in picked" :key="spot.id" class="slot">
+              <div class="slot-text">
+                <strong :title="spot.name">{{ spot.loading ? 'Loading…' : spot.name }}</strong>
+                <small>{{ where(spot) }}</small>
+              </div>
+              <button type="button" class="nb-icon-btn remove" :aria-label="`Remove ${spot.name || 'this spot'} from the comparison`" @click="comparison.remove(spot.id)">✕</button>
+            </li>
+          </TransitionGroup>
+        </div>
+      </Transition>
     </div>
   </aside>
 </template>
@@ -82,88 +83,52 @@ function compare() { if (comparison.canCompare) router.push({ path: '/compare', 
   position: sticky;
   bottom: 12px;
   z-index: 20;
-  width: min(100% - 32px, 1040px);
+  width: min(100% - 32px, 760px);
   margin: 16px auto 0;
   color: #28263f;
   text-align: left;
 }
 
-/* The folder tab anchors a Bootstrap card so the comparison tray feels like a notebook pull-out. */
-.tab {
-  position: relative;
-  bottom: -2px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 16px 4px 14px;
-  border: 2px solid #28263f;
-  border-bottom: none;
-  border-radius: 8px 14px 0 0;
-  background: var(--nb-manila-dark);
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-.tab-icon { width: 16px; height: 14px; flex: none; vertical-align: middle; }
-
-/* The tray and its light slots keep the original dark ink above Bootstrap card defaults. */
+/* The compact bar keeps the folder treatment but does not cover the page while browsing. */
 .tray {
   color: #28263f;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 14px 18px;
-  padding: 14px 16px 14px 18px;
+  gap: 8px 16px;
+  padding: 8px 12px;
   border: 2px solid #28263f;
-  border-radius: 0 10px 10px 10px;
+  border-radius: 10px;
   background: var(--nb-manila-dark);
-  box-shadow: 6px 6px 0 var(--nb-shadow);
+  box-shadow: 4px 4px 0 var(--nb-shadow);
 }
-
-.summary { flex: none; width: 185px; }
-.summary h2 { margin: 0; font: 700 1.6rem/1.05 var(--nb-heading); color: #28263f; letter-spacing: 0; white-space: nowrap; }
-.summary p { margin: 4px 0 0; font-size: 0.85rem; line-height: 1.35; }
+.tab { display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 700; }
+.tab-icon { width: 16px; height: 14px; flex: none; vertical-align: middle; }
+.summary { display: flex; flex: 1 1 auto; align-items: baseline; gap: 8px; min-width: 0; }
+.summary h2 { margin: 0; font: 700 1.35rem/1.05 var(--nb-heading); color: #28263f; letter-spacing: 0; white-space: nowrap; }
+.summary p { margin: 0; font-size: 0.78rem; line-height: 1.2; }
 .summary .limit { font-weight: 700; color: var(--nb-error); }
-
-.slots { display: flex; flex: 1 1 460px; gap: 10px; min-width: 0; margin: 0; padding: 0; list-style: none; }
-.slot {
-  color: #28263f;
-  display: flex;
-  flex: 1 1 0;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  min-height: 50px;
-  padding: 6px 8px 6px 12px;
-  border: 2px solid #28263f;
-  border-radius: 6px;
-  background: #fffef9;
-}
+.compact-actions { display: flex; align-items: center; gap: 8px; }
+.clear { padding: 4px 6px; font-size: 0.82rem; }
+.tray-toggle { padding: 6px 10px; font-size: 0.82rem; }
+.compact-actions .nb-btn--primary { padding: 6px 11px; white-space: nowrap; }
+.tray-details { flex-basis: 100%; }
+.slots { display: flex; gap: 8px; min-width: 0; margin: 0; padding: 0; list-style: none; }
+.slot { color: #28263f; display: flex; flex: 1 1 0; align-items: center; gap: 8px; min-width: 0; min-height: 42px; padding: 5px 7px 5px 10px; border: 2px solid #28263f; border-radius: 6px; background: #fffef9; }
 .slot-text { display: grid; flex: 1; min-width: 0; }
-.slot-text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slot-text small { overflow: hidden; color: var(--nb-muted); text-overflow: ellipsis; white-space: nowrap; font-size: 0.7rem; }
 /* long names wrap to two lines, then end in "…" */
-.slot-text strong { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 0.9rem; line-height: 1.2; }
-.slot-text small { color: var(--nb-muted); font-size: 0.75rem; }
-.slot--empty {
-  justify-content: center;
-  border: 1.5px dashed #28263f;
-  background: rgba(255, 254, 249, 0.35);
-  color: var(--nb-muted);
-  font-size: 0.85rem;
-  font-weight: 700;
-}
-.remove { width: 30px; height: 30px; border-radius: 7px; font-size: 0.8rem; }
-.tray-slot-enter-active, .tray-slot-leave-active { transition: opacity .2s ease, transform .2s ease; }
-.tray-slot-enter-from, .tray-slot-leave-to { opacity: 0; transform: scale(.96); }
+.slot-text strong { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 0.84rem; line-height: 1.15; }
+.remove { width: 28px; height: 28px; border-radius: 7px; font-size: 0.75rem; }
+.tray-slot-enter-active, .tray-slot-leave-active, .tray-details-enter-active, .tray-details-leave-active { transition: opacity .2s ease, transform .2s ease; }
+.tray-slot-enter-from, .tray-slot-leave-to, .tray-details-enter-from, .tray-details-leave-to { opacity: 0; transform: translateY(-4px); }
 
-.actions { display: flex; align-items: center; gap: 14px; margin-left: auto; }
-.clear { font-size: 0.9rem; }
-.actions .nb-btn { padding: 10px 16px; white-space: nowrap; }
-
-/* On phones the slots stack and the tray sits in the page flow, which keeps 320px screens free of sideways scrolling. */
-@media (prefers-reduced-motion: reduce) { .tray-slot-enter-active, .tray-slot-leave-active { transition: none; } }
+/* On phones the compact bar stays in flow and the expanded spots stack without sideways scrolling. */
+@media (prefers-reduced-motion: reduce) { .tray-slot-enter-active, .tray-slot-leave-active, .tray-details-enter-active, .tray-details-leave-active { transition: none; } }
 @media (max-width: 650px) {
   .compare-tray { position: relative; bottom: 0; width: calc(100% - 24px); }
-  .slots { flex-direction: column; flex-basis: 100%; }
-  .actions { width: 100%; justify-content: space-between; }
+  .summary { flex-basis: 100%; }
+  .compact-actions { width: 100%; justify-content: flex-end; }
+  .slots { flex-direction: column; }
 }
 </style>

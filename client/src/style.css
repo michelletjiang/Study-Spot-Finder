@@ -198,6 +198,10 @@ p {
   --nb-note-blue: #c5d3e4;
   --nb-manila: #e5d4ac;
   --nb-manila-dark: #dcc58f;
+  /* Comparison headers use a brighter outline at night so their edges do not merge into the page. */
+  --nb-night-outline: #f1e4bf;
+  --nb-night-header: #ead9ad;
+  --nb-night-header-ink: #28263f;
 }
 
 /* ---------- buttons ---------- */

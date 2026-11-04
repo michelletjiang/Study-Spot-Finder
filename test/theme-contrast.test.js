@@ -50,3 +50,11 @@ test('comparison keeps the original dark-ink treatment on light surfaces', () =>
   assert.ok(contrast('#28263f', '#c5d3e4') >= 4.5, 'winner strip ink must meet WCAG AA in both themes')
   assert.ok(contrast('#28263f', '#ecd27e') >= 4.5, 'best badge ink must meet WCAG AA in both themes')
 })
+
+test('night comparison edges and header copy stay readable on dark paper', () => {
+  const nightMatch = css.match(/:root\[data-theme='night'\]\s*\{([\s\S]*?)\n}/)
+  assert.ok(nightMatch, 'night theme variables must exist')
+  const night = variables(nightMatch[1])
+  assert.ok(contrast(night['nb-night-header-ink'], night['nb-night-header']) >= 4.5, 'night header copy must meet WCAG AA')
+  assert.ok(contrast(night['nb-night-outline'], night.paper) >= 3, 'night comparison outline must meet UI contrast')
+})
