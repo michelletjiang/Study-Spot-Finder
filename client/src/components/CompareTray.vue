@@ -43,15 +43,17 @@ function compare() { if (comparison.canCompare) router.push({ path: '/compare', 
 <template>
   <aside v-if="ids.length && route.path !== '/compare'" class="compare-tray" aria-label="Selected spots for comparison">
     <span class="tab" aria-hidden="true"><span class="tab-icon">▯▯</span> Compare</span>
-    <div class="tray">
+    <div class="tray card">
       <div class="summary">
+        <!-- Bootstrap's card layout gives the tray a clear summary before its slots. -->
         <h2 aria-live="polite">{{ ids.length }} of {{ MAX_COMPARISON_SPOTS }} picked</h2>
         <!-- The store's notice, for example when a fourth spot is refused. -->
         <p v-if="notice" class="limit" role="status">{{ notice }}</p>
         <p v-else>{{ hint }}</p>
       </div>
 
-      <ul class="slots">
+      <!-- Vue transitions make adding and removing a shortlist slot feel immediate without changing store behavior. -->
+      <TransitionGroup tag="ul" name="tray-slot" class="slots">
         <li v-for="spot in picked" :key="spot.id" class="slot">
           <div class="slot-text">
             <strong :title="spot.name">{{ spot.loading ? 'Loading…' : spot.name }}</strong>
@@ -62,11 +64,11 @@ function compare() { if (comparison.canCompare) router.push({ path: '/compare', 
         <li v-for="n in emptySlots" :key="`empty-${n}`" class="slot slot--empty">
           + {{ n === 2 ? 'Pick a 2nd spot' : 'Optional 3rd spot' }}
         </li>
-      </ul>
+      </TransitionGroup>
 
       <div class="actions">
-        <button type="button" class="nb-link clear" @click="comparison.clear">Clear</button>
-        <button type="button" class="nb-btn nb-btn--primary" :disabled="!comparison.canCompare" @click="compare">
+        <button type="button" class="btn nb-link clear" @click="comparison.clear">Clear</button>
+        <button type="button" class="btn nb-btn nb-btn--primary" :disabled="!comparison.canCompare" @click="compare">
           Compare {{ ids.length >= 2 ? `${ids.length} spots` : '' }} →
         </button>
       </div>
@@ -85,7 +87,7 @@ function compare() { if (comparison.canCompare) router.push({ path: '/compare', 
   text-align: left;
 }
 
-/* the folder tab on the top-left edge */
+/* The folder tab anchors a Bootstrap card so the comparison tray feels like a notebook pull-out. */
 .tab {
   position: relative;
   bottom: -2px;
@@ -146,12 +148,15 @@ function compare() { if (comparison.canCompare) router.push({ path: '/compare', 
   font-weight: 700;
 }
 .remove { width: 30px; height: 30px; border-radius: 7px; font-size: 0.8rem; }
+.tray-slot-enter-active, .tray-slot-leave-active { transition: opacity .2s ease, transform .2s ease; }
+.tray-slot-enter-from, .tray-slot-leave-to { opacity: 0; transform: scale(.96); }
 
 .actions { display: flex; align-items: center; gap: 14px; margin-left: auto; }
 .clear { font-size: 0.9rem; }
 .actions .nb-btn { padding: 10px 16px; white-space: nowrap; }
 
 /* On phones the slots stack and the tray sits in the page flow, which keeps 320px screens free of sideways scrolling. */
+@media (prefers-reduced-motion: reduce) { .tray-slot-enter-active, .tray-slot-leave-active { transition: none; } }
 @media (max-width: 650px) {
   .compare-tray { position: relative; bottom: 0; width: calc(100% - 24px); }
   .slots { flex-direction: column; flex-basis: 100%; }

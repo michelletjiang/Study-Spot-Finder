@@ -157,113 +157,104 @@ const suggestion = computed(() => {
 </script>
 
 <template>
-  <main class="nb-page" aria-labelledby="comparison-title">
-    <RouterLink to="/" class="nb-back">‹ Back to study spots</RouterLink>
-
-    <header class="nb-page-head">
-      <div>
-        <h1 id="comparison-title" class="nb-title">Compare study spots</h1>
-        <p class="nb-subtitle">
-          <template v-if="!loading && spots.length">
-            {{ spots.length }} of {{ requestedIds.length }} spots · <mark class="nb-mark"><strong>highlighted</strong></mark> = best in that row
-          </template>
-        </p>
-      </div>
-      <button v-if="sameCount && spots.length" type="button" class="nb-btn same-toggle" :aria-pressed="hideSame" @click="hideSame = !hideSame">
-        <span aria-hidden="true">≡</span> {{ hideSame ? `Show all rows (${sameCount} hidden)` : 'Hide rows that are the same' }}
-      </button>
-    </header>
+  <main class="nb-page compare-page" aria-labelledby="comparison-title">
+    <!-- Bootstrap's container and flex utilities keep the heading and controls aligned at every width. -->
+    <div class="container-fluid px-0">
+      <RouterLink to="/" class="nb-back">‹ Back to study spots</RouterLink>
+      <header class="page-heading d-flex flex-wrap align-items-end justify-content-between gap-3">
+        <div>
+          <h1 id="comparison-title" class="nb-title">Compare study spots</h1>
+          <p class="nb-subtitle" aria-live="polite">
+            <template v-if="!loading && spots.length">{{ spots.length }} spots · <mark class="nb-mark"><strong>highlighted</strong></mark> = best in that row</template>
+          </p>
+        </div>
+        <!-- A Bootstrap button group makes the table filter easy to find and keyboard accessible. -->
+        <div v-if="sameCount && spots.length" class="btn-group same-toggle" role="group" aria-label="Comparison row options">
+          <button type="button" class="btn nb-btn" :class="{ 'is-active': hideSame }" :aria-pressed="hideSame" @click="hideSame = !hideSame">
+            <span aria-hidden="true">≡</span> {{ hideSame ? `Show all rows (${sameCount} hidden)` : 'Hide same rows' }}
+          </button>
+        </div>
+      </header>
+    </div>
 
     <p v-if="loading" class="nb-state" aria-live="polite">Loading the spots…</p>
     <p v-else-if="error" class="nb-state nb-state--error" role="alert">{{ error }}</p>
-    <p v-if="!loading && liveError" class="nb-state">Some reviews or check-ins couldn't load, so those rows may be incomplete.</p>
+    <p v-if="!loading && liveError" class="nb-state" role="status">Some reviews or check-ins couldn't load, so those rows may be incomplete.</p>
 
-    <div v-if="!loading && spots.length" class="nb-table-wrap">
-      <table class="compare">
-        <caption class="visually-hidden">Study spots side by side. The best value in each live row is marked Best.</caption>
-        <thead>
-          <tr>
-            <td class="corner"></td>
-            <th v-for="spot in spots" :key="spot._id" scope="col">
-              <div class="spot-head">
-                <h2>{{ spot.name }}</h2>
-                <button type="button" class="nb-icon-btn" :aria-label="`Remove ${spot.name} from the comparison`" @click="removeSpot(spot._id)">✕</button>
+    <!-- Each spot is a Bootstrap card on small screens; the same cards become columns on larger screens. -->
+    <TransitionGroup v-if="!loading && spots.length" name="compare-card" tag="div" class="row g-3 spot-grid">
+      <article v-for="spot in spots" :key="spot._id" class="col-12 spot-column">
+        <section class="card spot-card h-100">
+          <header class="card-header spot-card-header">
+            <div class="spot-head">
+              <div>
+                <h2 class="card-title mb-1">{{ spot.name }}</h2>
+                <p class="where">{{ spot.buildingName }} · {{ levelLabel(spot.floor) }}</p>
               </div>
-              <p class="where">{{ spot.buildingName }} · {{ levelLabel(spot.floor) }}</p>
-              <RouterLink :to="`/spots/${spot._id}`" class="view">View room →</RouterLink>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="row in shownRows" :key="row.key" :class="{ live: 'higher' in row }">
-            <th scope="row">
-              {{ row.label }}
-              <small>{{ row.same ? 'same for all' : row.note }}</small>
-            </th>
-            <td v-for="(cell, i) in row.values" :key="spots[i]._id">
-              <span v-if="cell.tag" class="nb-tag" :class="`nb-tag--${cell.tag}`">{{ cell.text }}</span>
-              <template v-else>
-                <span v-if="cell.dot" class="nb-dot" :class="`nb-dot--${cell.dot}`" aria-hidden="true"></span>
-                <mark v-if="i === row.best" class="nb-mark"><strong>{{ cell.text }}</strong></mark>
-                <span v-else>{{ cell.text }}</span>
+              <button type="button" class="nb-icon-btn" :aria-label="`Remove ${spot.name} from the comparison`" @click="removeSpot(spot._id)">✕</button>
+            </div>
+            <RouterLink :to="`/spots/${spot._id}`" class="view">View room →</RouterLink>
+          </header>
+          <div class="card-body">
+            <dl class="comparison-list">
+              <template v-for="row in shownRows" :key="row.key">
+                <div class="comparison-row" :class="{ 'is-live': 'higher' in row }">
+                  <dt>{{ row.label }} <small>{{ row.same ? 'same for all' : row.note }}</small></dt>
+                  <dd>
+                    <span v-if="row.values[spots.indexOf(spot)].tag" class="badge nb-tag" :class="`nb-tag--${row.values[spots.indexOf(spot)].tag}`">{{ row.values[spots.indexOf(spot)].text }}</span>
+                    <template v-else>
+                      <span v-if="row.values[spots.indexOf(spot)].dot" class="nb-dot" :class="`nb-dot--${row.values[spots.indexOf(spot)].dot}`" aria-hidden="true"></span>
+                      <mark v-if="spots.indexOf(spot) === row.best" class="nb-mark"><strong>{{ row.values[spots.indexOf(spot)].text }}</strong></mark>
+                      <span v-else>{{ row.values[spots.indexOf(spot)].text }}</span>
+                    </template>
+                    <span v-if="spots.indexOf(spot) === row.best" class="badge best-badge">Best</span>
+                  </dd>
+                </div>
               </template>
-              <span v-if="i === row.best" class="best">☆ Best</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+            </dl>
+          </div>
+        </section>
+      </article>
+    </TransitionGroup>
 
     <aside v-if="suggestion" class="nb-note suggestion">
       <span class="nb-pin" aria-hidden="true"></span>
       <h2>Going now? Try {{ suggestion.spot.name }}</h2>
       <p>{{ suggestion.reason }}</p>
     </aside>
-
     <p v-if="!loading && !spots.length && !error" class="nb-state">No matching spots found.</p>
   </main>
 </template>
 
 <style scoped>
-.nb-page-head { max-width: 1240px; }
-.same-toggle { margin-bottom: 28px; border-style: dashed; border-radius: 999px; background: transparent; }
-.same-toggle[aria-pressed='true'] { border-style: solid; background: var(--nb-highlight); }
+/* The comparison sheet uses Bootstrap layout primitives while preserving the notebook tokens for its surfaces. */
+.compare-page { max-width: 1240px; }
+.page-heading { margin-bottom: 24px; }
+.same-toggle .nb-btn { border-style: dashed; border-radius: 999px; background: transparent; }
+.same-toggle .nb-btn.is-active { border-style: solid; background: var(--nb-highlight); }
 .nb-state { margin-bottom: 20px; }
-
-.nb-table-wrap { max-width: 1240px; }
-.compare { width: 100%; min-width: 640px; border-collapse: collapse; color: var(--nb-ink); table-layout: fixed; }
-.compare .corner { width: 190px; }
-.compare thead th,
-.compare .corner { background: var(--nb-manila-dark); border-bottom: 2px solid var(--nb-ink); }
-.compare thead th { padding: 16px 20px 18px; font-weight: 400; text-align: left; vertical-align: top; }
-.compare thead th,
-.compare td { border-left: 2px solid var(--nb-ink); }
-
+.spot-grid { max-width: 1240px; margin-inline: auto; }
+.spot-column { min-width: 0; }
+.spot-card { overflow: hidden; border: 2px solid var(--nb-ink); border-radius: 10px; background: var(--nb-card); box-shadow: 6px 6px 0 var(--nb-shadow); color: var(--nb-ink); }
+.spot-card-header { border-bottom: 2px solid var(--nb-ink); background: var(--nb-manila-dark); }
 .spot-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.spot-head h2 { margin: 0; font: 700 1.8rem/1.1 var(--nb-heading); color: #28263f; overflow-wrap: break-word; }
-.where { margin: 8px 0 6px; color: #28263f; font-size: 0.92rem; }
-.view { color: #28263f; font-weight: 700; text-underline-offset: 3px; }
-
-.compare tbody th,
-.compare td { padding: 18px 20px; border-bottom: 1.5px dashed var(--nb-rule); text-align: left; vertical-align: middle; }
-.compare tbody tr:last-child > * { border-bottom: none; }
-.compare tbody th { font-weight: 700; }
-.compare tbody th small { display: block; margin-top: 2px; color: var(--nb-muted); font-size: 0.82rem; font-weight: 400; }
-/* catalogue rows sit on a slightly greyer paper than the live rows */
-.compare tbody tr:not(.live) > * { background: rgba(40, 38, 63, 0.025); }
-.compare tbody tr:not(.live) td { color: var(--nb-muted); }
-.best { margin-left: 8px; font-size: 0.82rem; font-weight: 700; white-space: nowrap; }
-
+.spot-head h2 { color: var(--nb-ink); font: 700 1.8rem/1.1 var(--nb-heading); overflow-wrap: anywhere; }
+.where { margin: 4px 0 8px; color: var(--nb-ink); font-size: .92rem; }
+.view { color: var(--nb-ink); font-weight: 700; text-underline-offset: 3px; }
+.comparison-list { margin: 0; }
+.comparison-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 58px; padding: 10px 0; border-bottom: 1.5px dashed var(--nb-rule); }
+.comparison-row:last-child { border-bottom: 0; }
+.comparison-row dt { min-width: 0; font-weight: 700; }
+.comparison-row dt small { display: block; color: var(--nb-muted); font-size: .78rem; font-weight: 400; line-height: 1.2; }
+.comparison-row dd { flex: 0 1 auto; margin: 0; text-align: right; }
+.comparison-row.is-live dd { font-weight: 600; }
+.best-badge { margin-left: 8px; border: 1px solid var(--nb-ink); background: var(--nb-highlight); color: var(--nb-ink); }
 .suggestion { max-width: 560px; margin: 40px 0 0 4px; transform: rotate(-1deg); }
-
-/* On phones the table scrolls sideways inside its sheet (not the page), with the row labels pinned on the left. */
-@media (max-width: 650px) {
-  .compare { min-width: 660px; }
-  .compare .corner { width: 118px; }
-  .compare .corner,
-  .compare tbody th { position: sticky; left: 0; z-index: 1; padding-left: 14px; padding-right: 10px; }
-  .compare tbody th { background: var(--nb-sheet); box-shadow: 2px 0 0 var(--nb-ink); }
-  .compare tbody tr:not(.live) > th { background: #f8f6f2; }
-  .spot-head h2 { font-size: 1.5rem; }
-}
+.compare-card-enter-active, .compare-card-leave-active { transition: opacity .2s ease, transform .2s ease; }
+.compare-card-enter-from, .compare-card-leave-to { opacity: 0; transform: translateY(8px); }
+/* Two cards fit comfortably on desktop; phones retain one readable card per spot with no sideways page scroll. */
+@media (min-width: 800px) { .spot-column { flex: 1 0 0; width: auto; } }
+/* Narrow screens use one card per spot and keep every label readable without horizontal scrolling. */
+@media (max-width: 650px) { .compare-page { padding-inline: 12px; } .comparison-row { align-items: flex-start; } }
+@media (prefers-reduced-motion: reduce) { .compare-card-enter-active, .compare-card-leave-active { transition: none; } }
 </style>
