@@ -84,7 +84,7 @@ function compare() { if (comparison.canCompare) router.push({ path: '/compare', 
   z-index: 20;
   width: min(100% - 32px, 1040px);
   margin: 16px auto 0;
-  color: var(--nb-ink);
+  color: #28263f;
   text-align: left;
 }
 
@@ -96,7 +96,7 @@ function compare() { if (comparison.canCompare) router.push({ path: '/compare', 
   align-items: center;
   gap: 6px;
   padding: 3px 16px 4px 14px;
-  border: 2px solid var(--nb-ink);
+  border: 2px solid #28263f;
   border-bottom: none;
   border-radius: 8px 14px 0 0;
   background: var(--nb-manila-dark);
@@ -111,14 +111,14 @@ function compare() { if (comparison.canCompare) router.push({ path: '/compare', 
   align-items: center;
   gap: 14px 18px;
   padding: 14px 16px 14px 18px;
-  border: 2px solid var(--nb-ink);
+  border: 2px solid #28263f;
   border-radius: 0 10px 10px 10px;
   background: var(--nb-manila-dark);
   box-shadow: 6px 6px 0 var(--nb-shadow);
 }
 
 .summary { flex: none; width: 185px; }
-.summary h2 { margin: 0; font: 700 1.6rem/1.05 var(--nb-heading); color: var(--nb-ink); letter-spacing: 0; white-space: nowrap; }
+.summary h2 { margin: 0; font: 700 1.6rem/1.05 var(--nb-heading); color: #28263f; letter-spacing: 0; white-space: nowrap; }
 .summary p { margin: 4px 0 0; font-size: 0.85rem; line-height: 1.35; }
 .summary .limit { font-weight: 700; color: var(--nb-error); }
 
@@ -131,9 +131,9 @@ function compare() { if (comparison.canCompare) router.push({ path: '/compare', 
   min-width: 0;
   min-height: 50px;
   padding: 6px 8px 6px 12px;
-  border: 2px solid var(--nb-ink);
+  border: 2px solid #28263f;
   border-radius: 6px;
-  background: var(--nb-card);
+  background: #fffef9;
 }
 .slot-text { display: grid; flex: 1; min-width: 0; }
 .slot-text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -142,7 +142,7 @@ function compare() { if (comparison.canCompare) router.push({ path: '/compare', 
 .slot-text small { color: var(--nb-muted); font-size: 0.75rem; }
 .slot--empty {
   justify-content: center;
-  border: 1.5px dashed var(--nb-ink);
+  border: 1.5px dashed #28263f;
   background: rgba(255, 254, 249, 0.35);
   color: var(--nb-muted);
   font-size: 0.85rem;

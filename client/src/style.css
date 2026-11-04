@@ -198,20 +198,7 @@ p {
   --nb-note-blue: #c5d3e4;
   --nb-manila: #e5d4ac;
   --nb-manila-dark: #dcc58f;
-  /* Dedicated comparison surfaces preserve other pages' light note and folder colours at night. */
-  --nb-compare-night-manila: #51431f;
-  --nb-compare-night-blue: #253d56;
 }
-
-/* Comparison surfaces need dark backgrounds at night so their light ink remains readable. */
-:root[data-theme='night'] .compare-page .winner-summary { background: var(--nb-compare-night-blue); }
-/* Comparison card headers keep the folder colour while providing enough contrast for night ink. */
-:root[data-theme='night'] .compare-page .spot-card-header { background: var(--nb-compare-night-manila); }
-/* The comparison tray uses the same dark folder treatment as the comparison cards at night. */
-:root[data-theme='night'] .compare-tray .tray,
-:root[data-theme='night'] .compare-tray .tab { background: var(--nb-compare-night-manila); }
-/* Empty tray slots use the dark card surface instead of a translucent light wash at night. */
-:root[data-theme='night'] .compare-tray .slot--empty { background: var(--nb-card); }
 
 /* ---------- buttons ---------- */
 .nb-btn {
