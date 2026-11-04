@@ -278,7 +278,9 @@ const suggestion = computed(() => {
 .comparison-list { margin: 0; }
 .comparison-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 58px; padding: 10px 0; border-bottom: 1.5px dashed var(--nb-rule); }
 .comparison-row:last-child { border-bottom: 0; }
-.comparison-row dt { min-width: 0; font-weight: 700; }
+.comparison-row dt { min-width: max-content; font-weight: 700; white-space: nowrap; }
+.comparison-row dt small { white-space: normal; }
+.comparison-row dd { min-width: 0; overflow-wrap: anywhere; }
 .comparison-row dt small { display: block; color: var(--nb-muted); font-size: .78rem; font-weight: 400; line-height: 1.2; }
 .comparison-row dd { flex: 0 1 auto; margin: 0; text-align: right; }
 /* Catalogue rows retain the subdued tint and muted values from the original comparison table. */
@@ -287,6 +289,15 @@ const suggestion = computed(() => {
 .comparison-row.is-live dd { font-weight: 600; }
 /* Best badges sit on the light highlight, so they use the same dark ink as other light surfaces. */
 .best-badge { margin-left: 8px; border: 1px solid #28263f; background: var(--nb-highlight); color: #28263f; }
+/* Night comparison edges and header copy use the brighter token pair instead of disappearing into dark paper. */
+:root[data-theme='night'] .spot-card { border-color: var(--nb-night-outline); }
+:root[data-theme='night'] .spot-card-header { border-color: var(--nb-night-outline); background: var(--nb-night-header); color: var(--nb-night-header-ink); }
+:root[data-theme='night'] .spot-head h2,
+:root[data-theme='night'] .spot-card-header .where,
+:root[data-theme='night'] .spot-card-header .view,
+:root[data-theme='night'] .spot-card-header .nb-icon-btn { color: var(--nb-night-header-ink); }
+:root[data-theme='night'] .winner-summary { border-color: var(--nb-night-outline); }
+
 .suggestion { max-width: 560px; margin: 40px 0 0 4px; transform: rotate(-1deg); }
 .compare-card-enter-active, .compare-card-leave-active { transition: opacity .2s ease, transform .2s ease; }
 .compare-card-enter-from, .compare-card-leave-to { opacity: 0; transform: translateY(8px); }
