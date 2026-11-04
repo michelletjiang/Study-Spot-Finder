@@ -75,7 +75,7 @@ describe('TestSuite1: permission rules', () => {
   })
 })
 
-describe('TestSuite2: legacy review pages enforce ownership', () => {
+describe('TestSuite2: the review API enforces ownership', () => {
   let edit, del
   beforeEach(() => {
     vi.spyOn(Review, 'findByreviewId').mockResolvedValue({ ...aliceReview })
@@ -85,64 +85,67 @@ describe('TestSuite2: legacy review pages enforce ownership', () => {
 
   it('Test1: another student cannot edit the review (403, nothing saved)', async () => {
     const res = fakeRes()
-    await reviewsController.updateReview(fakeReq(bob, { params: { reviewId: REVIEW_ID }, body: { title: 'HACKED', content: 'x', rating: '1' } }), res)
+    await reviewsController.apiUpdateReview(fakeReq(bob, { params: { id: REVIEW_ID }, body: { title: 'HACKED', content: 'x', rating: '1', noiseLevel: 'Loud' } }), res)
     expect(res.statusCode).toBe(403)
     expect(edit).not.toHaveBeenCalled()
   })
 
-  it('Test2: the author can still edit, and the page gets the user it needs', async () => {
+  it('Test2: the author can still edit', async () => {
     const res = fakeRes()
-    await reviewsController.updateReview(fakeReq(alice, { params: { reviewId: REVIEW_ID }, body: { title: 'New', content: 'Still quiet', rating: '5' } }), res)
-    expect(edit).toHaveBeenCalledWith(REVIEW_ID, 'New', 'Still quiet', 5)
-    expect(res.render).toHaveBeenCalledWith('update-review', expect.objectContaining({ user: alice }))
+    await reviewsController.apiUpdateReview(fakeReq(alice, { params: { id: REVIEW_ID }, body: { title: 'New', content: 'Still quiet', rating: '5', noiseLevel: 'Quiet' } }), res)
+    expect(edit).toHaveBeenCalledWith(REVIEW_ID, 'New', 'Still quiet', 5, 'Quiet')
+    expect(res.statusCode).toBe(200)
   })
 
-  it('Test3: a blank field stops before saving', async () => {
+  it('Test3: a blank field stops before saving (400)', async () => {
     const res = fakeRes()
-    await reviewsController.updateReview(fakeReq(alice, { params: { reviewId: REVIEW_ID }, body: { title: '', content: 'x', rating: '3' } }), res)
+    await reviewsController.apiUpdateReview(fakeReq(alice, { params: { id: REVIEW_ID }, body: { title: '', content: 'x', rating: '3', noiseLevel: 'Quiet' } }), res)
+    expect(res.statusCode).toBe(400)
     expect(edit).not.toHaveBeenCalled()
-    expect(res.render).toHaveBeenCalledWith('update-review', expect.objectContaining({ msg: 'All fields are required.' }))
   })
 
   it('Test4: another student cannot delete the review (403, nothing deleted)', async () => {
     const res = fakeRes()
-    await reviewsController.deleteAReview(fakeReq(bob, { body: { id: REVIEW_ID } }), res)
+    await reviewsController.apiDeleteReview(fakeReq(bob, { params: { id: REVIEW_ID } }), res)
     expect(res.statusCode).toBe(403)
     expect(del).not.toHaveBeenCalled()
   })
 
   it('Test5: an admin can delete it, and its reports go with it', async () => {
     const res = fakeRes()
-    await reviewsController.deleteAReview(fakeReq(admin, { body: { id: REVIEW_ID } }), res)
+    await reviewsController.apiDeleteReview(fakeReq(admin, { params: { id: REVIEW_ID } }), res)
     expect(del).toHaveBeenCalledWith(REVIEW_ID)
-    expect(res.redirect).toHaveBeenCalledWith('/review-list/SCIS%201/Lounge')
+    expect(res.statusCode).toBe(204)
   })
 })
 
-describe('TestSuite3: legacy favourites and reports enforce ownership', () => {
+describe('TestSuite3: the favourites and reports APIs enforce ownership', () => {
   it('Test1: removing a favourite is limited to the logged-in user', async () => {
     const forUser = vi.spyOn(Favourite, 'removeFavouriteForUser').mockResolvedValue({ deletedCount: 0 })
-    const anyone = vi.spyOn(Favourite, 'removeFavourite').mockResolvedValue({ deletedCount: 1 })
-    await favouritesController.removeFavourite(fakeReq(bob, { query: { favId: FAV_ID } }), fakeRes())
+    const res = fakeRes()
+    await favouritesController.apiRemoveFavourite(fakeReq(bob, { params: { id: FAV_ID } }), res)
     expect(forUser).toHaveBeenCalledWith(FAV_ID, 'bob')
-    expect(anyone).not.toHaveBeenCalled()
+    expect(res.statusCode).toBe(404) // not bob's, so nothing was found to delete
   })
 
+  // Report.findById(...).populate(...) in the controller
+  const reportFound = report => vi.spyOn(Report, 'findById').mockReturnValue({ populate: async () => report })
+
   it('Test2: another student cannot edit a report (403, nothing saved)', async () => {
-    vi.spyOn(Report, 'findById').mockResolvedValue({ _id: REPORT_ID, reportedBy: 'carol', status: 'Pending' })
+    reportFound({ _id: REPORT_ID, reportedBy: 'carol', status: 'Pending' })
     const save = vi.spyOn(Report, 'editReport').mockResolvedValue({})
     const res = fakeRes()
-    await reportController.updateReport(fakeReq(bob, { params: { reportId: REPORT_ID }, body: { reason: 'Spam', description: 'changed' } }), res)
+    await reportController.apiUpdateReport(fakeReq(bob, { params: { id: REPORT_ID }, body: { reason: 'Spam', description: 'changed' } }), res)
     expect(res.statusCode).toBe(403)
     expect(save).not.toHaveBeenCalled()
   })
 
-  it('Test3: a report an admin already approved cannot be edited, even by its reporter', async () => {
-    vi.spyOn(Report, 'findById').mockResolvedValue({ _id: REPORT_ID, reportedBy: 'bob', status: 'Approved' })
+  it('Test3: a report an admin already reviewed cannot be edited, even by its reporter (409)', async () => {
+    reportFound({ _id: REPORT_ID, reportedBy: 'bob', status: 'Approved' })
     const save = vi.spyOn(Report, 'editReport').mockResolvedValue({})
     const res = fakeRes()
-    await reportController.updateReport(fakeReq(bob, { params: { reportId: REPORT_ID }, body: { reason: 'Spam', description: 'changed' } }), res)
-    expect(res.statusCode).toBe(403)
+    await reportController.apiUpdateReport(fakeReq(bob, { params: { id: REPORT_ID }, body: { reason: 'Spam', description: 'changed' } }), res)
+    expect(res.statusCode).toBe(409)
     expect(save).not.toHaveBeenCalled()
   })
 })

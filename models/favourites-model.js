@@ -41,11 +41,6 @@ exports.addFavourite = function(newFavourite) {
     return Favourite.create(newFavourite);
 };
 
-// Delete by id. Does not check the owner, so only the legacy routes use it.
-// DELETE - remove a favourite by its _id
-exports.removeFavourite = function(favId) {
-    return Favourite.deleteOne({ _id: favId });
-};
 // Delete by id and owner, so one student cannot remove another student's favourite. The JSON API uses this one.
 // DELETE - remove a favourite only if it belongs to this user (used by the JSON API)
 exports.removeFavouriteForUser = function(favId, userName) {
