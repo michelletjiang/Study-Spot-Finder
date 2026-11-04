@@ -105,7 +105,9 @@ function compare() { if (comparison.canCompare) router.push({ path: '/compare', 
 }
 .tab-icon { width: 16px; height: 14px; flex: none; vertical-align: middle; }
 
+/* The tray and its light slots keep the original dark ink above Bootstrap card defaults. */
 .tray {
+  color: #28263f;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -124,6 +126,7 @@ function compare() { if (comparison.canCompare) router.push({ path: '/compare', 
 
 .slots { display: flex; flex: 1 1 460px; gap: 10px; min-width: 0; margin: 0; padding: 0; list-style: none; }
 .slot {
+  color: #28263f;
   display: flex;
   flex: 1 1 0;
   align-items: center;
