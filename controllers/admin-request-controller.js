@@ -1,73 +1,8 @@
-// MIXED file: requestAdmin and processRequest (lines 4 to 51) are LEGACY EJS handlers used by routes/admin-request-routes.js. The "JSON API" section below is ACTIVE.
+// JSON API for requests to become an admin, used by routes/api/admin-requests-routes.js.
 // The model for admin requests.
 const AdminRequest = require('../models/admin-request-model');
 // The user model, to change a user's role.
 const User = require('../models/user-model');
-
-// LEGACY - not used by the Vue demo: a student asks to become admin, then is redirected to the old profile page.
-exports.requestAdmin = async (req, res) => {
-    try {
-        // The session user was saved at login.
-        const userId = req.session.user.id;
-        const username = req.session.user.username;
-
-        // Don't create a duplicate pending request
-        // Look for an existing Pending request.
-        const existing = await AdminRequest.findOne({ userId, status: 'Pending' });
-        // Already pending: do nothing.
-        if (existing) {
-            return res.redirect('/profile');
-        }
-
-        // Build the request document.
-        const newRequest = {
-            userId: userId,
-            username: username,
-            status: 'Pending'
-        };
-        console.log(newRequest);
-        // Save it.
-        await AdminRequest.addRequest(newRequest);
-        // Redirect to the legacy profile page.
-        res.redirect('/profile');
-    } catch (error) {
-        // Errors become a plain-text message.
-        console.log(error);
-        res.send("Error submitting admin request");
-    }
-};
-
-// LEGACY - not used by the Vue demo: admin approves or denies a request from an HTML form.
-exports.processRequest = async (req, res) => {
-    try {
-        // The hidden form field has the request id.
-        const requestId = req.body.requestId;
-        // The action is the button pressed.
-        const action = req.body.action;
-        // Load the request.
-        const adminRequest = await AdminRequest.findById(requestId);
-
-        // Missing request: plain-text message.
-        if (!adminRequest) {
-            return res.send("Request not found");
-        }
-
-        // Approve: mark the request and give the user the Admin role.
-        if (action == 'approve') {
-            await AdminRequest.updateRequestStatus(requestId, 'Approved');
-            await User.findByIdAndUpdate(adminRequest.userId, { role: 'Admin' });
-        // Deny: only mark the request.
-        } else if (action == 'deny') {
-            await AdminRequest.updateRequestStatus(requestId, 'Denied');
-        }
-
-        // Redirect back to the legacy admin profile.
-        res.redirect('/admin-profile');
-    } catch (error) {
-        console.log(error);
-        res.send("Error processing admin request");
-    }
-};
 
 // ACTIVE: JSON handlers used by routes/api/admin-requests-routes.js.
 // ---------- JSON API (used by Vue) ----------

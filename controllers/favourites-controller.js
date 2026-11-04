@@ -1,69 +1,7 @@
-// MIXED file: lines 1 to 51 are LEGACY EJS handlers used only by routes/favourites-routes.js. The "JSON API" section from line 52 is ACTIVE and used by routes/api/favourites-routes.js.
+// JSON API for saved spots, used by routes/api/favourites-routes.js.
 // The favourites model reads and writes saved spots.
 const Favourite = require('../models/favourites-model');
- 
-// LEGACY - not used by the Vue demo: renders the old favourites page.
-// READ MANY - show all favourites for the logged-in user
-exports.showFavourites = async (req, res) => {
-    try {
-        // The logged-in user's name from the session.
-        const userName = req.session.user.username;
-        // Fetch that user's favourites.
-        const favourites = await Favourite.getAll(userName);
-        // Render views/favourites.ejs.
-        res.render('favourites', { favourites });
-    } catch (error) {
-        console.error('Error loading favourites:', error);
-        res.send('Error loading favourites');
-    }
-};
- 
-// LEGACY - not used by the Vue demo: adds a favourite from a link's query string.
-// CREATE - add a study spot to favourites (GET request, no redirect to favourites page)
-exports.addFavourite = async (req, res) => {
-    try {
-        // Read the spot details from the query string. The server trusts the link, which the JSON version avoids.
-        const userName       = req.session.user.username;
-        const spotName       = req.query.spotName;
-        const buildingName   = req.query.buildingName;
-        const floor          = req.query.floor;
-        const seatCount      = req.query.seatCount;
-        const hasPowerSocket = req.query.hasPowerSocket === 'true';
-        const noiseLevel     = req.query.noiseLevel;
- 
-        // Existing: avoid saving the same spot twice.
-        // prevent duplicates for this user
-        const existing = await Favourite.findByUserAndSpotAndBuilding(userName, spotName, buildingName);
-        // Only add when none exists.
-        if (!existing) {
-            await Favourite.addFavourite({ userName, spotName, buildingName, floor, seatCount, hasPowerSocket, noiseLevel });
-        }
- 
-        // go back to the building page instead of redirecting to favourites
-        // Redirect to the old building page.
-        res.redirect('/building/' + buildingName);
-    } catch (error) {
-        console.error('Error adding favourite:', error);
-        res.send('Error adding favourite');
-    }
-};
- 
- 
-// LEGACY - not used by the Vue demo: removes a favourite from a link.
-// DELETE - remove a favourite from the favourites page
-exports.removeFavourite = async (req, res) => {
-    try {
-        // The favourite id from the query string.
-        const favId = req.query.favId;
-        // Delete only if this favourite belongs to the logged-in user (same rule as the JSON API).
-        await Favourite.removeFavouriteForUser(favId, req.session.user.username);
-        // Redirect to the legacy favourites page.
-        res.redirect('/favourites');
-    } catch (error) {
-        console.error('Error removing favourite:', error);
-        res.redirect('/favourites');
-    }
-};
+
 // ACTIVE: JSON API used by the Vue client (client/src/stores/favourites.js and FavouriteButton.vue).
 // ---------- JSON API (used by Vue) ----------
 
