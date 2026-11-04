@@ -38,3 +38,12 @@ test('native controls and text stay light and readable under dark OS preference'
   assert.ok(contrast(light['text-h'], light.paper) >= 4.5, 'light heading must meet WCAG AA')
   assert.ok(contrast(light.ink, light.bg) >= 4.5, 'light card copy must meet WCAG AA')
 })
+
+test('comparison surfaces keep night-theme text readable', () => {
+  const nightMatch = css.match(/^:root\[data-theme='night'\]\s*{([\s\S]*?)\n}/m)
+  assert.ok(nightMatch, 'night theme variables must exist')
+  const night = variables(nightMatch[1])
+  assert.ok(contrast(night['nb-ink'], night['nb-compare-night-manila']) >= 4.5, 'night comparison folder copy must meet WCAG AA')
+  assert.ok(contrast(night['nb-ink'], night['nb-compare-night-blue']) >= 4.5, 'night winner summary copy must meet WCAG AA')
+  assert.ok(contrast(night['nb-ink'], night['nb-card']) >= 4.5, 'night tray slot copy must meet WCAG AA')
+})
