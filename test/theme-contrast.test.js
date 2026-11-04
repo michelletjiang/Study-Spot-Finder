@@ -38,3 +38,15 @@ test('native controls and text stay light and readable under dark OS preference'
   assert.ok(contrast(light['text-h'], light.paper) >= 4.5, 'light heading must meet WCAG AA')
   assert.ok(contrast(light.ink, light.bg) >= 4.5, 'light card copy must meet WCAG AA')
 })
+
+test('comparison keeps the original dark-ink treatment on light surfaces', () => {
+  const compare = fs.readFileSync('client/src/views/CompareView.vue', 'utf8')
+  const tray = fs.readFileSync('client/src/components/CompareTray.vue', 'utf8')
+  assert.match(compare, /winner-summary[^\n]*color: #28263f/)
+  assert.match(compare, /spot-head h2 \{ color: #28263f/)
+  assert.match(compare, /comparison-row:not\(.is-live\) \{ background: rgba\(40, 38, 63, 0\.025\)/)
+  assert.match(tray, /\.compare-tray \{[\s\S]*?color: #28263f;/)
+  assert.ok(contrast('#28263f', '#dcc58f') >= 4.5, 'comparison header ink must meet WCAG AA in both themes')
+  assert.ok(contrast('#28263f', '#c5d3e4') >= 4.5, 'winner strip ink must meet WCAG AA in both themes')
+  assert.ok(contrast('#28263f', '#ecd27e') >= 4.5, 'best badge ink must meet WCAG AA in both themes')
+})

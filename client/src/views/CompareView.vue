@@ -116,7 +116,7 @@ const rows = computed(() => {
       if (pattern.total < MIN_FOR_SUMMARY) return { text: 'Not enough check-ins' }
       // null means nobody has checked in at this hour in the last 8 weeks
       const taken = pattern.days[now.day][now.hour]?.taken ?? 0
-      return { text: `${percent(taken)} full`, sort: taken, progress: Math.round(taken * 100) }
+      return { text: `${percent(taken)} full`, sort: taken, progress: Math.max(0, Math.min(100, Math.round(taken * 100))) }
     }),
   }
   const at = hourLabel(now.hour)
@@ -259,7 +259,8 @@ const suggestion = computed(() => {
 .same-toggle .nb-btn.is-active { border-style: solid; background: var(--nb-highlight); }
 .nb-state { margin-bottom: 20px; }
 /* The summary uses Bootstrap alert semantics but keeps the notebook's paper and ink colours. */
-.winner-summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; max-width: 1240px; margin: 0 auto 20px; border: 2px solid var(--nb-ink); background: var(--nb-note-blue); color: var(--nb-ink); }
+/* The light note-blue winner strip uses the original dark ink in both themes. */
+.winner-summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; max-width: 1240px; margin: 0 auto 20px; border: 2px solid var(--nb-ink); background: var(--nb-note-blue); color: #28263f; }
 .winner-item { font-weight: 700; }
 /* Small progress bars add a visual scale to seat capacity and live occupancy without replacing the text. */
 .spot-grid { max-width: 1240px; margin-inline: auto; }
@@ -270,17 +271,22 @@ const suggestion = computed(() => {
 .spot-card { overflow: hidden; border: 2px solid var(--nb-ink); border-radius: 10px; background: var(--nb-card); box-shadow: 6px 6px 0 var(--nb-shadow); color: var(--nb-ink); }
 .spot-card-header { border-bottom: 2px solid var(--nb-ink); background: var(--nb-manila-dark); }
 .spot-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.spot-head h2 { color: var(--nb-ink); font: 700 1.8rem/1.1 var(--nb-heading); overflow-wrap: anywhere; }
-.where { margin: 4px 0 8px; color: var(--nb-ink); font-size: .92rem; }
-.view { color: var(--nb-ink); font-weight: 700; text-underline-offset: 3px; }
+/* Light folder headers retain the dark ink used by the original comparison table in both themes. */
+.spot-head h2 { color: #28263f; font: 700 1.8rem/1.1 var(--nb-heading); overflow-wrap: anywhere; }
+.where { margin: 4px 0 8px; color: #28263f; font-size: .92rem; }
+.view { color: #28263f; font-weight: 700; text-underline-offset: 3px; }
 .comparison-list { margin: 0; }
 .comparison-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 58px; padding: 10px 0; border-bottom: 1.5px dashed var(--nb-rule); }
 .comparison-row:last-child { border-bottom: 0; }
 .comparison-row dt { min-width: 0; font-weight: 700; }
 .comparison-row dt small { display: block; color: var(--nb-muted); font-size: .78rem; font-weight: 400; line-height: 1.2; }
 .comparison-row dd { flex: 0 1 auto; margin: 0; text-align: right; }
+/* Catalogue rows retain the subdued tint and muted values from the original comparison table. */
+.comparison-row:not(.is-live) { background: rgba(40, 38, 63, 0.025); }
+.comparison-row:not(.is-live) dd { color: var(--nb-muted); }
 .comparison-row.is-live dd { font-weight: 600; }
-.best-badge { margin-left: 8px; border: 1px solid var(--nb-ink); background: var(--nb-highlight); color: var(--nb-ink); }
+/* Best badges sit on the light highlight, so they use the same dark ink as other light surfaces. */
+.best-badge { margin-left: 8px; border: 1px solid #28263f; background: var(--nb-highlight); color: #28263f; }
 .suggestion { max-width: 560px; margin: 40px 0 0 4px; transform: rotate(-1deg); }
 .compare-card-enter-active, .compare-card-leave-active { transition: opacity .2s ease, transform .2s ease; }
 .compare-card-enter-from, .compare-card-leave-to { opacity: 0; transform: translateY(8px); }
