@@ -123,7 +123,7 @@ onUnmounted(() => clearInterval(timer))
 .home {
   padding: 8px 24px 40px 48px; /* left padding clears the notebook's pink margin line */
   text-align: left;
-  color: #28263f;
+  color: var(--nb-ink);
 }
 
 .top {
@@ -139,11 +139,11 @@ h1 {
   margin: 28px 0 6px;
   font: 700 clamp(2.4rem, 5vw, 3.6rem)/1.1 Georgia, 'Times New Roman', serif;
   letter-spacing: -0.5px;
-  color: #28263f;
+  color: var(--nb-ink);
 }
 
 .intro {
-  color: #6b6880;
+  color: var(--nb-muted);
 }
 
 /* drawn like the folders: ink outline, hard shadow, highlighter yellow */
@@ -207,9 +207,9 @@ h1 {
   height: calc(100vh - 240px); /* short enough that its route panel is on screen without scrolling */
   min-height: 420px;
   max-height: 720px;
-  border: 2px solid #28263f;
+  border: 2px solid var(--nb-ink);
   border-radius: 14px;
-  box-shadow: 6px 6px 0 #28263f;
+  box-shadow: 6px 6px 0 var(--nb-shadow);
   overflow: hidden;
 }
 
@@ -218,6 +218,7 @@ h1 {
   border: 2px dashed #28263f;
   border-radius: 10px;
   background: #fffdf7;
+  color: #28263f;
 }
 .state.error {
   border-style: solid;

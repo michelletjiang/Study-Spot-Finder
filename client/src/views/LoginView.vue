@@ -112,7 +112,7 @@ async function login() {
   gap: 24px;
   max-width: 480px;
   margin-bottom: 26px;
-  color: #28263f;
+  color: var(--nb-ink);
 }
 /* the folder stretches to the room card's height: its front grows to fill it */
 .mini-folder { position: relative; display: flex; flex-direction: column; padding-top: 26px; }
@@ -123,7 +123,7 @@ async function login() {
   background: var(--nb-manila-dark);
   border: 2px solid #28263f;
   border-radius: 4px 10px 10px 10px;
-  box-shadow: 5px 5px 0 var(--nb-ink);
+  box-shadow: 5px 5px 0 var(--nb-shadow);
 }
 .mini-paper {
   position: absolute;
@@ -160,7 +160,8 @@ async function login() {
   background: var(--nb-manila);
   border: 2px solid #28263f;
   border-radius: 4px 4px 10px 10px;
-  box-shadow: 5px 5px 0 var(--nb-ink);
+  box-shadow: 5px 5px 0 var(--nb-shadow);
+  color: #28263f; /* light paper, so dark text in the night theme too */
 }
 .mini-front strong { font: 700 1.4rem/1.1 var(--nb-heading); }
 .mini-front small { color: #5e5a73; }
@@ -173,8 +174,9 @@ async function login() {
   padding: 12px 14px;
   background: #fffef9;
   border: 2px solid #28263f;
-  box-shadow: 5px 5px 0 var(--nb-ink);
+  box-shadow: 5px 5px 0 var(--nb-shadow);
   transform: rotate(1.5deg);
+  color: #28263f; /* light paper, so dark text in the night theme too */
 }
 .mini-card .nb-tape { width: 46px; height: 14px; margin-left: 0; left: auto; right: 22px; top: -8px; }
 .mini-card strong { font: 700 1.35rem/1.1 var(--nb-heading); padding-bottom: 4px; border-bottom: 1.5px solid var(--nb-pink); }

@@ -217,12 +217,13 @@ async function submit() {
   background: var(--nb-input);
   cursor: pointer;
 }
-.reason:has(input:checked) { background: var(--nb-highlight); box-shadow: 3px 3px 0 var(--nb-ink); }
+.reason:has(input:checked) { background: var(--nb-highlight); box-shadow: 3px 3px 0 var(--nb-shadow); }
 .reason:has(input:focus-visible) { outline: 3px solid var(--nb-focus); outline-offset: 2px; }
 .reasons:disabled .reason { opacity: 0.6; cursor: default; }
 .reason input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.reason-text { display: grid; gap: 2px; color: #28263f; }
-.reason-text small { color: #4a4660; font-size: 0.82rem; line-height: 1.35; }
+.reason-text { display: grid; gap: 2px; color: var(--nb-ink); }
+.reason-text small { color: var(--nb-muted); font-size: 0.82rem; line-height: 1.35; }
+.reason:has(input:checked) .reason-text, .reason:has(input:checked) small { color: #28263f; }
 .count { justify-self: end; }
 
 .reported { transform: rotate(0.6deg); }

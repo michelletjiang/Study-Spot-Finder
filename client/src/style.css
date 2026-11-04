@@ -42,6 +42,8 @@
 /* The page body paints the notebook look with the paper colour and two background layers: a vertical pink margin line and repeating horizontal blue lines. */
 body {
   margin: 0;
+  /* day and night fade into each other */
+  transition: background-color 0.8s ease, color 0.8s ease;
   background-color: var(--paper);
   background-image:
     linear-gradient(
@@ -125,6 +127,12 @@ p {
   box-sizing: border-box;
 }
 
+/* The doodles (Doodles.vue) are the first thing in #app; everything after them sits above, so on narrow screens they
+   peek out from behind the page. :where() keeps these rules weaker than any component's own position (e.g. the
+   sticky compare tray). The menu bar sits above the page, so its Admin dropdown isn't covered. */
+:where(#app > :not(.doodles)) { position: relative; z-index: 1; }
+:where(#app > .navbar) { z-index: 2; }
+
 /* ==========================================================================
    Notebook look: ink outlines, hard shadows, yellow highlighter, sticky notes and tape.
    Pages keep their own layout in their scoped <style>; anything used on
@@ -133,6 +141,7 @@ p {
 
 :root {
   --nb-ink: #28263f;
+  --nb-shadow: #28263f;      /* the hard shadow under cards and buttons (stays dark at night, unlike the ink) */
   --nb-muted: #6b6880;
   --nb-paper: #fbf7ed;       /* soft panels inside a card */
   --nb-card: #fffdf7;        /* cards, tabs, chips */
@@ -155,6 +164,40 @@ p {
   --nb-seats-some: #f5d34a;
   --nb-seats-few: #ec8a35;
   --nb-seats-full: #e0606a;
+}
+
+/* ---------- night ---------- */
+/* After 7pm in Singapore (or when a student picks Night) the page turns into a notebook at night: soft dark paper and
+   off-white ink, kept gentle on the eyes (not black and white). The sticky notes, highlighter and folders are dimmed a
+   little but stay light, so their dark text stays readable, and shadows stay dark instead of turning into white edges.
+   It's switched by stores/daynight.js, never by the computer's own dark mode. */
+:root[data-theme='night'] {
+  color-scheme: dark;
+  --paper: #2b2a3f;
+  --ink: #dedaea;
+  --line: #34334b;
+  --pink: #6e4a58;
+  --bg: #302f46;
+  --text: #b9b4cb;
+  --text-h: #ece9f5;
+  --border: #3d3c55;
+  --nb-ink: #dedaea;
+  --nb-shadow: #17162a;
+  --nb-muted: #aaa5bf;
+  --nb-paper: #33324a;
+  --nb-card: #34334b;
+  --nb-sheet: #313048;
+  --nb-input: #383750;
+  --nb-rule: #535170;
+  --nb-rule-light: #44435e;
+  --nb-error: #ff9aa3;
+  --nb-focus: #b8aefc;
+  --nb-highlight: #ecd27e;
+  --nb-note: #e6d08a;
+  --nb-note-pink: #e9c3c8;
+  --nb-note-blue: #c5d3e4;
+  --nb-manila: #e5d4ac;
+  --nb-manila-dark: #dcc58f;
 }
 
 /* ---------- buttons ---------- */
@@ -182,10 +225,10 @@ p {
 .nb-btn--primary {
   background: var(--nb-highlight);
   color: #28263f;
-  box-shadow: 4px 4px 0 var(--nb-ink);
+  box-shadow: 4px 4px 0 var(--nb-shadow);
   transition: transform 0.1s, box-shadow 0.1s;
 }
-.nb-btn--primary:hover:not(:disabled) { color: #28263f; transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--nb-ink); }
+.nb-btn--primary:hover:not(:disabled) { color: #28263f; transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--nb-shadow); }
 
 /* small buttons on sticky notes, which stay light in dark mode */
 .nb-btn--small { padding: 3px 12px; font-size: 0.88rem; border-color: #28263f; background: #fffef9; color: #28263f; }
@@ -200,7 +243,7 @@ p {
   padding: 22px 24px 20px;
   background: var(--nb-note);
   border: 2px solid #28263f;
-  box-shadow: 5px 5px 0 var(--nb-ink);
+  box-shadow: 5px 5px 0 var(--nb-shadow);
   color: #28263f; /* the note stays light in dark mode, so its text stays dark */
   transform: rotate(1deg);
 }
@@ -266,6 +309,8 @@ p {
   background: linear-gradient(transparent 52%, var(--nb-highlight) 52%, var(--nb-highlight) 90%, transparent 90%);
   color: inherit;
 }
+/* at night light text can't sit on half a yellow stroke, so the whole word is highlighted, in dark ink */
+:root[data-theme='night'] .nb-mark { padding: 0 0.2em; border-radius: 3px; background: var(--nb-highlight); color: #28263f; }
 
 /* ---------- form fields ---------- */
 /* <div class="nb-field"><label>…</label><input class="nb-input"><small class="nb-hint">…</small></div> */
@@ -333,7 +378,7 @@ p {
   background: var(--nb-sheet);
   border: 2px solid var(--nb-ink);
   border-radius: 3px;
-  box-shadow: 6px 6px 0 var(--nb-ink);
+  box-shadow: 6px 6px 0 var(--nb-shadow);
 }
 
 /* small rounded labels: "30 seats", "Power sockets", noise levels */
@@ -389,7 +434,7 @@ p {
   background: var(--nb-manila-dark);
   border: 2px solid #28263f;
   border-radius: 4px 12px 12px 12px;
-  box-shadow: 6px 6px 0 var(--nb-ink);
+  box-shadow: 6px 6px 0 var(--nb-shadow);
 }
 .nb-folder::after {
   content: '';
@@ -435,7 +480,7 @@ p {
   background: var(--nb-manila);
   border: 2px solid #28263f;
   border-radius: 4px 4px 12px 12px;
-  box-shadow: 6px 6px 0 var(--nb-ink);
+  box-shadow: 6px 6px 0 var(--nb-shadow);
 }
 .nb-folder:hover .nb-folder-paper, .nb-folder:focus-within .nb-folder-paper { transform: translateY(-14px) rotate(-1.5deg); }
 
@@ -446,7 +491,7 @@ p {
   background: var(--nb-sheet);
   border: 2px solid var(--nb-ink);
   border-radius: 6px;
-  box-shadow: 6px 6px 0 var(--nb-ink);
+  box-shadow: 6px 6px 0 var(--nb-shadow);
 }
 .nb-table { width: 100%; border-collapse: collapse; color: var(--nb-ink); }
 .nb-table th {

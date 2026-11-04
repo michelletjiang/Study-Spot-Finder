@@ -111,7 +111,7 @@ function compare() { if (comparison.canCompare) router.push({ path: '/compare', 
   border: 2px solid #28263f;
   border-radius: 0 10px 10px 10px;
   background: var(--nb-manila-dark);
-  box-shadow: 6px 6px 0 var(--nb-ink);
+  box-shadow: 6px 6px 0 var(--nb-shadow);
 }
 
 .summary { flex: none; width: 185px; }

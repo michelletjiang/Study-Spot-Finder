@@ -41,7 +41,7 @@ defineProps({ title: { type: String, required: true } })
   background: var(--nb-sheet);
   border: 2px solid var(--nb-ink);
   border-radius: 3px;
-  box-shadow: 7px 7px 0 var(--nb-ink);
+  box-shadow: 7px 7px 0 var(--nb-shadow);
   transform: rotate(-0.5deg);
 }
 h1 {

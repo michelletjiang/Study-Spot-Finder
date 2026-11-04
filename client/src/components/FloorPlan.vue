@@ -279,7 +279,7 @@ polygon.tone-heat.alerted { stroke: var(--nb-error); stroke-width: 4; stroke-das
   border-radius: 8px;
   background: var(--nb-card);
   color: var(--nb-ink);
-  box-shadow: 4px 4px 0 var(--nb-ink);
+  box-shadow: 4px 4px 0 var(--nb-shadow);
   font-size: 0.9em;
   white-space: nowrap;
   pointer-events: none; /* so it never blocks the room underneath */

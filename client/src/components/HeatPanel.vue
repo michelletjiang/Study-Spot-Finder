@@ -56,7 +56,7 @@ const quietest = computed(() => props.spots
 
 <template>
   <aside class="heat-panel" aria-label="Noise reports">
-    <section v-if="spot" class="card" aria-live="polite">
+    <section v-if="spot" class="heat-card" aria-live="polite">
       <header>
         <h2>{{ spot.name }}</h2>
         <button type="button" class="close" aria-label="Close room details" @click="emit('close')">✕</button>
@@ -81,7 +81,7 @@ const quietest = computed(() => props.spots
       <button type="button" class="more" @click="emit('details')">Check in, seats and reviews →</button>
     </section>
 
-    <section class="card">
+    <section class="heat-card">
       <h2>Quiet right now</h2>
       <ol v-if="quietest.length" class="quiet">
         <li v-for="room in quietest" :key="room._id">
@@ -114,7 +114,7 @@ const quietest = computed(() => props.spots
 <style scoped>
 .heat-panel { display: grid; gap: 22px; color: var(--nb-ink); text-align: left; }
 
-.card {
+.heat-card {
   display: grid;
   justify-items: start;
   gap: 10px;
@@ -122,9 +122,9 @@ const quietest = computed(() => props.spots
   background: var(--nb-card);
   border: 2px solid var(--nb-ink);
   border-radius: 4px;
-  box-shadow: 6px 6px 0 var(--nb-ink);
+  box-shadow: 6px 6px 0 var(--nb-shadow);
 }
-.card header { display: flex; justify-content: space-between; gap: 10px; width: 100%; }
+.heat-card header { display: flex; justify-content: space-between; gap: 10px; width: 100%; }
 .alerts { width: 100%; }
 h2 { margin: 0; font: 700 1.8rem/1.1 var(--nb-heading); color: inherit; text-wrap: balance; }
 

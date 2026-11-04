@@ -7,6 +7,8 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap'
 // Load the global stylesheet, including the light and dark theme tokens.
 import './style.css'
+// Day or night from the Singapore time: sets the theme on <html> before the app appears, so it doesn't flash.
+import './stores/daynight'
 // The root component that holds the nav bar, router outlet, compare tray and minimap.
 import App from './App.vue'
 // The router decides which view shows for each URL.

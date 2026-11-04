@@ -147,7 +147,7 @@ legend {
 /* the checkbox itself is hidden; the pill shows its state */
 .chip input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .chip .tick { display: none; }
-.chip.on { border: 2px solid #28263f; background: var(--nb-highlight); color: #28263f; font-weight: 700; box-shadow: 3px 3px 0 var(--nb-ink); }
+.chip.on { border: 2px solid #28263f; background: var(--nb-highlight); color: #28263f; font-weight: 700; box-shadow: 3px 3px 0 var(--nb-shadow); }
 .chip.on .tick { display: inline; }
 .chip.off { opacity: 0.45; cursor: default; }
 .chip:has(input:focus-visible) { outline: 3px solid var(--nb-focus); outline-offset: 2px; }

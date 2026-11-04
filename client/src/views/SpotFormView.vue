@@ -132,7 +132,7 @@ async function save() {
       <!-- a live preview of the room's facts, as on its room page -->
       <aside class="preview" aria-label="How students will see it">
         <p class="nb-preview-label">How students will see it</p>
-        <div class="nb-sheet card" aria-hidden="true">
+        <div class="nb-sheet preview-card" aria-hidden="true">
           <strong class="name">{{ form.name || 'Room name' }}</strong>
           <span class="meta">{{ form.buildingName || 'Building' }} · {{ level }}</span>
           <div class="facts">
@@ -155,7 +155,7 @@ async function save() {
 .choice legend { float: none; margin-bottom: 6px; font-size: 1rem; }
 
 
-.card { display: grid; gap: 4px; margin-bottom: 14px; padding: 18px 20px 20px; }
+.preview-card { display: grid; gap: 4px; margin-bottom: 14px; padding: 18px 20px 20px; }
 .name { font: 700 2rem/1.1 var(--nb-heading); overflow-wrap: anywhere; }
 .meta { color: var(--nb-muted); font-size: 0.92rem; }
 .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
