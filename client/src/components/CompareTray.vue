@@ -80,7 +80,7 @@ function compare() { if (comparison.canCompare) router.push({ path: '/compare', 
 
 <style scoped>
 .compare-tray {
-  position: sticky;
+  position: fixed;
   bottom: 12px;
   z-index: 20;
   width: min(100% - 32px, 760px);
