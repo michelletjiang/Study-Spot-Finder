@@ -91,9 +91,11 @@ function bestIndex(values, higherIsBetter) {
 // Each cell is { text, tag?, dot?, sort? }; sort is the number compared for "best".
 const rows = computed(() => {
   const list = spots.value
+  // Meters are relative to this comparison, so the largest capacity is always the full bar.
+  const largestSeatCount = Math.max(1, ...list.map(s => s.seatCount))
   const cells = {
     where: list.map(s => ({ text: `${s.buildingName}, ${levelLabel(s.floor)}` })),
-    seats: list.map(s => ({ text: `${s.seatCount} seats`, progress: Math.min(100, s.seatCount * 10) })),
+    seats: list.map(s => ({ text: `${s.seatCount} seats`, progress: Math.round(s.seatCount / largestSeatCount * 100) })),
     power: list.map(s => ({ text: s.hasPowerSocket ? 'Available' : 'Not available' })),
     noise: list.map(s => (s.noiseLevel ? { text: s.noiseLevel, tag: s.noiseLevel.toLowerCase() } : { text: 'Not set' })),
     rating: list.map(s => {
@@ -106,7 +108,7 @@ const rows = computed(() => {
       if (!checkedIn.value) return { text: liveError.value ? '–' : '…' }
       const people = checkedIn.value[s._id] || 0
       const free = Math.max(0, s.seatCount - people)
-      return { text: `~${free} of ${s.seatCount} free`, dot: seatsLevel(people, s.seatCount), sort: free, progress: s.seatCount ? Math.round(free / s.seatCount * 100) : 0 }
+      return { text: `~${free} of ${s.seatCount} free`, dot: seatsLevel(people, s.seatCount), sort: free, progress: Math.round(free / largestSeatCount * 100) }
     }),
     crowd: list.map(s => {
       const pattern = patternsById.value[s._id]
