@@ -116,7 +116,7 @@ const rows = computed(() => {
       if (pattern.total < MIN_FOR_SUMMARY) return { text: 'Not enough check-ins' }
       // null means nobody has checked in at this hour in the last 8 weeks
       const taken = pattern.days[now.day][now.hour]?.taken ?? 0
-      return { text: `${percent(taken)} full`, sort: taken, progress: Math.round(taken * 100) }
+      return { text: `${percent(taken)} full`, sort: taken, progress: Math.max(0, Math.min(100, Math.round(taken * 100))) }
     }),
   }
   const at = hourLabel(now.hour)
@@ -285,7 +285,8 @@ const suggestion = computed(() => {
 .comparison-row:not(.is-live) { background: rgba(40, 38, 63, 0.025); }
 .comparison-row:not(.is-live) dd { color: var(--nb-muted); }
 .comparison-row.is-live dd { font-weight: 600; }
-.best-badge { margin-left: 8px; border: 1px solid var(--nb-ink); background: var(--nb-highlight); color: var(--nb-ink); }
+/* Best badges sit on the light highlight, so they use the same dark ink as other light surfaces. */
+.best-badge { margin-left: 8px; border: 1px solid #28263f; background: var(--nb-highlight); color: #28263f; }
 .suggestion { max-width: 560px; margin: 40px 0 0 4px; transform: rotate(-1deg); }
 .compare-card-enter-active, .compare-card-leave-active { transition: opacity .2s ease, transform .2s ease; }
 .compare-card-enter-from, .compare-card-leave-to { opacity: 0; transform: translateY(8px); }

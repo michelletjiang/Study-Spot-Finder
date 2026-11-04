@@ -48,4 +48,5 @@ test('comparison keeps the original dark-ink treatment on light surfaces', () =>
   assert.match(tray, /\.compare-tray \{[\s\S]*?color: #28263f;/)
   assert.ok(contrast('#28263f', '#dcc58f') >= 4.5, 'comparison header ink must meet WCAG AA in both themes')
   assert.ok(contrast('#28263f', '#c5d3e4') >= 4.5, 'winner strip ink must meet WCAG AA in both themes')
+  assert.ok(contrast('#28263f', '#ecd27e') >= 4.5, 'best badge ink must meet WCAG AA in both themes')
 })
