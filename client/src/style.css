@@ -76,6 +76,8 @@ body {
 }
 /* All buttons show a pointer cursor. */
 button { cursor: pointer; }
+/* Reserve room for the fixed comparison tray so the last room action remains reachable on phones and desktops. */
+body:has(.compare-tray) { padding-bottom: 220px; }
 /* A clear outline for keyboard users. */
 button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 /* Small spacing for secondary buttons such as Compare on the spot list. */

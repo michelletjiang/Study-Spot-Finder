@@ -82,8 +82,10 @@ function compare() { if (comparison.canCompare) router.push({ path: '/compare', 
 .compare-tray {
   position: fixed;
   bottom: 12px;
+  left: 50%;
   z-index: 20;
   width: min(100% - 32px, 760px);
+  transform: translateX(-50%);
   margin: 16px auto 0;
   color: #28263f;
   text-align: left;
@@ -126,7 +128,7 @@ function compare() { if (comparison.canCompare) router.push({ path: '/compare', 
 /* On phones the compact bar stays in flow and the expanded spots stack without sideways scrolling. */
 @media (prefers-reduced-motion: reduce) { .tray-slot-enter-active, .tray-slot-leave-active, .tray-details-enter-active, .tray-details-leave-active { transition: none; } }
 @media (max-width: 650px) {
-  .compare-tray { position: relative; bottom: 0; width: calc(100% - 24px); }
+  .compare-tray { width: calc(100% - 24px); }
   .summary { flex-basis: 100%; }
   .compact-actions { width: 100%; justify-content: flex-end; }
   .slots { flex-direction: column; }
