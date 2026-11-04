@@ -3,7 +3,7 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useBuildingSpots } from '../buildingSpots'
 import { normalizeFloor, floorLabel } from '../floors'
-import { findFloorplan } from '../floorplans'
+import { findFloorplan, sectionOf } from '../floorplans'
 import FavouriteButton from '../components/FavouriteButton.vue'
 import FloorPlan from '../components/FloorPlan.vue'
 import SpotReviewSummary from '../components/SpotReviewSummary.vue'
@@ -15,7 +15,8 @@ const buildingName = computed(() => route.params.name)
 const floor = computed(() => normalizeFloor(route.params.floor || ''))
 const { spots, loading, error } = useBuildingSpots(buildingName)
 
-const floorSpots = computed(() => spots.value.filter(s => normalizeFloor(s.floor) === floor.value))
+// the building's own floor only: a library inside it (KGC) has its own tab on the building page
+const floorSpots = computed(() => spots.value.filter(s => normalizeFloor(s.floor) === floor.value && !sectionOf(buildingName.value, s.name)))
 const floorplan = computed(() => findFloorplan(buildingName.value, floor.value))
 
 // floorplan mode: the selected spot is highlighted on the plan and its card shows rating + latest reviews

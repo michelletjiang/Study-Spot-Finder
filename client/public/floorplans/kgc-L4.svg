@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 900" width="600" height="900" id="level-4" role="img" aria-label="Library level 4 floor plan">
+<defs>
+  <pattern id="stairHatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+    <rect width="7" height="7" fill="#efece6"/><line x1="0" y1="0" x2="0" y2="7" stroke="#9a948a" stroke-width="2"/>
+  </pattern>
+  <clipPath id="l4-clip"><path transform="rotate(-20 308 310)" d="M58,310 a250,295 0 1,0 500,0 a250,295 0 1,0 -500,0 Z"/></clipPath>
+</defs>
+<style>
+  .floor{fill:#faf7f2;stroke:#3a3a3a;stroke-width:3}
+  .outline{fill:none;stroke:#3a3a3a;stroke-width:3;pointer-events:none}
+  .fins{fill:none;stroke:#c4bdb1;stroke-width:9;stroke-dasharray:2 8}
+  .zone{cursor:pointer;transition:opacity .15s}
+  .zone:hover{opacity:.7}
+  .quiet{fill:#cfe8d5;stroke:#5c9a6c;stroke-width:1.5}
+  .project{fill:#d6e4f7;stroke:#4f78b0;stroke-width:1.5}
+  .amenity{fill:#f6e6c8;stroke:#c08a3e;stroke-width:1.5}
+  .terrace{fill:#f4d9c6;stroke:#c0764a;stroke-width:1.5}
+  .service{fill:#e2dfda;stroke:#8c867d;stroke-width:1.5}
+  .void{fill:#ffffff;stroke:#8c867d;stroke-width:1.5;stroke-dasharray:6 4}
+  .stairs{fill:url(#stairHatch);stroke:#3a3a3a;stroke-width:2}
+  .wall{fill:none;stroke:#3a3a3a;stroke-width:2.5;stroke-linecap:round}
+  .label{font:600 14px system-ui,-apple-system,"Segoe UI",sans-serif;fill:#2b2b2b;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
+  .num{font-size:15px;font-weight:700}
+  .small{font-size:11px;font-weight:500;fill:#5d5850}
+  .title{font:700 24px system-ui,-apple-system,"Segoe UI",sans-serif;fill:#2b2b2b;text-anchor:end}
+</style>
+<polygon class="floor" points="140,497 25,565 25,880 390,880 440,640 360,622"/>
+<path class="floor" transform="rotate(-20 308 310)" d="M58,310 a250,295 0 1,0 500,0 a250,295 0 1,0 -500,0 Z"/>
+<ellipse class="fins" transform="rotate(-20 308 310)" cx="308" cy="310" rx="258" ry="303"/>
+<g id="l4-quiet-area" class="zone quiet" data-name="Quiet Area"><path transform="rotate(-20 308 310)" fill-rule="evenodd" d="M58,310 a250,295 0 1,0 500,0 a250,295 0 1,0 -500,0 Z M257,320 a65,115 0 1,0 130,0 a65,115 0 1,0 -130,0 Z"/></g>
+<path class="void" transform="rotate(-20 308 310)" d="M257,320 a65,115 0 1,0 130,0 a65,115 0 1,0 -130,0 Z"/>
+<g id="l4-wc" class="zone service" data-name="Toilets / Services"><polygon points="68,352 205,322 245,398 140,485"/></g>
+<g id="l4-graduate-lounge" class="zone amenity" data-name="Graduate Lounge"><path d="M212,498 Q290,488 364,520 L360,572 Q290,550 222,542 Z"/></g>
+<g id="l4-project-room-10" class="zone project" data-name="Project Room 10"><polygon points="25,565 100,565 100,613 25,613"/></g>
+<text class="label num" x="62" y="589.0">10</text>
+<g id="l4-project-room-9" class="zone project" data-name="Project Room 9"><polygon points="25,613 100,613 100,661 25,661"/></g>
+<text class="label num" x="62" y="637.0">9</text>
+<g id="l4-project-room-8" class="zone project" data-name="Project Room 8"><polygon points="25,661 100,661 100,709 25,709"/></g>
+<text class="label num" x="62" y="685.0">8</text>
+<g id="l4-project-room-7" class="zone project" data-name="Project Room 7"><polygon points="25,812 80,812 80,880 25,880"/></g>
+<text class="label num" x="52.5" y="846">7</text>
+<g id="l4-project-room-6" class="zone project" data-name="Project Room 6"><polygon points="80,812 132,812 132,880 80,880"/></g>
+<text class="label num" x="106.0" y="846">6</text>
+<g id="l4-project-room-5" class="zone project" data-name="Project Room 5"><polygon points="132,812 180,812 180,880 132,880"/></g>
+<text class="label num" x="156.0" y="846">5</text>
+<g id="l4-project-room-4" class="zone project" data-name="Project Room 4"><polygon points="180,812 232,812 232,880 180,880"/></g>
+<text class="label num" x="206.0" y="846">4</text>
+<g id="l4-project-room-3" class="zone project" data-name="Project Room 3"><polygon points="232,812 280,812 280,880 232,880"/></g>
+<text class="label num" x="256.0" y="846">3</text>
+<g id="l4-project-room-2" class="zone project" data-name="Project Room 2"><polygon points="280,812 328,812 328,880 280,880"/></g>
+<text class="label num" x="304.0" y="846">2</text>
+<g id="l4-project-room-1" class="zone project" data-name="Project Room 1"><polygon points="328,812 380,812 380,880 328,880"/></g>
+<text class="label num" x="354.0" y="846">1</text>
+<g id="l4-project-room-11" class="zone project" data-name="Project Room 11"><polygon points="160,622 212,596 232,674 178,690"/></g>
+<text class="label num" x="196" y="646">11</text>
+<g id="l4-project-room-12" class="zone project" data-name="Project Room 12"><polygon points="212,596 262,590 268,670 232,674"/></g>
+<text class="label num" x="243" y="633">12</text>
+<g id="l4-project-room-13" class="zone project" data-name="Project Room 13"><polygon points="262,590 316,600 304,676 268,670"/></g>
+<text class="label num" x="287" y="634">13</text>
+<g id="l4-print-area" class="zone service" data-name="Print Area"><polygon points="330,646 438,648 406,800 330,800"/></g>
+<path class="outline" transform="rotate(-20 308 310)" d="M58,310 a250,295 0 1,0 500,0 a250,295 0 1,0 -500,0 Z"/>
+<path class="stairs" d="M150,232 Q165,135 268,108 L282,138 Q200,160 182,238 Z"/>
+<circle class="service" cx="291" cy="225" r="18"/>
+<text class="label " x="425" y="150">Quiet Area</text>
+<text class="label " x="470" y="380">Quiet Area</text>
+<text class="label small" x="322" y="330">Atrium</text>
+<text class="label small" x="155" y="405">WC</text>
+<text class="label small" x="290" y="528">Graduate Lounge</text>
+<text class="label small" x="372" y="715">Print</text>
+<text class="label small" x="372" y="729">Area</text>
+<text class="label small" x="215" y="750">Project Rooms</text>
+<text class="title" x="585" y="885">Level 4</text>
+</svg>

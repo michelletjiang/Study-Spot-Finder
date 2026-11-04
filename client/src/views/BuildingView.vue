@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { api } from '../api'
 import { useBuildingSpots } from '../buildingSpots'
 import { normalizeFloor, floorOrder, floorLabel } from '../floors'
-import { floorplans, findFloorplan } from '../floorplans'
+import { floorplans, findFloorplan, sectionsOf, sectionOf } from '../floorplans'
 import { openStatus } from '../buildingHours'
 import { isGroupRoom, isQuiet } from '../roomTypes'
 import FloorPlan from '../components/FloorPlan.vue'
@@ -15,27 +15,41 @@ import { heatEnabled, HEAT_GRADIENT, NOISE_LEVELS } from '../heatmap'
 import { timeAgo } from '../reviews'
 
 // A building: floor tabs, the chosen floor's plan (rooms coloured by rating), and a details card for the clicked room.
-// The floor and room are kept in ?floor= and ?spot=, so the back button and shared links come back to the same view.
+// A library inside the building (KGC in Yong Pung How) has its own tab after the floors, with sub-tabs for its levels.
+// The section, floor and room are kept in ?section=, ?floor= and ?spot=, so the back button and shared links come back to the same view.
 const route = useRoute()
 const router = useRouter()
 const buildingName = computed(() => route.params.name)
 const { spots, loading, error } = useBuildingSpots(buildingName)
 
-// only floors with something to show: a study spot or a floorplan (so e.g. LKS level 1 isn't listed)
-const floors = computed(() => {
-  const all = new Set(Object.keys(floorplans[buildingName.value] || {}))
-  for (const s of spots.value) all.add(normalizeFloor(s.floor))
-  return [...all].sort((a, b) => floorOrder(a) - floorOrder(b))
-})
+// ---------- sections: a library inside this building, with its own floor plans (floorplans.js) ----------
+const buildingSections = computed(() => sectionsOf(buildingName.value))
+const activeSection = computed(() => buildingSections.value.find(s => s.key === route.query.section) || null)
+const sectionKeyOf = spot => sectionOf(buildingName.value, spot.name)?.key ?? null
+// a section's spots (null: the building's own), on one floor or all of them
+const spotsIn = (sectionKey, floor = null) =>
+  spots.value.filter(s => sectionKeyOf(s) === sectionKey && (floor === null || normalizeFloor(s.floor) === floor))
 
-const spotsOn = floor => spots.value.filter(s => normalizeFloor(s.floor) === floor)
-const hasPlan = floor => !!findFloorplan(buildingName.value, floor)
+// only floors with something to show: a study spot or a floorplan (so e.g. LKS level 1 isn't listed)
+function floorsOf(section) {
+  const all = new Set(Object.keys(section ? section.floors : floorplans[buildingName.value] || {}))
+  for (const s of spotsIn(section?.key ?? null)) all.add(normalizeFloor(s.floor))
+  return [...all].sort((a, b) => floorOrder(a) - floorOrder(b))
+}
+const mainFloors = computed(() => floorsOf(null))
+// the floors being browsed: the building's, or the open section's levels
+const floors = computed(() => (activeSection.value ? floorsOf(activeSection.value) : mainFloors.value))
+
+const spotsOn = floor => spotsIn(activeSection.value?.key ?? null, floor)
+const hasPlan = floor => !!findFloorplan(buildingName.value, floor, activeSection.value?.key)
 const tabLabel = floor => (floor.startsWith('B') ? floor : `L${floor}`)
 
 // ?floor= if it's valid, otherwise the first floor with a floorplan, otherwise the first floor
 const selectedFloor = computed(() =>
   floors.value.includes(route.query.floor) ? route.query.floor : floors.value.find(hasPlan) || floors.value[0])
-const selectedPlan = computed(() => findFloorplan(buildingName.value, selectedFloor.value))
+const selectedPlan = computed(() => findFloorplan(buildingName.value, selectedFloor.value, activeSection.value?.key))
+// "Level 3", or "KGC Law Library · Level 3" inside a section
+const placeLabel = computed(() => (activeSection.value ? `${activeSection.value.label} · ` : '') + floorLabel(selectedFloor.value))
 const floorSpots = computed(() => spotsOn(selectedFloor.value))
 const selectedSpot = computed(() => floorSpots.value.find(s => s._id === route.query.spot) || null)
 
@@ -111,8 +125,18 @@ function onCheckinsChange(counts) {
 const hasAlerts = spot => alertsBySpot.value[spot._id]?.length > 0
 
 // ---------- floors, rooms, zoom, list ----------
+const sectionQuery = computed(() => (activeSection.value ? { section: activeSection.value.key } : {}))
+// a floor of whatever is open (the building, or the section's levels); a new floor starts with no room selected
 function chooseFloor(floor) {
-  router.replace({ query: { floor } }) // a new floor starts with no room selected
+  router.replace({ query: { ...sectionQuery.value, floor } })
+}
+// one of the building's own floor tabs, leaving any section
+function chooseMainFloor(floor) {
+  router.replace({ query: { floor } })
+}
+// a section's tab: opens on its first level
+function chooseSection(key) {
+  router.replace({ query: { section: key } })
 }
 
 function stepFloor(step) {
@@ -123,14 +147,21 @@ const isFirstFloor = computed(() => floors.value.indexOf(selectedFloor.value) <=
 const isLastFloor = computed(() => floors.value.indexOf(selectedFloor.value) >= floors.value.length - 1)
 
 function selectSpot(spot) {
-  router.replace({ query: { floor: selectedFloor.value, spot: spot._id } })
+  router.replace({ query: { ...sectionQuery.value, floor: selectedFloor.value, spot: spot._id } })
 }
 function closePanel() {
-  router.replace({ query: { floor: selectedFloor.value } })
+  router.replace({ query: { ...sectionQuery.value, floor: selectedFloor.value } })
 }
 
 const ZOOMS = [1, 1.5, 2]
 const zoom = ref(1)
+// At zoom 1 the whole plan fits: as wide as the sheet, or narrower for a tall plan (KGC is 600 x 900) so its height
+// fits the 72vh the plan area allows (less 4px for the plan's border). Zooming in scales that up and scrolls.
+const planWidth = computed(() => {
+  const plan = selectedPlan.value
+  if (!plan) return '100%'
+  return `calc(${zoom.value} * min(100%, (72vh - 4px) * ${plan.width / plan.height}))`
+})
 const zoomIn = () => (zoom.value = ZOOMS[Math.min(ZOOMS.indexOf(zoom.value) + 1, ZOOMS.length - 1)])
 const zoomOut = () => (zoom.value = ZOOMS[Math.max(ZOOMS.indexOf(zoom.value) - 1, 0)])
 
@@ -143,7 +174,7 @@ watch(selectedFloor, () => (zoom.value = 1))
 const heatChosen = computed(() => colourBy.value === 'noise')
 const heat = ref(null) // spot _id -> { score, current, count }, null until loaded
 const heatError = ref('')
-const canShowHeat = computed(() => heatEnabled(buildingName.value, selectedFloor.value) && !showList.value)
+const canShowHeat = computed(() => heatEnabled(buildingName.value, selectedFloor.value, activeSection.value?.key) && !showList.value)
 // if the reports can't load the plan keeps its rating colours, because all stripes would claim there are none
 const heatShown = computed(() => (canShowHeat.value && heatChosen.value ? heat.value : null))
 // the newest report on this floor, for the "Latest report" line
@@ -213,11 +244,11 @@ onUnmounted(() => {
         </label>
       </div>
     </header>
-    <p v-if="heatShown" class="heat-sub">{{ floorLabel(selectedFloor) }} · how loud it is right now</p>
+    <p v-if="heatShown" class="heat-sub">{{ placeLabel }} · how loud it is right now</p>
 
     <p v-if="loading" class="nb-state">Loading floors and rooms…</p>
     <p v-else-if="error" class="nb-state nb-state--error">Couldn't load this building: {{ error }}</p>
-    <p v-else-if="floors.length === 0" class="nb-state">No study spots in this building yet.</p>
+    <p v-else-if="mainFloors.length === 0 && !buildingSections.length" class="nb-state">No study spots in this building yet.</p>
 
     <template v-else>
       <div class="toolbar">
@@ -264,13 +295,23 @@ onUnmounted(() => {
           <div class="tab-row">
             <nav class="tabs" aria-label="Floors">
               <button
-                v-for="floor in floors" :key="floor" type="button" class="tab"
-                :class="{ active: floor === selectedFloor }" :aria-current="floor === selectedFloor ? 'true' : null"
-                :aria-label="`${floorLabel(floor)}, ${spotsOn(floor).length} study spots`"
-                @click="chooseFloor(floor)"
+                v-for="floor in mainFloors" :key="floor" type="button" class="tab"
+                :class="{ active: !activeSection && floor === selectedFloor }" :aria-current="!activeSection && floor === selectedFloor ? 'true' : null"
+                :aria-label="`${floorLabel(floor)}, ${spotsIn(null, floor).length} study spots`"
+                @click="chooseMainFloor(floor)"
               >
                 <strong>{{ tabLabel(floor) }}</strong>
-                <small> · {{ spotsOn(floor).length }}<template v-if="floor === selectedFloor"> spot{{ spotsOn(floor).length === 1 ? '' : 's' }}</template></small>
+                <small> · {{ spotsIn(null, floor).length }}<template v-if="!activeSection && floor === selectedFloor"> spot{{ spotsIn(null, floor).length === 1 ? '' : 's' }}</template></small>
+              </button>
+              <!-- a library inside the building: its levels are sub-tabs on the sheet below -->
+              <button
+                v-for="section in buildingSections" :key="section.key" type="button" class="tab section-tab"
+                :class="{ active: activeSection?.key === section.key }" :aria-current="activeSection?.key === section.key ? 'true' : null"
+                :aria-label="`${section.name}, ${spotsIn(section.key).length} study spots`"
+                @click="chooseSection(section.key)"
+              >
+                <strong>{{ section.label }}</strong>
+                <small> · {{ spotsIn(section.key).length }}</small>
               </button>
             </nav>
             <div class="steppers">
@@ -279,7 +320,15 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <section class="sheet" :aria-label="`${floorLabel(selectedFloor)} floor plan`">
+          <section class="sheet" :aria-label="`${placeLabel} floor plan`">
+            <nav v-if="activeSection" class="subtabs" :aria-label="`${activeSection.name} levels`">
+              <span class="subtabs-name">{{ activeSection.name }}</span>
+              <button
+                v-for="floor in floors" :key="floor" type="button" class="chip"
+                :aria-pressed="floor === selectedFloor" :aria-label="`${floorLabel(floor)}, ${spotsOn(floor).length} study spots`"
+                @click="chooseFloor(floor)"
+              >{{ tabLabel(floor) }} <small>· {{ spotsOn(floor).length }}</small></button>
+            </nav>
             <div class="sheet-tools">
               <template v-if="selectedPlan && !showList">
                 <button type="button" class="square" aria-label="Zoom in" :disabled="zoom === ZOOMS[ZOOMS.length - 1]" @click="zoomIn">+</button>
@@ -299,7 +348,7 @@ onUnmounted(() => {
 
             <!-- plan -->
             <div v-if="!showList" class="plan-scroll">
-              <div class="plan-inner" :style="{ width: `${zoom * 100}%` }">
+              <div class="plan-inner" :style="{ width: planWidth }">
                 <FloorPlan
                   :plan="selectedPlan" :spots="floorSpots" :selected-id="selectedSpot?._id ?? null"
                   :tones="tones" :heat="heatShown" :dimmed-ids="dimmedIds" :alerts="alertsBySpot" :checked-in="checkedInBySpot" @select="selectSpot"
@@ -309,7 +358,7 @@ onUnmounted(() => {
 
             <!-- list (also the fallback for floors without a plan) -->
             <div v-else class="room-list">
-              <p v-if="!selectedPlan" class="no-plan">No floor plan for {{ floorLabel(selectedFloor) }} yet, so here are its rooms as a list.</p>
+              <p v-if="!selectedPlan" class="no-plan">No floor plan for {{ placeLabel }} yet, so here are its rooms as a list.</p>
               <p v-if="!floorSpots.length" class="no-plan">No study spots on this floor yet.</p>
               <button
                 v-for="spot in floorSpots" :key="spot._id" type="button" class="room"
@@ -347,7 +396,7 @@ onUnmounted(() => {
           @close="closePanel" @alerts-change="onAlertsChange" @checkins-change="onCheckinsChange" @noise-rated="loadHeat"
         />
         <aside v-else class="hint-card">
-          <h2>{{ floorLabel(selectedFloor) }}</h2>
+          <h2>{{ placeLabel }}</h2>
           <p>{{ floorSpots.length }} study spot{{ floorSpots.length === 1 ? '' : 's' }} ·
             {{ floorSpots.filter(s => s.hasPowerSocket).length }} with power sockets</p>
           <p class="muted">Pick a room on the plan to see its seats, how busy it is and what people say about it.</p>
@@ -474,6 +523,12 @@ h1 {
 .tab small { color: var(--nb-muted); font-size: 0.82rem; }
 .tab.active { z-index: 1; padding-top: 10px; background: var(--nb-highlight); color: #28263f; }
 .tab.active small { color: #4a4660; }
+/* a library inside the building (e.g. KGC): set apart from the floor tabs */
+.section-tab { margin-left: 10px; background: var(--nb-manila); color: #28263f; }
+.section-tab small { color: #4a4660; }
+.subtabs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0 56px 12px 0; }
+.subtabs-name { margin-right: 4px; font: 700 1.5rem/1.1 var(--nb-heading); }
+.subtabs .chip small { font-size: 0.8rem; opacity: 0.75; }
 .steppers { display: flex; gap: 6px; margin-bottom: 8px; }
 
 .square {
@@ -502,7 +557,7 @@ h1 {
 .match-note { margin: 0 56px 8px 0; font-size: 0.95rem; }
 
 .plan-scroll { overflow: auto; max-height: 72vh; margin-right: 52px; border-radius: 6px; }
-.plan-inner { min-width: 100%; }
+.plan-inner { margin: 0 auto; } /* a tall plan that fits the height is narrower than the sheet, so centre it */
 
 .room-list { display: grid; gap: 8px; margin-right: 52px; }
 .room {
@@ -552,6 +607,9 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--nb-focus); outl
 @media (max-width: 600px) {
   .building-page { padding-left: 16px; padding-right: 16px; }
   .plan-scroll, .room-list { margin-right: 0; margin-top: 50px; }
+  /* the tools sit in a row along the top: a section's level tabs go under them, and the plan follows straight after */
+  .subtabs { margin: 50px 0 12px; }
+  .subtabs ~ .plan-scroll, .subtabs ~ .room-list { margin-top: 0; }
   .sheet-tools { flex-direction: row; }
   .room { grid-template-columns: 1fr 1fr; }
 }

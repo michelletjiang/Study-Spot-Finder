@@ -199,3 +199,24 @@ describe('the Quiet need on the find-a-spot ranking', async () => {
     expect(ranked.map(r => r.name)).toEqual(['quiet', 'loud'])
   })
 })
+
+describe('the KGC Law Library section of Yong Pung How', async () => {
+  const { sectionOf, findFloorplan } = await import('../../client/src/floorplans.js')
+  const YPH = 'Yong Pung How School of Law'
+
+  it("puts KGC's rooms in the section and leaves the school's own rooms out", () => {
+    expect(sectionOf(YPH, 'KGC Project Room 7')?.key).toBe('kgc')
+    expect(sectionOf(YPH, 'KGC Quiet Area (Level 5)')?.key).toBe('kgc')
+    expect(sectionOf(YPH, 'GSR 3-06')).toBeNull()
+  })
+
+  it("finds KGC's plans by section, separately from the school's floors", () => {
+    expect(findFloorplan(YPH, '4', 'kgc')?.image).toBe('/floorplans/kgc-L4.svg')
+    expect(findFloorplan(YPH, '4')).toBeNull() // the school itself has no level 4 plan
+    expect(findFloorplan(YPH, '3')?.image).not.toBe(findFloorplan(YPH, '3', 'kgc')?.image)
+  })
+
+  it('has the noise heatmap on every KGC level', () => {
+    for (const floor of ['3', '4', '5']) expect(heatEnabled(YPH, floor, 'kgc')).toBe(true)
+  })
+})

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 900" width="600" height="900" id="level-3" role="img" aria-label="Library level 3 floor plan">
+<defs>
+  <pattern id="stairHatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+    <rect width="7" height="7" fill="#efece6"/><line x1="0" y1="0" x2="0" y2="7" stroke="#9a948a" stroke-width="2"/>
+  </pattern>
+  <clipPath id="l3-clip"><path transform="rotate(-20 308 310)" d="M58,310 a250,295 0 1,0 500,0 a250,295 0 1,0 -500,0 Z"/></clipPath>
+</defs>
+<style>
+  .floor{fill:#faf7f2;stroke:#3a3a3a;stroke-width:3}
+  .outline{fill:none;stroke:#3a3a3a;stroke-width:3;pointer-events:none}
+  .fins{fill:none;stroke:#c4bdb1;stroke-width:9;stroke-dasharray:2 8}
+  .zone{cursor:pointer;transition:opacity .15s}
+  .zone:hover{opacity:.7}
+  .quiet{fill:#cfe8d5;stroke:#5c9a6c;stroke-width:1.5}
+  .project{fill:#d6e4f7;stroke:#4f78b0;stroke-width:1.5}
+  .amenity{fill:#f6e6c8;stroke:#c08a3e;stroke-width:1.5}
+  .terrace{fill:#f4d9c6;stroke:#c0764a;stroke-width:1.5}
+  .service{fill:#e2dfda;stroke:#8c867d;stroke-width:1.5}
+  .void{fill:#ffffff;stroke:#8c867d;stroke-width:1.5;stroke-dasharray:6 4}
+  .stairs{fill:url(#stairHatch);stroke:#3a3a3a;stroke-width:2}
+  .wall{fill:none;stroke:#3a3a3a;stroke-width:2.5;stroke-linecap:round}
+  .label{font:600 14px system-ui,-apple-system,"Segoe UI",sans-serif;fill:#2b2b2b;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
+  .num{font-size:15px;font-weight:700}
+  .small{font-size:11px;font-weight:500;fill:#5d5850}
+  .title{font:700 24px system-ui,-apple-system,"Segoe UI",sans-serif;fill:#2b2b2b;text-anchor:end}
+</style>
+<path class="floor" transform="rotate(-20 308 310)" d="M58,310 a250,295 0 1,0 500,0 a250,295 0 1,0 -500,0 Z"/>
+<ellipse class="fins" transform="rotate(-20 308 310)" cx="308" cy="310" rx="258" ry="303"/>
+<g id="l3-reserves" class="zone amenity" data-name="Reserves"><path d="M233,155 Q345,175 394,305 Q414,370 398,440 L350,430 L222,412 Q160,330 186,240 Z"/></g>
+<g id="l3-quiet-area" class="zone quiet" data-name="Quiet Area"><path clip-path="url(#l3-clip)" d="M233,155 Q345,175 394,305 L600,330 L600,0 L233,0 Z"/></g>
+<g id="l3-library-office" class="zone service" data-name="Library Office"><polygon points="85,345 152,328 214,405 205,465 150,505 105,440"/></g>
+<g id="l3-learning-lab-1" class="zone project" data-name="Learning Lab 1"><polygon points="222,412 286,420 282,490 215,480"/></g>
+<g id="l3-learning-lab-2" class="zone project" data-name="Learning Lab 2"><polygon points="286,420 350,430 345,495 282,490"/></g>
+<path class="outline" transform="rotate(-20 308 310)" d="M58,310 a250,295 0 1,0 500,0 a250,295 0 1,0 -500,0 Z"/>
+<path class="stairs" d="M150,232 Q165,135 268,108 L282,138 Q200,160 182,238 Z"/>
+<circle class="service" cx="291" cy="225" r="18"/>
+<text class="label " x="400" y="190">Quiet Area</text>
+<text class="label " x="315" y="330">Reserves</text>
+<text class="label small" x="150" y="410">Library</text>
+<text class="label small" x="150" y="424">Office</text>
+<text class="label small" x="250" y="452">Lab 1</text>
+<text class="label small" x="316" y="460">Lab 2</text>
+<text class="title" x="585" y="885">Level 3</text>
+</svg>

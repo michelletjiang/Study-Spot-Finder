@@ -153,6 +153,24 @@ const buildings = {
     { floor: '3', name: 'Seminar Room 3-11', seatCount: 45, hasPowerSocket: true },
     { floor: '3', name: 'Seminar Room 3-12', seatCount: 45, hasPowerSocket: true },
     { floor: '3', name: 'Learning Common', seatCount: 30, hasPowerSocket: true },
+    // Kwa Geok Choo Law Library: levels 3 to 5 of the building, on its own tab of the building page
+    // (the 'kgc' section in client/src/floorplans.js). Names start with KGC to keep them apart from the school's rooms.
+    { floor: '3', name: 'KGC Quiet Area (Level 3)', seatCount: 60, hasPowerSocket: true, noiseLevel: 'Quiet' },
+    { floor: '4', name: 'KGC Quiet Area (Level 4)', seatCount: 120, hasPowerSocket: true, noiseLevel: 'Quiet' },
+    { floor: '4', name: 'KGC Project Room 1', seatCount: 6, hasPowerSocket: true },
+    { floor: '4', name: 'KGC Project Room 2', seatCount: 6, hasPowerSocket: true },
+    { floor: '4', name: 'KGC Project Room 3', seatCount: 6, hasPowerSocket: true },
+    { floor: '4', name: 'KGC Project Room 4', seatCount: 6, hasPowerSocket: true },
+    { floor: '4', name: 'KGC Project Room 5', seatCount: 6, hasPowerSocket: true },
+    { floor: '4', name: 'KGC Project Room 6', seatCount: 6, hasPowerSocket: true },
+    { floor: '4', name: 'KGC Project Room 7', seatCount: 6, hasPowerSocket: true },
+    { floor: '4', name: 'KGC Project Room 8', seatCount: 6, hasPowerSocket: true },
+    { floor: '4', name: 'KGC Project Room 9', seatCount: 6, hasPowerSocket: true },
+    { floor: '4', name: 'KGC Project Room 10', seatCount: 6, hasPowerSocket: true },
+    { floor: '4', name: 'KGC Project Room 11', seatCount: 6, hasPowerSocket: true },
+    { floor: '4', name: 'KGC Project Room 12', seatCount: 6, hasPowerSocket: true },
+    { floor: '4', name: 'KGC Project Room 13', seatCount: 6, hasPowerSocket: true },
+    { floor: '5', name: 'KGC Quiet Area (Level 5)', seatCount: 100, hasPowerSocket: true, noiseLevel: 'Quiet' },
   ],
 
   // the auditorium and Onalu (cafe) are drawn on the plan but aren't study spots

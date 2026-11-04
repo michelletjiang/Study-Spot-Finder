@@ -13,7 +13,9 @@ const HEATMAP_BUILDINGS = [
   'Yong Pung How School of Law',
   'School of Social Sciences / College of Integrative Studies',
 ]
-export const heatEnabled = (buildingName, floor) => HEATMAP_BUILDINGS.includes(buildingName) && !!findFloorplan(buildingName, floor)
+// sectionKey: a library inside the building with its own plans (floorplans.js), e.g. 'kgc'
+export const heatEnabled = (buildingName, floor, sectionKey = null) =>
+  HEATMAP_BUILDINGS.includes(buildingName) && !!findFloorplan(buildingName, floor, sectionKey)
 
 // the noise levels, in score order (see services/noise-service.js). key is what's stored, label what students see.
 export const NOISE_LEVELS = [
@@ -158,10 +160,12 @@ export function heatLabel(points, name, count, planWidth, obstacles = []) {
   }
   spots.sort((a, b) => Math.hypot(a.x - middle.x, a.y - middle.y) - Math.hypot(b.x - middle.x, b.y - middle.y))
 
-  // the whole label inside the room (corners, edge middles and centre) and not over a smaller room
+  // the whole label inside the room (a 5 x 5 grid of points over it, so a small hole such as a lift isn't missed)
+  // and not over a smaller room
   const fits = (x, y, w, h) => {
     const [l, r, t, b] = [x - w / 2, x + w / 2, y - h / 2, y + h / 2]
-    const checks = [[l, t], [x, t], [r, t], [l, y], [x, y], [r, y], [l, b], [x, b], [r, b]]
+    const checks = []
+    for (let i = 0; i <= 4; i++) for (let j = 0; j <= 4; j++) checks.push([l + (w * i) / 4, t + (h * j) / 4])
     if (!checks.every(p => inside(p, pts))) return false
     return obstacles.every(o => r <= o.x0 || l >= o.x1 || b <= o.y0 || t >= o.y1)
   }
