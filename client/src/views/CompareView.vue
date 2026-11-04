@@ -2,7 +2,8 @@
 // ACTIVE (comparison): the side-by-side table at /compare?ids=a,b[,c]. It only reads: it never edits spots.
 // Catalogue rows (where, seats, sockets, noise) come from the spot. Live rows (rating, seats free now,
 // usual crowd) come from reviews and check-ins, and the best value in a live row is highlighted.
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { Tooltip } from 'bootstrap'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../api'
 import { comparison } from '../stores/compare'
@@ -25,6 +26,7 @@ const checkedIn = ref(null) // { spotId: people checked in }, or null until load
 const liveError = ref(false)
 const hideSame = ref(false)
 const now = sgNow()
+let tooltips = []
 
 const requestedIds = computed(() => String(route.query.ids || '').split(',').map(id => id.trim()).filter(Boolean))
 
@@ -91,7 +93,7 @@ const rows = computed(() => {
   const list = spots.value
   const cells = {
     where: list.map(s => ({ text: `${s.buildingName}, ${levelLabel(s.floor)}` })),
-    seats: list.map(s => ({ text: `${s.seatCount} seats` })),
+    seats: list.map(s => ({ text: `${s.seatCount} seats`, progress: Math.min(100, s.seatCount * 10) })),
     power: list.map(s => ({ text: s.hasPowerSocket ? 'Available' : 'Not available' })),
     noise: list.map(s => (s.noiseLevel ? { text: s.noiseLevel, tag: s.noiseLevel.toLowerCase() } : { text: 'Not set' })),
     rating: list.map(s => {
@@ -104,7 +106,7 @@ const rows = computed(() => {
       if (!checkedIn.value) return { text: liveError.value ? '–' : '…' }
       const people = checkedIn.value[s._id] || 0
       const free = Math.max(0, s.seatCount - people)
-      return { text: `~${free} of ${s.seatCount} free`, dot: seatsLevel(people, s.seatCount), sort: free }
+      return { text: `~${free} of ${s.seatCount} free`, dot: seatsLevel(people, s.seatCount), sort: free, progress: s.seatCount ? Math.round(free / s.seatCount * 100) : 0 }
     }),
     crowd: list.map(s => {
       const pattern = patternsById.value[s._id]
@@ -112,7 +114,7 @@ const rows = computed(() => {
       if (pattern.total < MIN_FOR_SUMMARY) return { text: 'Not enough check-ins' }
       // null means nobody has checked in at this hour in the last 8 weeks
       const taken = pattern.days[now.day][now.hour]?.taken ?? 0
-      return { text: `${percent(taken)} full`, sort: taken }
+      return { text: `${percent(taken)} full`, sort: taken, progress: Math.round(taken * 100) }
     }),
   }
   const at = hourLabel(now.hour)
@@ -134,6 +136,18 @@ const rows = computed(() => {
 
 const sameCount = computed(() => rows.value.filter(r => r.same).length)
 const shownRows = computed(() => (hideSame.value ? rows.value.filter(r => !r.same) : rows.value))
+
+// Summarise the unique row winners before the detailed cards, so students can decide at a glance.
+const winnerSummary = computed(() => rows.value.filter(row => row.best >= 0).map(row => ({ label: row.label, spot: spots.value[row.best]?.name })))
+
+// Bootstrap tooltips explain live rows and the meaning of the highlighted best badge.
+function refreshTooltips() {
+  tooltips.forEach(tooltip => tooltip.dispose())
+  tooltips = [...document.querySelectorAll('[data-bs-toggle="tooltip"]')].map(node => new Tooltip(node))
+}
+onMounted(refreshTooltips)
+watch([shownRows, spots], refreshTooltips)
+onBeforeUnmount(() => tooltips.forEach(tooltip => tooltip.dispose()))
 
 // The sticky note: the spot that wins the most live rows, with the reasons. Hidden on a tie.
 const suggestion = computed(() => {
@@ -181,6 +195,12 @@ const suggestion = computed(() => {
     <p v-else-if="error" class="nb-state nb-state--error" role="alert">{{ error }}</p>
     <p v-if="!loading && liveError" class="nb-state" role="status">Some reviews or check-ins couldn't load, so those rows may be incomplete.</p>
 
+    <!-- This compact Bootstrap alert gives the computed row winners a useful summary. -->
+    <div v-if="!loading && winnerSummary.length" class="alert winner-summary" role="status">
+      <strong>Quick take:</strong>
+      <span v-for="winner in winnerSummary" :key="winner.label" class="winner-item">{{ winner.label }}: {{ winner.spot }}</span>
+    </div>
+
     <!-- Each spot is a Bootstrap card on small screens; the same cards become columns on larger screens. -->
     <TransitionGroup v-if="!loading && spots.length" name="compare-card" tag="div" class="row g-3 spot-grid">
       <article v-for="spot in spots" :key="spot._id" class="col-12 spot-column">
@@ -199,7 +219,7 @@ const suggestion = computed(() => {
             <dl class="comparison-list">
               <template v-for="row in shownRows" :key="row.key">
                 <div class="comparison-row" :class="{ 'is-live': 'higher' in row }">
-                  <dt>{{ row.label }} <small>{{ row.same ? 'same for all' : row.note }}</small></dt>
+                  <dt>{{ row.label }} <small :title="'higher' in row ? 'Live data from reviews or check-ins.' : row.note">{{ row.same ? 'same for all' : row.note }}</small></dt>
                   <dd>
                     <span v-if="row.values[spots.indexOf(spot)].tag" class="badge nb-tag" :class="`nb-tag--${row.values[spots.indexOf(spot)].tag}`">{{ row.values[spots.indexOf(spot)].text }}</span>
                     <template v-else>
@@ -207,7 +227,10 @@ const suggestion = computed(() => {
                       <mark v-if="spots.indexOf(spot) === row.best" class="nb-mark"><strong>{{ row.values[spots.indexOf(spot)].text }}</strong></mark>
                       <span v-else>{{ row.values[spots.indexOf(spot)].text }}</span>
                     </template>
-                    <span v-if="spots.indexOf(spot) === row.best" class="badge best-badge">Best</span>
+                    <span v-if="row.values[spots.indexOf(spot)].progress != null" class="progress value-meter" role="progressbar" :aria-valuenow="row.values[spots.indexOf(spot)].progress" aria-valuemin="0" aria-valuemax="100" :aria-label="`${row.label} visual meter`">
+                      <span class="progress-bar" :style="{ width: `${row.values[spots.indexOf(spot)].progress}%` }"></span>
+                    </span>
+                    <span v-if="spots.indexOf(spot) === row.best" class="badge best-badge" data-bs-toggle="tooltip" title="This is the strongest unique value in this row.">Best</span>
                   </dd>
                 </div>
               </template>
@@ -233,7 +256,14 @@ const suggestion = computed(() => {
 .same-toggle .nb-btn { border-style: dashed; border-radius: 999px; background: transparent; }
 .same-toggle .nb-btn.is-active { border-style: solid; background: var(--nb-highlight); }
 .nb-state { margin-bottom: 20px; }
+/* The summary uses Bootstrap alert semantics but keeps the notebook's paper and ink colours. */
+.winner-summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; max-width: 1240px; margin: 0 auto 20px; border: 2px solid var(--nb-ink); background: var(--nb-note-blue); color: var(--nb-ink); }
+.winner-item { font-weight: 700; }
+/* Small progress bars add a visual scale to seat capacity and live occupancy without replacing the text. */
 .spot-grid { max-width: 1240px; margin-inline: auto; }
+.value-meter { display: inline-flex; width: 56px; height: 7px; margin: 0 0 0 8px; vertical-align: middle; background: var(--nb-rule-light); }
+.value-meter .progress-bar { background: var(--nb-focus); }
+
 .spot-column { min-width: 0; }
 .spot-card { overflow: hidden; border: 2px solid var(--nb-ink); border-radius: 10px; background: var(--nb-card); box-shadow: 6px 6px 0 var(--nb-shadow); color: var(--nb-ink); }
 .spot-card-header { border-bottom: 2px solid var(--nb-ink); background: var(--nb-manila-dark); }
@@ -255,6 +285,6 @@ const suggestion = computed(() => {
 /* Two cards fit comfortably on desktop; phones retain one readable card per spot with no sideways page scroll. */
 @media (min-width: 800px) { .spot-column { flex: 1 0 0; width: auto; } }
 /* Narrow screens use one card per spot and keep every label readable without horizontal scrolling. */
-@media (max-width: 650px) { .compare-page { padding-inline: 12px; } .comparison-row { align-items: flex-start; } }
+@media (max-width: 650px) { .compare-page { padding-inline: 12px; } .comparison-row { align-items: flex-start; } .comparison-row dt { position: sticky; left: 0; } }
 @media (prefers-reduced-motion: reduce) { .compare-card-enter-active, .compare-card-leave-active { transition: none; } }
 </style>
