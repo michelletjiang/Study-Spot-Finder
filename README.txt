@@ -262,7 +262,7 @@ These accounts work on the deployed app and with the project database.
 
 ## Database Design
 
-The active application uses **9 MongoDB schemas** with relationships between them:
+The active application uses **10 MongoDB schemas** with relationships between them:
 
 | Schema           | Key Fields                                                                     | Relationships                             |
 |------------------|--------------------------------------------------------------------------------|-------------------------------------------|
@@ -274,8 +274,15 @@ The active application uses **9 MongoDB schemas** with relationships between the
 | **AdminRequest** | userId (ObjectId ref), username, status                                        | References User                           |
 | **Favourite**    | userName, spotName, buildingName, floor, seatCount, hasPowerSocket, noiseLevel | Linked to User and StudySpot by name      |
 
-The other two active schemas are `CheckIn` (seat check-ins linked to a spot and user) and
-`StudySpotAlert` (spot alerts and their confirm/dispute votes).
+The live layer that students generate uses three more schemas:
+
+| Schema             | Key Fields                                       | Relationships                                      |
+|--------------------|--------------------------------------------------|----------------------------------------------------|
+| **CheckIn**        | spot, user, check-in and check-out times         | References StudySpot and User; powers seats free now and busiest times |
+| **NoiseReport**    | spot, userId, status (Quiet / Moderate / Loud), createdAt | References StudySpot and User; powers the live noise heatmap (last hour only) |
+| **StudySpotAlert** | spot, issue message, confirms, disputes          | References StudySpot                               |
+
+`models/crowd-report-model.js` is left over from an earlier version; its routes are not mounted, so it is not used.
 
 ---
 
