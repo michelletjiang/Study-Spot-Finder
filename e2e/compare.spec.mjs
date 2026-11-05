@@ -1,6 +1,6 @@
 // compare.spec.mjs
 // End-to-end test (Playwright) of comparing study spots:
-//   pick two spots from their pages -> the compare tray counts them -> Compare opens /compare with both cards in order
+//   pick two spots on a floor plan -> the compare tray counts them -> Compare opens /compare with both cards in order
 //   -> a third spot shows three cards -> removing one keeps the other two. The server only accepts 2 or 3 unique spots.
 //
 // Run: start the app with `npm run dev`, then `npm run test:e2e`.
@@ -26,13 +26,18 @@ test('compare two, then three study spots', async ({ page, playwright, baseURL }
       expect(ok.spots.map(s => s._id)).toEqual([b._id, a._id]) // kept in the order the student chose
     })
 
-    await test.step('pick two spots from their pages', async () => {
-      for (const spot of [a, b]) {
-        await page.goto(`/spots/${spot._id}`)
-        await expect(page.getByRole('heading', { name: spot.name })).toBeVisible()
-        await page.getByRole('button', { name: 'Compare', exact: true }).click()
-        await expect(page.getByRole('button', { name: 'Comparing', exact: true })).toBeVisible()
-      }
+    await test.step('pick two spots from the floor plan', async () => {
+      // the shortlist lives in the page's memory, so both picks happen without reloading the page
+      await page.goto(`/building/${encodeURIComponent(TEST_BUILDING)}?floor=3&spot=${a._id}`)
+      const panel = name => page.getByRole('complementary', { name: `${name} details` })
+      await expect(panel(a.name)).toBeVisible()
+      await panel(a.name).getByRole('button', { name: 'Compare', exact: true }).click()
+      await expect(panel(a.name).getByRole('button', { name: 'Comparing', exact: true })).toBeVisible()
+
+      await page.getByRole('button', { name: new RegExp(`^${b.name},`) }).click()
+      await expect(panel(b.name)).toBeVisible()
+      await panel(b.name).getByRole('button', { name: 'Compare', exact: true }).click()
+
       const tray = page.getByRole('complementary', { name: 'Selected spots for comparison' })
       await expect(tray.getByRole('heading', { name: /^2 of 3 picked/ })).toBeVisible()
       await tray.getByRole('button', { name: /^Compare 2 spots/ }).click()

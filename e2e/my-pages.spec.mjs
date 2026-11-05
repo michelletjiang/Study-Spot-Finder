@@ -21,6 +21,7 @@ test('favourites and my reviews: add, see, remove', async ({ page, playwright, b
 
     await test.step('favourite a spot, then remove it from My favourite spots', async () => {
       await page.goto(`/spots/${spot._id}`)
+      await page.waitForLoadState('networkidle') // the page loads the student's favourites first
       await page.getByRole('button', { name: 'Save to favourites', exact: true }).click()
       await expect(page.getByRole('button', { name: 'Saved to favourites', exact: true })).toBeVisible()
 

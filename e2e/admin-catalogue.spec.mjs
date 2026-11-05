@@ -12,7 +12,14 @@ import { newAccount, apiUser, deleteApiUser, uiLogin, ADMIN, TEST_BUILDING } fro
 test('an admin adds, edits and deletes a study spot', async ({ page, playwright, baseURL }) => {
   const name = `E2E Room ${Date.now().toString(36)}`
   const student = await apiUser(playwright, baseURL, newAccount('viewer'))
-  const studentSees = async () => (await (await student.get('/api/spots')).json()).find(s => s.name === name)
+  let spotId = null // read from the new spot's row, so each check asks for that one spot, not all ~390
+  const studentSees = async () => {
+    const res = await student.get(`/api/spots/${spotId}`, { timeout: 15_000 })
+    return res.ok() ? res.json() : undefined
+  }
+  const row = () => page.getByRole('row').filter({ hasText: name })
+  // On a phone-sized screen the table's sticky header row overlaps the first row's buttons, so the row's Edit and
+  // Delete are used with the keyboard (focus + Enter), as a keyboard or screen-reader user would.
 
   page.on('dialog', dialog => dialog.accept()) // the "Delete ...?" confirm
   await uiLogin(page, ADMIN.email, ADMIN.password)
@@ -32,14 +39,19 @@ test('an admin adds, edits and deletes a study spot', async ({ page, playwright,
     })
 
     await test.step('the new spot is listed for admins and visible to students', async () => {
-      await page.getByLabel('Search').fill(name)
-      await expect(page.getByRole('row').filter({ hasText: name })).toHaveCount(1)
+      await page.getByRole('searchbox', { name: 'Search' }).fill(name)
+      await expect(row()).toHaveCount(1)
+      // the row's View link points at /spots/<id>
+      const href = await row().getByRole('link', { name: `View ${name}` }).getAttribute('href')
+      spotId = href.split('/').pop()
       const seen = await studentSees()
       expect(seen).toMatchObject({ buildingName: TEST_BUILDING, floor: '2', seatCount: 4, hasPowerSocket: true, noiseLevel: 'Quiet' })
     })
 
     await test.step('edit the seat count', async () => {
-      await page.getByRole('link', { name: `Edit ${name}` }).click()
+      const edit = row().getByRole('link', { name: `Edit ${name}` })
+      await edit.focus()
+      await page.keyboard.press('Enter')
       await expect(page.getByRole('heading', { name: `Edit ${name}` })).toBeVisible()
       await page.getByLabel('Seats').fill('8')
       await page.getByRole('button', { name: 'Save changes' }).click()
@@ -61,15 +73,16 @@ test('an admin adds, edits and deletes a study spot', async ({ page, playwright,
 
     await test.step('delete it: it is gone for everyone', async () => {
       await page.goto('/admin/spots')
-      await page.getByLabel('Search').fill(name)
-      await page.getByRole('button', { name: `Delete ${name}` }).click()
-      await expect(page.getByRole('row').filter({ hasText: name })).toHaveCount(0)
+      await page.getByRole('searchbox', { name: 'Search' }).fill(name)
+      const del = row().getByRole('button', { name: `Delete ${name}` })
+      await del.focus()
+      await page.keyboard.press('Enter')
+      await expect(row()).toHaveCount(0)
       expect(await studentSees()).toBeUndefined()
     })
   } finally {
-    // clean up whatever a failed step left behind
-    const left = (await (await page.request.get('/api/spots')).json()).filter(s => s.name.startsWith(name))
-    for (const spot of left) await page.request.delete(`/api/spots/${spot._id}`)
-    await deleteApiUser(student)
+    // clean up whatever a failed step left behind (quick calls only, so cleanup cannot hang the run)
+    if (spotId) await page.request.delete(`/api/spots/${spotId}`, { timeout: 10_000 }).catch(() => {})
+    await deleteApiUser(student).catch(() => {})
   }
 })
