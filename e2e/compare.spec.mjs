@@ -31,6 +31,7 @@ test('compare two, then three study spots', async ({ page, playwright, baseURL }
       await page.goto(`/building/${encodeURIComponent(TEST_BUILDING)}?floor=3&spot=${a._id}`)
       const panel = name => page.getByRole('complementary', { name: `${name} details` })
       await expect(panel(a.name)).toBeVisible()
+      await expect(panel(a.name).getByRole('link', { name: /Busiest times/ })).toHaveCount(0)
       await panel(a.name).getByRole('button', { name: 'Compare', exact: true }).click()
       await expect(panel(a.name).getByRole('button', { name: 'Comparing', exact: true })).toBeVisible()
 
@@ -57,6 +58,14 @@ test('compare two, then three study spots', async ({ page, playwright, baseURL }
       await page.getByRole('button', { name: `Remove ${c.name} from the comparison` }).click()
       await expect(cards).toHaveText([a.name, b.name])
       await expect(page).not.toHaveURL(new RegExp(c._id))
+    })
+
+    await test.step('room details still show reviews without busy hours', async () => {
+      await page.goto(`/spots/${a._id}`)
+      await expect(page.getByRole('heading', { name: a.name, exact: true })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Reviews', exact: true })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Busiest times', exact: true })).toHaveCount(0)
+      await expect(page.getByRole('button', { name: /^(Compare|Comparing)$/ })).toBeVisible()
     })
   } finally {
     await page.request.delete('/api/profile')

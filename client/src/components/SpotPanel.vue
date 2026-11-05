@@ -7,7 +7,7 @@ import { levelLabel } from '../floors'
 import { roomType } from '../roomTypes'
 import { timeAgo } from '../reviews'
 import { myCheckIn } from '../stores/checkin'
-import { seatsLevel, seatsFreeText, peopleText, clockTime, busiestSummary, sgNow } from '../seats'
+import { seatsLevel, seatsFreeText, peopleText, clockTime } from '../seats'
 import SpotAlerts from './SpotAlerts.vue'
 import NoiseRating from './NoiseRating.vue'
 
@@ -26,7 +26,6 @@ const checkedIn = ref(null)  // people checked in here right now, or null while 
 const countError = ref('')
 const checkInMessage = ref('')
 const checkingIn = ref(false)
-const busiestToday = ref(null) // "On Tuesdays it's usually busiest around 2 pm (~40% of seats taken)." once there's enough data
 
 // the "You're checked in" popup: { spotName, buildingName, endsAt, previous, alreadyHere } while it's open
 const confirmDialog = ref(null)
@@ -49,12 +48,6 @@ watch(() => props.spot._id, async id => {
   reviewsError.value = countError.value = checkInMessage.value = favError.value = ''
   reviewsLoading.value = true
   checkedIn.value = null
-  busiestToday.value = null
-
-  // the full chart is on the room page; the panel only has room for one line
-  api(`/api/checkins/${id}/pattern`)
-    .then(data => { if (props.spot._id === id) busiestToday.value = busiestSummary(data, sgNow().day) })
-    .catch(() => {}) // optional extra, so nothing to show
 
   api(`/api/reviews?spotId=${id}`)
     .then(data => { if (props.spot._id === id) reviews.value = data })
@@ -185,9 +178,6 @@ async function toggleFavourite() {
         <p v-if="elsewhere" class="note">You're checked in at {{ placeName(elsewhere) }}. Checking in here will move you.</p>
       </template>
       <p v-if="checkInMessage" class="note">{{ checkInMessage }}</p>
-      <p v-if="busiestToday" class="note">
-        {{ busiestToday }} <RouterLink :to="`/spots/${spot._id}`" class="busy-link">Busiest times →</RouterLink>
-      </p>
     </section>
 
     <!-- confirmation after checking in (a modal dialog, so it can't be missed) -->
@@ -375,7 +365,6 @@ h2 {
 
 .muted { color: var(--nb-muted); }
 .note { color: var(--nb-muted); font-size: 0.82rem; }
-.busy-link { color: var(--nb-ink); font-weight: 700; white-space: nowrap; }
 .error { margin: 0; color: var(--nb-error); font-size: 0.88rem; }
 
 button:focus-visible, a:focus-visible { outline: 3px solid var(--nb-focus); outline-offset: 2px; }
