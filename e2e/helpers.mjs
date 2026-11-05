@@ -45,3 +45,23 @@ export async function firstSpot(ctx) {
   if (!spots.length) throw new Error('no study spots in the database')
   return spots[0]
 }
+
+// A known room to test against, instead of whatever spot happens to come first in the database.
+// Li Ka Shing Library level 3 has a floor plan and the noise heatmap, so the live features can be tested there.
+export const TEST_BUILDING = 'Li Ka Shing Library'
+export const TEST_FLOOR = '3'
+export const TEST_ROOMS = ['RM3-1', 'RM3-2', 'RM3-3']
+
+// Finds a study spot by building and room name through the API (ctx: any logged-in request context).
+export async function findSpot(ctx, buildingName, name) {
+  const spots = await (await ctx.get('/api/spots')).json()
+  const spot = spots.find(s => s.buildingName === buildingName && s.name === name)
+  if (!spot) throw new Error(`study spot not found: ${buildingName}, ${name} (run npm run seed:spots)`)
+  return spot
+}
+
+// The admin test account from the README's Default Credentials. Override with ADMIN_EMAIL / ADMIN_PASSWORD.
+export const ADMIN = {
+  email: process.env.ADMIN_EMAIL || 'admintest@gmail.com',
+  password: process.env.ADMIN_PASSWORD || '12345678'
+}

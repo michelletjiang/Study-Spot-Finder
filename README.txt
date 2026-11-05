@@ -202,11 +202,9 @@ npm run test:e2e                  # terminal 2: every spec on desktop Chrome and
 npx playwright show-report        # optional: HTML report, with screenshots of any failure
 ```
 
-The admin test needs an existing admin account (it is skipped otherwise):
-
-```sh
-ADMIN_EMAIL=admintest@gmail.com ADMIN_PASSWORD=12345678 npm run test:e2e
-```
+The admin tests log in as the admin account from [Default Credentials](#default-credentials). To use a
+different admin, pass `ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run test:e2e`. Room-based tests use known rooms on
+Li Ka Shing Library level 3 (RM3-1 to RM3-3), so the database needs the floor-plan spots (`npm run seed:spots`).
 
 ### End-to-end test cases
 
@@ -215,9 +213,15 @@ ADMIN_EMAIL=admintest@gmail.com ADMIN_PASSWORD=12345678 npm run test:e2e
 | `student-journey.spec.mjs` | Register, log in, open a spot, save it to favourites, write and edit a review with a noise level, report it, delete it, delete the account | Each step is shown in the UI; an author cannot report their own review (403); a review cannot be reported twice while pending (409); deleting a review also deletes its reports; a deleted account can no longer log in |
 | `review-votes.spec.mjs` | A second student upvotes, switches to a downvote, and takes the vote back | Counts and pressed states update; switching moves the vote rather than doubling it; the vote is still there after a reload; authors cannot vote on their own review (403) |
 | `admin-moderation.spec.mjs` | An admin works through the reported-reviews queue | Approving a report deletes the review; declining keeps it |
+| `checkin-noise.spec.mjs` | Open a floor plan, switch on **Noise now**, pick a room, check in, rate it Loud, check out | Rating without a check-in is refused (button hidden and 403); check-in takes a seat and check-out frees it; the rating is saved and counted, and the room's label on the heatmap shows it |
+| `compare.spec.mjs` | Pick two spots from their pages, compare, add a third, remove one | The tray counts the picks; cards appear in the chosen order; removing a spot keeps the rest; the server only accepts 2 or 3 different spots (400 otherwise) |
+| `access-control.spec.mjs` | A logged-out visitor opens a protected page; a student types an admin URL | Login is required (redirect, then back to the page asked for; API 401); students are sent home from admin pages and refused admin API calls (403) |
+| `admin-catalogue.spec.mjs` | An admin adds, edits and deletes a study spot through the forms | Students see the new spot and the edit; an invalid floor is rejected with a message; after deleting, the spot is gone for everyone |
+| `my-pages.spec.mjs` | Favourite a spot and remove it; write a review and delete it from My reviews | My favourite spots and My reviews show the right items; removals take effect everywhere |
 
-The tests find elements by role and visible label (`getByRole`, `getByLabel`), which keeps them stable
-when the styling changes. Each spec runs one test at a time with one retry, to absorb a slow first
+Every spec makes its own throw-away accounts and deletes them at the end, which also deletes their reviews,
+favourites, check-ins and noise ratings; the admin catalogue test also removes the spot it adds. The tests find
+elements by role and visible label (`getByRole`, `getByLabel`), which keeps them stable when the styling changes. Each spec runs one test at a time with one retry, to absorb a slow first
 response from MongoDB Atlas.
 
 ### Manual test cases
@@ -227,12 +231,9 @@ These features are checked by hand; their logic is also covered by the unit test
 | ID | Feature | Steps | Expected result |
 |----|---------|-------|-----------------|
 | M1 | Noise heatmap | Log in, open Li Ka Shing Library, level 3, choose **Noise now** | Legend shows Quiet to Loud; rooms without ratings are striped (`noise-heat.spec.js`) |
-| M2 | Rating needs a check-in | Click a room you are not checked in to | The note asks you to check in first; no rating buttons are shown (`noise-heat.spec.js`) |
-| M3 | Rating the noise | Check in to the room, rate it **Loud** | The room turns red and its label shows the report count; it appears in the room's latest reports |
-| M4 | Quiet rooms list | Rate another room **Quiet** | It appears under **Quiet right now** |
-| M5 | Directions (OneMap) | Open **Map and directions** on a building page and request a route | A walking route is drawn on the map (`directions-integration.test.js`) |
-| M6 | Compare | Click **Compare** on three spots, then **Compare 3 spots →** in the tray | The spots are compared side by side (`compare*.test.js`) |
-| M7 | Responsive layout | Chrome DevTools, from 375 × 667 (iPhone 6) up to 1400px wide | No horizontal scrolling; on screens up to 760px the map opens with **Show map** and closes with **Hide map**, **Close map** or Escape, and focus returns to Show map |
+| M2 | Quiet rooms list | Rate another room **Quiet** | It appears under **Quiet right now** |
+| M3 | Directions (OneMap) | Open **Map and directions** on a building page and request a route | A walking route is drawn on the map (`directions-integration.test.js`) |
+| M4 | Responsive layout | Chrome DevTools, from 375 × 667 (iPhone 6) up to 1400px wide | No horizontal scrolling; on screens up to 760px the map opens with **Show map** and closes with **Hide map**, **Close map** or Escape, and focus returns to Show map |
 
 ## User Accounts & Roles
 
