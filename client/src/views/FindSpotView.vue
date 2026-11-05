@@ -254,6 +254,7 @@ async function findNearby() {
   font-size: 1.1rem;
   color: var(--ink);
   text-align: left;
+}
 
 /* spiral binding holes down the left edge */
 .nearby::before {
