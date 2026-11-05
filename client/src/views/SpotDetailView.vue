@@ -110,6 +110,7 @@ async function deleteReview(review) {
 
       <!-- when it's usually busy, from check-ins -->
       <div class="nb-sheet busy-sheet">
+        <div class="nb-tape" aria-hidden="true"></div>
         <BusyTimesChart :spot-id="spot._id" />
       </div>
 
@@ -177,7 +178,8 @@ async function deleteReview(review) {
 .facts .nb-note:nth-child(3) { transform: rotate(0.8deg); }
 .facts .white { background: #fffef9; transform: rotate(-0.4deg); }
 
-.busy-sheet { max-width: 1000px; margin-bottom: 36px; }
+.busy-sheet { max-width: 1000px; margin-bottom: 40px; padding: 24px 28px 18px; }
+@media (max-width: 600px) { .busy-sheet { padding: 20px 16px 14px; } }
 
 .reviews { max-width: 1000px; padding-top: 22px; border-top: 2px solid var(--nb-ink); }
 .reviews-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
