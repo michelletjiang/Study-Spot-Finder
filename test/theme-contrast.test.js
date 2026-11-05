@@ -58,3 +58,13 @@ test('night comparison edges and header copy stay readable on dark paper', () =>
   assert.ok(contrast(night['nb-night-header-ink'], night['nb-night-header']) >= 4.5, 'night header copy must meet WCAG AA')
   assert.ok(contrast(night['nb-night-outline'], night.paper) >= 3, 'night comparison outline must meet UI contrast')
 })
+
+test('night checklist rows keep matched and unmatched copy readable', () => {
+  const nightMatch = css.match(/:root\[data-theme='night'\]\s*\{([\s\S]*?)\n}/)
+  assert.ok(nightMatch, 'night theme variables must exist')
+  const night = variables(nightMatch[1])
+  assert.ok(contrast(night['nb-checklist-match-ink'], night['nb-checklist-match']) >= 4.5, 'matched row copy must meet WCAG AA')
+  assert.ok(contrast(night['nb-checklist-badge-ink'], night['nb-checklist-badge']) >= 4.5, 'matched badge copy must meet WCAG AA')
+  assert.ok(contrast(night['nb-checklist-muted-ink'], night['nb-checklist-muted']) >= 4.5, 'unmatched badge copy must meet WCAG AA')
+  assert.ok(contrast(night.ink, night.paper) >= 4.5, 'unmatched row copy must meet WCAG AA')
+})
