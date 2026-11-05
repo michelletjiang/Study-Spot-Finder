@@ -81,11 +81,14 @@ const tip = computed(() => {
 <template>
   <section class="busy" aria-labelledby="busy-title">
     <div class="busy-head">
-      <h2 id="busy-title">Busiest times</h2>
+      <div>
+        <h2 id="busy-title">Busiest times</h2>
+        <p class="lede">How full this room usually gets, hour by hour</p>
+      </div>
       <div class="days" role="group" aria-label="Day of the week">
         <button
-          v-for="d in WEEK" :key="d" type="button" class="day"
-          :aria-pressed="day === d" :aria-label="DAY_NAMES[d]" @click="day = d"
+          v-for="d in WEEK" :key="d" type="button" class="day" :class="{ today: d === now.day }"
+          :aria-pressed="day === d" :aria-label="`${DAY_NAMES[d]}${d === now.day ? ' (today)' : ''}`" @click="day = d"
         >{{ DAY_NAMES[d].slice(0, 3) }}</button>
       </div>
     </div>
@@ -98,11 +101,17 @@ const tip = computed(() => {
     </p>
 
     <template v-else>
-      <p class="summary">
-        {{ summary || (dayHasData ? `Only a few check-ins so far, so this is a rough guide.` : `Nobody has checked in on ${DAY_NAMES[day]}s yet.`) }}
+      <p v-if="dayHasData" class="summary">
+        <span class="summary-icon" aria-hidden="true">{{ summary ? '⏰' : '✎' }}</span>
+        {{ summary || 'Only a few check-ins so far, so this is a rough guide.' }}
       </p>
 
-      <div ref="chartEl" class="chart" @mouseleave="hovered = null">
+      <div ref="chartEl" class="chart" :class="{ blank: !dayHasData }" @mouseleave="hovered = null">
+        <!-- a day with no check-ins: a note over the empty chart instead of a bare grid -->
+        <p v-if="!dayHasData" class="blank-note">
+          <strong>No check-ins on {{ DAY_NAMES[day] }}s yet</strong>
+          <span>Check in when you study here and this fills up.</span>
+        </p>
         <svg :viewBox="`0 0 ${W} ${H}`" role="group" :aria-label="`Share of seats usually taken by hour on ${DAY_NAMES[day]}s`">
           <!-- recessive grid: one hairline per quarter of the seats -->
           <g class="grid">
@@ -120,7 +129,7 @@ const tip = computed(() => {
           </g>
 
           <g v-for="c in cells" :key="c.hour">
-            <path v-if="c.cell" class="bar" :class="{ hovered: hovered === c.hour }" :d="barPath(c.i, c.cell.taken)" />
+            <path v-if="c.cell" class="bar" :class="{ hovered: hovered === c.hour, 'peak-bar': peak?.hour === c.hour }" :d="barPath(c.i, c.cell.taken)" />
             <!-- the hit target is the whole band, not just the column -->
             <rect
               class="hit" :x="bandX(c.i)" :y="M.top" :width="band" :height="plotH"
@@ -139,7 +148,7 @@ const tip = computed(() => {
         <div v-if="tip" class="tip" :style="{ left: `${tip.left}%` }" aria-hidden="true">{{ tip.text }}</div>
       </div>
 
-      <details class="table-view">
+      <details v-if="dayHasData" class="table-view">
         <summary>Show as a table</summary>
         <table>
           <thead><tr><th scope="col">Hour</th><th scope="col">Seats taken</th><th scope="col">People (average)</th></tr></thead>
@@ -147,12 +156,12 @@ const tip = computed(() => {
             <tr v-for="c in cells.filter(c => c.cell)" :key="c.hour">
               <th scope="row">{{ hourLabel(c.hour) }}</th><td>~{{ percent(c.cell.taken) }}</td><td>{{ Math.round(c.cell.people * 10) / 10 }}</td>
             </tr>
-            <tr v-if="!dayHasData"><td colspan="3">Nobody has checked in on {{ DAY_NAMES[day] }}s yet.</td></tr>
           </tbody>
         </table>
       </details>
 
       <p class="foot">
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.5" /><path d="M8 7.2v4M8 4.6v.2" /></svg>
         Based on {{ pattern.total }} check-in{{ pattern.total === 1 ? '' : 's' }} from the last 8 weeks, Singapore time.
         Only counts people who checked in through the app.
       </p>
@@ -162,14 +171,16 @@ const tip = computed(() => {
 
 <style scoped>
 /* minmax(0, 1fr) lets the column shrink on a phone instead of being held open by the chart; the app centres text by default */
-.busy { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; text-align: left; }
-.busy-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.busy { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; text-align: left; font-family: 'Patrick Hand', system-ui, sans-serif; font-size: 1.05rem; }
+.busy-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px 16px; }
 h2 { margin: 0; font: 700 2.4rem/1.1 var(--nb-heading); color: var(--nb-ink); }
 .busy p { margin: 0; }
+.lede { color: var(--nb-muted); font-size: 0.95rem; }
 
-.days { display: flex; flex-wrap: wrap; gap: 5px; }
+.days { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .day {
-  padding: 1px 11px;
+  position: relative;
+  padding: 2px 12px;
   border: 1.5px solid var(--nb-ink);
   border-radius: 999px;
   background: var(--nb-card);
@@ -178,25 +189,66 @@ h2 { margin: 0; font: 700 2.4rem/1.1 var(--nb-heading); color: var(--nb-ink); }
   font-size: 0.9rem;
   cursor: pointer;
 }
-.day[aria-pressed='true'] { background: var(--nb-highlight); color: #28263f; font-weight: 700; }
+.day:hover { border-style: dashed; }
+.day[aria-pressed='true'] { background: var(--nb-highlight); color: #28263f; font-weight: 700; box-shadow: 2px 2px 0 var(--nb-shadow); }
+.day[aria-pressed='true']:hover { border-style: solid; }
+/* a pink dot under today's day */
+.day.today::after { content: ''; position: absolute; left: 50%; bottom: -8px; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--nb-pink); }
 
-.summary { font-weight: 700; }
+/* the busiest hour, written on a strip of highlighter */
+.summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 6px 14px;
+  border: 2px solid #28263f;
+  border-radius: 8px;
+  background: var(--nb-note);
+  color: #28263f;
+  font-size: 1.1rem;
+  transform: rotate(-0.4deg);
+}
+.summary-icon { flex: none; font-size: 1.1rem; }
 .muted, .foot { color: var(--nb-muted); }
-.foot { font-size: 0.85rem; }
+.foot { display: flex; align-items: center; gap: 6px; padding-top: 10px; border-top: 1.5px dashed var(--nb-rule-light); font-size: 0.9rem; }
+.foot svg { flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
 .empty { padding: 12px; border: 1.5px dashed var(--nb-rule); border-radius: 6px; color: var(--nb-muted); }
 
-.chart { position: relative; }
-svg { display: block; width: 100%; height: auto; overflow: visible; font-family: system-ui, sans-serif; }
+.chart { position: relative; margin-top: 4px; }
+.chart > svg { display: block; width: 100%; height: auto; overflow: visible; font-family: 'Patrick Hand', system-ui, sans-serif; }
+/* an empty day: the grid fades back behind a note */
+.chart.blank > svg { opacity: 0.45; }
+.blank-note {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  z-index: 1;
+  display: grid;
+  gap: 2px;
+  padding: 12px 20px;
+  border: 2px dashed var(--nb-ink);
+  border-radius: 10px;
+  background: var(--nb-sheet);
+  text-align: center;
+  transform: translate(-50%, -50%) rotate(-1deg);
+}
+.blank-note span { color: var(--nb-muted); font-size: 0.95rem; }
 
-.grid line { stroke: #e6e2ee; stroke-width: 1; }
-.grid .axis { stroke: var(--nb-rule); }
-.grid text, .x { fill: var(--nb-muted); font-size: 12px; }
+/* pencil-like dashed grid and a solid ink baseline */
+.grid line { stroke: var(--nb-rule-light); stroke-width: 1; stroke-dasharray: 4 5; }
+.grid .axis { stroke: var(--nb-ink); stroke-width: 2; stroke-dasharray: none; stroke-linecap: round; }
+.grid text, .x { fill: var(--nb-muted); font-size: 14px; }
 
-.now rect { fill: var(--nb-highlight); opacity: 0.45; }
-.now text, .peak { fill: var(--nb-ink); font-size: 12px; font-weight: 700; }
+/* this hour: a yellow highlighter stripe with a dashed edge */
+.now rect { fill: var(--nb-highlight); fill-opacity: 0.4; stroke: var(--nb-highlight); stroke-width: 2; stroke-dasharray: 6 4; rx: 6; }
+.now text, .peak { fill: var(--nb-ink); font-size: 15px; font-weight: 700; }
 
-.bar { fill: #4b3fb5; transition: opacity 0.1s; }
-.bar.hovered { opacity: 0.75; }
+/* the columns: blue sticky-note strips in ink, the busiest one pink, the hovered one yellow */
+.bar { fill: var(--nb-note-blue); stroke: #28263f; stroke-width: 1.5; stroke-linejoin: round; transition: fill 0.1s; }
+.bar.peak-bar { fill: var(--nb-note-pink); }
+.bar.hovered { fill: var(--nb-highlight); }
 .hit { fill: transparent; cursor: default; outline: none; }
 .hit:focus-visible { stroke: var(--nb-focus); stroke-width: 2; }
 
@@ -215,9 +267,11 @@ svg { display: block; width: 100%; height: auto; overflow: visible; font-family:
   pointer-events: none;
 }
 
-.table-view summary { cursor: pointer; color: var(--nb-ink); font-weight: 700; font-size: 0.92rem; }
-.table-view table { margin-top: 8px; border-collapse: collapse; font-size: 0.9rem; }
-.table-view th, .table-view td { padding: 3px 14px 3px 0; text-align: left; border-bottom: 1px solid var(--nb-rule-light); }
+.table-view summary { width: fit-content; cursor: pointer; color: var(--nb-ink); font-size: 0.95rem; text-decoration: underline dashed var(--nb-rule); text-underline-offset: 4px; }
+.table-view summary:hover { text-decoration-style: solid; }
+.table-view table { margin-top: 10px; border-collapse: collapse; font-size: 0.95rem; }
+.table-view th, .table-view td { padding: 4px 18px 4px 0; text-align: left; border-bottom: 1px dashed var(--nb-rule-light); }
+.table-view thead th { border-bottom: 2px solid var(--nb-ink); }
 
 .day:focus-visible, summary:focus-visible { outline: 3px solid var(--nb-focus); outline-offset: 2px; }
 </style>

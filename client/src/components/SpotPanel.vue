@@ -135,6 +135,8 @@ async function toggleFavourite() {
       <div>
         <h2>{{ spot.name }}</h2>
         <p class="kind">{{ roomType(spot) }} · {{ levelLabel(spot.floor) }}</p>
+        <!-- the full room page: every review and the busiest-times chart -->
+        <RouterLink :to="`/spots/${spot._id}`" class="more">Room page <span aria-hidden="true">→</span></RouterLink>
       </div>
       <button type="button" class="close" aria-label="Close room details" @click="emit('close')">✕</button>
     </header>
@@ -156,13 +158,13 @@ async function toggleFavourite() {
       </div>
     </div>
 
-    <!-- the room's usual noise level (from the spot itself), not how busy it is right now -->
-    <div v-if="spot.noiseLevel" class="tags">
-      <span class="tag">{{ spot.noiseLevel }} noise</span>
-    </div>
+    <!-- the room's usual noise level (from the spot itself), not how busy it is right now. Plain text: it isn't clickable -->
+    <p v-if="spot.noiseLevel" class="noise">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4ZM16.5 8.5a5 5 0 0 1 0 7M19.5 5.5a9.5 9.5 0 0 1 0 13" /></svg>
+      Usually <strong>{{ spot.noiseLevel.toLowerCase() }}</strong> noise
+    </p>
 
-    <SpotAlerts :spot="spot" @change="list => emit('alerts-change', spot._id, list)" />
-
+    <h3 class="section-title">Right now</h3>
     <section class="checkin" aria-live="polite">
       <p v-if="countError" class="muted">Couldn't load how many seats are free.</p>
       <p v-else-if="checkedIn === null" class="muted">Counting free seats…</p>
@@ -190,6 +192,9 @@ async function toggleFavourite() {
       </p>
     </section>
 
+    <h3 class="section-title">Reported issues</h3>
+    <SpotAlerts :spot="spot" @change="list => emit('alerts-change', spot._id, list)" />
+
     <!-- confirmation after checking in (a modal dialog, so it can't be missed) -->
     <dialog ref="confirmDialog" class="confirm" aria-labelledby="confirm-title" @close="confirmed = null">
       <template v-if="confirmed">
@@ -207,7 +212,10 @@ async function toggleFavourite() {
     </dialog>
 
     <section class="reviews">
-      <h3>Latest reviews</h3>
+      <div class="reviews-head">
+        <h3 class="section-title">Latest reviews</h3>
+        <RouterLink v-if="reviews.length > 2" :to="`/spots/${spot._id}`" class="all-reviews">All {{ reviews.length }} reviews →</RouterLink>
+      </div>
       <p v-if="reviewsLoading" class="muted">Loading reviews…</p>
       <p v-else-if="reviewsError" class="error">Couldn't load reviews: {{ reviewsError }}</p>
       <p v-else-if="!reviews.length" class="empty">No reviews yet. Be the first to say what this room is like.</p>
@@ -220,9 +228,6 @@ async function toggleFavourite() {
           <p>{{ review.content }}</p>
         </article>
       </template>
-      <RouterLink :to="`/spots/${spot._id}`" class="more">
-        {{ reviews.length > 2 ? `See all ${reviews.length} reviews` : 'Room details' }} →
-      </RouterLink>
     </section>
 
     <div class="actions">
@@ -303,12 +308,21 @@ h2 {
 .stat strong { font-size: 1.35rem; line-height: 1.2; }
 .stat span { font-size: 0.72rem; color: var(--nb-muted); line-height: 1.25; }
 
-.tags { display: flex; flex-wrap: wrap; gap: 6px; }
-.tag {
-  padding: 1px 10px;
-  border: 1.5px dashed var(--nb-ink);
-  border-radius: 999px;
-  font-size: 0.82rem;
+/* the usual noise level: a plain line with a speaker, so it doesn't look like a button */
+.noise { display: flex; align-items: center; gap: 6px; margin: -4px 0 0; color: var(--nb-muted); font-size: 0.9rem; }
+.noise strong { color: var(--nb-ink); }
+.noise svg { flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* each part of the panel gets a small heading over a dashed line, so it reads in clear blocks */
+.section-title {
+  margin: 4px 0 -6px;
+  padding-top: 12px;
+  border-top: 1.5px dashed var(--nb-rule);
+  color: var(--nb-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .checkin {
@@ -353,7 +367,8 @@ h2 {
 .confirm form { margin-top: 14px; }
 
 .reviews { display: grid; gap: 8px; }
-.reviews h3 { margin: 0; font-size: 1rem; color: var(--nb-ink); }
+.reviews-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; margin: 4px 0 2px; padding-top: 12px; border-top: 1.5px dashed var(--nb-rule); }
+.reviews-head .section-title { margin: 0; padding: 0; border: none; }
 .review { padding-bottom: 8px; border-bottom: 1.5px dashed var(--nb-rule); }
 .review p { margin: 4px 0 0; font-size: 0.9rem; }
 .review-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px; font-size: 0.82rem; }
@@ -367,7 +382,24 @@ h2 {
   color: var(--nb-muted);
   font-size: 0.9rem;
 }
-.more { color: var(--nb-ink); font-weight: 700; font-size: 0.9rem; }
+/* a small outlined button, so the way to the room page is easy to spot */
+.more {
+  flex: none;
+  padding: 2px 12px;
+  border: 2px solid var(--nb-ink);
+  border-radius: 999px;
+  background: var(--nb-sheet);
+  color: var(--nb-ink);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 2px 2px 0 var(--nb-shadow);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.kind + .more { display: inline-block; margin-top: 10px; }
+.all-reviews { color: var(--nb-ink); font-size: 0.85rem; font-weight: 700; }
+.all-reviews:hover { color: var(--nb-ink); }
+.more:hover { color: var(--nb-ink); transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--nb-shadow); }
 
 .actions { display: flex; flex-wrap: wrap; gap: 8px; }
 /* the shared notebook buttons (style.css), a little smaller to fit the panel */

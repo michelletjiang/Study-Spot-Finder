@@ -139,8 +139,11 @@ async function resolve(alert) {
       </div>
     </form>
     <div v-else-if="!loading" class="report-row">
-      <span v-if="!alerts.length" class="muted">No issues reported right now.</span>
-      <button type="button" class="report" @click="formOpen = true; message = ''">⚠ Report an issue</button>
+      <span v-if="!alerts.length" class="muted all-clear"><span class="ok" aria-hidden="true">✓</span> Nothing reported</span>
+      <button type="button" class="report" @click="formOpen = true; message = ''">
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 3 2.5 20h19ZM12 10v4.5M12 17.2v.3" /></svg>
+        Report an issue
+      </button>
     </div>
 
     <p v-if="message" class="note">{{ message }}</p>
@@ -180,8 +183,25 @@ async function resolve(alert) {
 button:disabled { opacity: 0.6; cursor: default; }
 
 .report-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; }
-.report { border-style: dashed; }
-.report:hover { border-style: solid; background: var(--nb-highlight); color: #28263f; }
+/* a real button: red ink, solid outline and a hard shadow, unlike the plain noise line above it */
+.report {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border: 2px solid var(--nb-error);
+  border-radius: 8px;
+  background: var(--nb-sheet);
+  color: var(--nb-error);
+  font-size: 0.88rem;
+  font-weight: 700;
+  box-shadow: 2px 2px 0 var(--nb-error);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.report svg { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.report:hover { background: var(--nb-note-pink); color: #8a2430; transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--nb-error); }
+.all-clear { display: inline-flex; align-items: center; gap: 6px; }
+.ok { display: grid; place-items: center; width: 18px; height: 18px; border: 1.5px solid #28263f; border-radius: 50%; background: var(--nb-seats-plenty); color: #28263f; font-size: 0.7rem; font-weight: 700; }
 
 .report-form {
   display: grid;
