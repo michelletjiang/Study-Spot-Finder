@@ -11,7 +11,8 @@
     "seed:noise": "node scripts/seed-noise-reports.js",
     "set:basements": "node scripts/set-basements.js",
     "test:unit": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "seed:law": "node scripts/seed-law-data.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
