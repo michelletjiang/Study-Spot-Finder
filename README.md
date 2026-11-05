@@ -6,9 +6,43 @@ MongoDB stores accounts, buildings, study spots, reviews, favourites, check-ins 
 
 ## Application and repository
 
-- Local first page: http://localhost:8000 (sign in when prompted).
-- Repository: https://github.com/michelletjiang/Study-Spot-Finder (currently private; assessors need access).
-- Hosted URL: not recorded here yet. Add the final deployed first-page URL before submission.
+| | |
+|---|---|
+| **Deployed app (first page)** | https://study-spot-finder-ln3r.onrender.com |
+| **Git repository** | https://github.com/michelletjiang/Study-Spot-Finder |
+| **Local first page** | http://localhost:8000 (after following [Setup](#setup) and [Run](#run-for-assessment--production)) |
+| **Login details** | See [Default Credentials](#default-credentials) (one Student and one Admin account) |
+
+If the deployed site takes a while to load the first time, the host is waking the server up; wait up to a minute and refresh.
+
+### Origin of the code
+
+This project builds on a team member's IS113 (WAD1) Express + EJS study-spot app, uploaded as the
+repository's first commit (18 Sep 2026): its user, building, study-spot, review, report and favourite
+models and their CRUD handlers. Everything else was built in IS216, including the Vue 3 website (the EJS
+pages are no longer served), interactive floorplans, the live noise heatmap, seat check-ins and crowd
+counts, spot alerts, preference ranking and comparison, OneMap geocoding and directions, review votes,
+the admin moderation queue, and the automated test suites.
+
+## Quick tour for assessors
+
+1. Open the deployed app and log in as the Student account from [Default Credentials](#default-credentials).
+2. **Find a spot:** on the home page choose **Rank spots by what I need →** to rank spots by your preferences.
+   Click **Compare** on two or three spots, then use the **Compare** tray at the bottom of the screen.
+3. **Floorplan:** open **Li Ka Shing Library**, pick a floor and click a room to see its seats, reviews and issues.
+4. **Live noise heatmap:** on the same floor choose **Noise now** in the colour options. Rooms are coloured
+   from Quiet (pale blue) to Loud (red), and rooms with no ratings in the last hour are striped.
+5. **Rate the noise:** click a room, choose **Check in here**, then answer "How loud is it?". The room's colour
+   updates straight away. Only a student checked in to that room can rate it.
+6. **Directions:** open **Map and directions** on a building page for a OneMap walking route.
+7. **Reviews and favourites:** on a spot page, save it to favourites and write, edit, vote on or report a review.
+8. **Admin:** log in as the Admin account and open the **Admin** menu: **Edit Buildings** / **Edit Study Spots**
+   to manage them, and **Pending Reports** to delete or keep reported reviews.
+
+Noise ratings only count for an hour, so the heatmap is mostly striped when no one has rated recently.
+To fill it with demo ratings (CONNEX level 4 and every floor of LKCSB, SOA, YPHSL and SOSS/CIS), run
+`npm run seed:noise` against the database; re-run it to refresh them, or `npm run seed:noise -- --remove`
+to delete them. The demo ratings never replace real students' ratings.
 
 ## Features
 
@@ -130,50 +164,74 @@ proxy assumes Express uses port 8000; a custom backend port also needs a matchin
 
 The Mac `run-study-spot.command` launcher starts this development setup.
 
-## Tests
+## Testing
 
-After Setup (including the frontend build), run:
+The application is tested at three levels. All automated tests are repeatable: the database-free tests
+replace the database with test doubles, and the browser tests create their own throw-away accounts with
+unique names and delete them (and everything they made) at the end, so they can be re-run against the
+shared database.
 
-```sh
-npm test
-```
+| Level | Tool | Where | What it checks |
+|-------|------|-------|----------------|
+| End-to-end | Playwright | `e2e/` | Real user journeys through the Vue website in Chrome, on desktop and Pixel 7 (phone) screen sizes |
+| HTTP / integration | Node test runner | `test/*.test.js` | API handlers, the built website being served, OneMap token handling and directions |
+| Unit | Vitest | `test/unit/` | Business rules: review validation, access control, cascade deletes, the noise heatmap's scoring and colours |
 
-These tests need no database connection. They cover comparison helpers and API handlers, review
-validation/votes, ownership checks, cascade cleanup, OneMap token handling and theme contrast.
-`test/frontend-serving.test.js` starts Express on a temporary local port and checks the actual built
-homepage, login/registration and nested URLs, frontend assets, JSON API responses and rejection of
-legacy form posts. It reads `client/dist`, so build the frontend before running it.
+### Run all database-free tests
 
-For just the Vitest suites in `test/unit`:
-
-```sh
-npm run test:unit
-```
-
-For browser tests, use a dedicated test database with study spots. These tests create accounts and
-reviews and delete their test data; interrupted runs may need cleanup.
+After [Setup](#setup), including `npm run build`:
 
 ```sh
-npx playwright install chromium
-npm run dev                  # terminal 1
-npm run test:e2e              # terminal 2: desktop Chrome and Pixel 7 sizes
-npx playwright show-report   # optional
+npm test            # Node HTTP/integration tests, then all Vitest unit tests
+npm run test:unit   # only the Vitest unit tests
 ```
 
-- `student-journey.spec.mjs`: registration, login, favourites, review noise/editing, reporting and cleanup.
-- `review-votes.spec.mjs`: upvote/downvote switching, removing votes, reload persistence and author restrictions.
-- `admin-moderation.spec.mjs`: delete or keep reported reviews. Skipped unless an existing admin is supplied:
+These need no database connection. `test/frontend-serving.test.js` starts Express on a temporary port and
+checks the built homepage, login and registration, nested URLs, frontend assets, JSON API responses and
+rejection of legacy form posts. It reads `client/dist`, so build the frontend first.
 
-  ```sh
-  ADMIN_EMAIL=your-test-admin-email ADMIN_PASSWORD=your-test-admin-password npm run test:e2e
-  ```
+### Run the end-to-end tests
 
-The browser suite currently targets the development address on port 5173; the database-free HTTP test
-checks production serving separately.
+Use a database that already has study spots (the project database, or one seeded with `npm run seed:spots`).
 
-The map layout was manually checked on desktop and at 375 × 667: the room and comparison controls
-remain unobstructed, the mobile map opens and closes, focus returns to Show map, and the homepage
-map remains embedded. These visual checks are separate from the automated test suite.
+```sh
+npx playwright install chromium   # one-time: download the test browser
+npm run dev                       # terminal 1: Express on :8000, Vue on :5173
+npm run test:e2e                  # terminal 2: every spec on desktop Chrome and Pixel 7
+npx playwright show-report        # optional: HTML report, with screenshots of any failure
+```
+
+The admin test needs an existing admin account (it is skipped otherwise):
+
+```sh
+ADMIN_EMAIL=admintest@gmail.com ADMIN_PASSWORD=12345678 npm run test:e2e
+```
+
+### End-to-end test cases
+
+| Spec | Journey | Checks |
+|------|---------|--------|
+| `student-journey.spec.mjs` | Register, log in, open a spot, save it to favourites, write and edit a review with a noise level, report it, delete it, delete the account | Each step is shown in the UI; an author cannot report their own review (403); a review cannot be reported twice while pending (409); deleting a review also deletes its reports; a deleted account can no longer log in |
+| `review-votes.spec.mjs` | A second student upvotes, switches to a downvote, and takes the vote back | Counts and pressed states update; switching moves the vote rather than doubling it; the vote is still there after a reload; authors cannot vote on their own review (403) |
+| `admin-moderation.spec.mjs` | An admin works through the reported-reviews queue | Approving a report deletes the review; declining keeps it |
+
+The tests find elements by role and visible label (`getByRole`, `getByLabel`), which keeps them stable
+when the styling changes. Each spec runs one test at a time with one retry, to absorb a slow first
+response from MongoDB Atlas.
+
+### Manual test cases
+
+These features are checked by hand; their logic is also covered by the unit tests named.
+
+| ID | Feature | Steps | Expected result |
+|----|---------|-------|-----------------|
+| M1 | Noise heatmap | Log in, open Li Ka Shing Library, level 3, choose **Noise now** | Legend shows Quiet to Loud; rooms without ratings are striped (`noise-heat.spec.js`) |
+| M2 | Rating needs a check-in | Click a room you are not checked in to | The note asks you to check in first; no rating buttons are shown (`noise-heat.spec.js`) |
+| M3 | Rating the noise | Check in to the room, rate it **Loud** | The room turns red and its label shows the report count; it appears in the room's latest reports |
+| M4 | Quiet rooms list | Rate another room **Quiet** | It appears under **Quiet right now** |
+| M5 | Directions (OneMap) | Open **Map and directions** on a building page and request a route | A walking route is drawn on the map (`directions-integration.test.js`) |
+| M6 | Compare | Click **Compare** on three spots, then **Compare 3 spots →** in the tray | The spots are compared side by side (`compare*.test.js`) |
+| M7 | Responsive layout | Chrome DevTools, from 375 × 667 (iPhone 6) up to 1400px wide | No horizontal scrolling; on screens up to 760px the map opens with **Show map** and closes with **Hide map**, **Close map** or Escape, and focus returns to Show map |
 
 ## User Accounts & Roles
 
@@ -186,11 +244,14 @@ map remains embedded. These visual checks are separate from the automated test s
 
 ### How to Create an Account
 
-- Go to `http://localhost:8000/register` and fill in the registration form.
+- Go to `/register` on the deployed app (https://study-spot-finder-ln3r.onrender.com/register) or locally (`http://localhost:8000/register`) and fill in the registration form.
 - All new accounts are created with the **Student** role by default.
 - Students can request admin access from their profile page. An existing admin must approve the request.
 
 ### Default Credentials
+
+These accounts work on the deployed app and with the project database.
+
 
 | Email                | Password   | Role    |
 |----------------------|------------|---------|
