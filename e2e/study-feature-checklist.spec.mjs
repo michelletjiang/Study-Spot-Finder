@@ -21,4 +21,7 @@ test('study feature checklist highlights matching spots', async ({ page }, testI
   await expect(page.locator('.feature-match').first()).toBeVisible()
 
   await page.screenshot({ path: `test-results/study-feature-checklist-${testInfo.project.name}.png`, fullPage: true })
+  await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'night'))
+  await expect(page.locator('.study-spot-row--match')).toHaveCSS('color', 'rgb(244, 240, 223)')
+  await page.screenshot({ path: `test-results/study-feature-checklist-night-${testInfo.project.name}.png`, fullPage: true })
 })

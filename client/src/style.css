@@ -237,6 +237,34 @@ p {
   --nb-night-outline: #f1e4bf;
   --nb-night-header: #ead9ad;
   --nb-night-header-ink: #28263f;
+  /* Checklist rows use dedicated night colours so the highlight never puts grey copy on olive. */
+  --nb-checklist-match: #4a452a;
+  --nb-checklist-match-ink: #f4f0df;
+  --nb-checklist-badge: #b4d18a;
+  --nb-checklist-badge-ink: #1b2417;
+  --nb-checklist-muted: #535170;
+  --nb-checklist-muted-ink: #f1effa;
+}
+
+:root[data-theme='night'] .study-spot-row {
+  color: var(--nb-ink);
+}
+:root[data-theme='night'] .study-spot-row--match {
+  background: var(--nb-checklist-match);
+  color: var(--nb-checklist-match-ink);
+  outline-color: var(--nb-highlight);
+}
+:root[data-theme='night'] .study-spot-row a,
+:root[data-theme='night'] .study-spot-row .study-spot-name {
+  color: inherit;
+}
+:root[data-theme='night'] .feature-match {
+  background: var(--nb-checklist-badge);
+  color: var(--nb-checklist-badge-ink);
+}
+:root[data-theme='night'] .feature-no-match {
+  background: var(--nb-checklist-muted);
+  color: var(--nb-checklist-muted-ink);
 }
 
 /* ---------- buttons ---------- */
