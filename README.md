@@ -88,25 +88,27 @@ feature details. Use this README for the current setup and startup instructions.
 
 ## Setup
 
-Use Node.js 22.12 or newer (Node.js 24 was used for verification), npm, and a reachable MongoDB
-instance. MongoDB Atlas requires network access and an allowed IP address. OneMap directions need
-internet access and a OneMap account.
+**Prerequisites**
 
-1. Extract or clone the project and open a terminal in the folder containing `server.js` and `package.json`.
+- Node.js 22.12 or newer (Node.js 24 was used for verification) and npm. Check with `node -v` and `npm -v`.
+- Internet access. The app uses the team's MongoDB Atlas database and the OneMap API, so nothing needs
+  to be installed or seeded locally.
+
+**Steps**
+
+1. Unzip the submitted project (or clone the Git repository) and open a terminal in the folder that
+   contains `server.js` and `package.json`.
 2. Install backend and test dependencies:
 
    ```sh
    npm ci
    ```
 
-3. If `config.env` does not already exist, copy the example:
-
-   ```sh
-   cp config.env.example config.env
-   ```
-
-   Edit `config.env` with your own values. Keep an existing working configuration rather than
-   replacing it with the example. Hosted environment variables can supply these settings instead.
+3. Check that `config.env` is in the project root. **The submitted zip already includes a filled-in
+   `config.env`** with the project's MongoDB Atlas database, session secret and OneMap account, so no
+   editing is needed. It is not in the Git repository because it contains credentials: if you cloned
+   from GitHub, copy `config.env` from the submitted zip into the project root. `config.env.example`
+   shows the expected format.
 
    | Setting | Purpose |
    |---------|---------|
@@ -116,7 +118,7 @@ internet access and a OneMap account.
    | `ONEMAP_EMAIL` | OneMap account email for directions and geocoding. |
    | `ONEMAP_PASSWORD` | OneMap account password. Without OneMap credentials, routing/geocoding cannot succeed; the rest of the application can run. |
 
-   Do not commit `config.env` or put database/provider credentials in the README.
+   `config.env` is listed in `.gitignore`; do not commit it to Git.
 
 4. Install the frontend dependencies and build the website:
 
@@ -197,13 +199,21 @@ Use a database that already has study spots (the project database, or one seeded
 
 ```sh
 npx playwright install chromium   # one-time: download the test browser
-npm run dev                       # terminal 1: Express on :8000, Vue on :5173
-npm run test:e2e                  # terminal 2: every spec on desktop Chrome and Pixel 7
+npm run test:e2e                  # every spec on desktop Chrome and Pixel 7
 npx playwright show-report        # optional: HTML report, with screenshots of any failure
 ```
 
-The admin tests log in as the admin account from [Default Credentials](#default-credentials). To use a
-different admin, pass `ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run test:e2e`. Room-based tests use known rooms on
+`npm run test:e2e` starts the app (`npm run dev`: Express on :8000, Vue on :5173) by itself if it is not
+already running, and reuses it if it is.
+
+The admin specs log in with `ADMIN_EMAIL` / `ADMIN_PASSWORD`. To run them as the Admin account from
+[Default Credentials](#default-credentials), use (macOS/Linux):
+
+```sh
+ADMIN_EMAIL=preview-admin-d8e8dd4b@local.test ADMIN_PASSWORD=31mGfsIywAafTO3P8PIRhxeQRo4Yiuem npm run test:e2e
+```
+
+On Windows PowerShell, run `$env:ADMIN_EMAIL="preview-admin-d8e8dd4b@local.test"; $env:ADMIN_PASSWORD="31mGfsIywAafTO3P8PIRhxeQRo4Yiuem"; npm run test:e2e`. Room-based tests use known rooms on
 Li Ka Shing Library level 3 (RM3-1 to RM3-3), so the database needs the floor-plan spots (`npm run seed:spots`).
 
 ### End-to-end test cases
@@ -218,6 +228,8 @@ Li Ka Shing Library level 3 (RM3-1 to RM3-3), so the database needs the floor-pl
 | `access-control.spec.mjs` | A logged-out visitor opens a protected page; a student types an admin URL | Login is required (redirect, then back to the page asked for; API 401); students are sent home from admin pages and refused admin API calls (403) |
 | `admin-catalogue.spec.mjs` | An admin adds, edits and deletes a study spot through the forms | Students see the new spot and the edit; an invalid floor is rejected with a message; after deleting, the spot is gone for everyone |
 | `my-pages.spec.mjs` | Favourite a spot and remove it; write a review and delete it from My reviews | My favourite spots and My reviews show the right items; removals take effect everywhere |
+| `connex-hours.spec.mjs` | Open a CONNEX level 4 spot while the building is closed and try to check in | The panel shows **Building closed** and the check-in button is disabled; the API refuses the check-in (409). Skipped automatically during CONNEX opening hours |
+| `study-feature-checklist.spec.mjs` | Tick **Power socket** in "What would you like in your study spot?" | The match count updates and matching spots are highlighted, in both day and night themes. Uses stubbed data, so it reads and writes nothing in the database |
 
 Every spec makes its own throw-away accounts and deletes them at the end, which also deletes their reviews,
 favourites, check-ins and noise ratings; the admin catalogue test also removes the spot it adds. The tests find
@@ -252,13 +264,16 @@ These features are checked by hand; their logic is also covered by the unit test
 
 ### Default Credentials
 
-These accounts work on the deployed app and with the project database.
+These accounts work on the deployed app and locally with the project database (the `DB` in the
+submitted `config.env`). Log in with the **email** and password.
 
+| Role    | Username                 | Email                              | Password                           |
+|---------|--------------------------|------------------------------------|------------------------------------|
+| Student | -                        | usertest@gmail.com                 | 12345678                           |
+| Admin   | preview-admin-d8e8dd4b   | preview-admin-d8e8dd4b@local.test  | 31mGfsIywAafTO3P8PIRhxeQRo4Yiuem   |
 
-| Email                | Password   | Role    |
-|----------------------|------------|---------|
-| usertest@gmail.com   | 12345678   | Student |
-| admintest@gmail.com  | 12345678   | Admin   |
+The Admin account is the one the team used for testing and the demo. You can also register your own
+Student account at `/register`.
 
 ---
 
@@ -295,8 +310,6 @@ AI/LLM tools were used for the following lower-order thinking tasks:
 - Debugging and understanding error messages
 - CSS styling suggestions
 - Outlining the structure for the README file
-
-
-This deployment update also used AI assistance to configure Express to serve the Vue build, write the
-HTTP regression test, and update setup documentation. Review the full disclosure against the team's
-actual use and the course requirements before submission.
+- Deployment configuration: setting up Express to serve the built Vue website
+- Writing the HTTP regression test for the served website (`test/frontend-serving.test.js`)
+- Drafting and updating the setup documentation in this README
