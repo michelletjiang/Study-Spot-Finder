@@ -24,14 +24,17 @@ function getMyCheckIn(userId) {
 }
 
 // Check the user in to a spot. A student can only sit in one place, so any other check-in ends now.
+// It ends after 3 hours, or at closesAt (the building's closing time) if that comes first.
 // Returns { checkIn, previousSpotId } (previousSpotId: the spot they were moved out of, or null).
-async function checkIn(userId, spotId) {
+async function checkIn(userId, spotId, closesAt = null) {
   const previous = await getMyCheckIn(userId);
   if (previous) {
     previous.endsAt = new Date();
     await previous.save();
   }
-  const created = await CheckIn.create({ spot: spotId, userId, endsAt: new Date(Date.now() + CHECKIN_LENGTH_MS) });
+  const limit = Date.now() + CHECKIN_LENGTH_MS;
+  const endsAt = new Date(closesAt ? Math.min(limit, closesAt.getTime()) : limit);
+  const created = await CheckIn.create({ spot: spotId, userId, endsAt });
   return { checkIn: created, previousSpotId: previous ? String(previous.spot) : null };
 }
 

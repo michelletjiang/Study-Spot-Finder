@@ -5,6 +5,7 @@
 const mongoose = require('mongoose');
 const StudySpot = require('../models/studyspot-model');
 const { countCheckedIn, getMyCheckIn, checkIn, checkOut, getWeeklyPattern } = require('../services/checkin-service');
+const { checkInWindow } = require('../lib/building-hours');
 
 // What the page gets about the user's own check-in.
 async function toPublic(checkIn) {
@@ -51,7 +52,7 @@ exports.apiMine = async (req, res) => {
   }
 };
 
-// POST /api/checkins/:spotId  — check in here (logged in). Moves you out of any other spot.
+// POST /api/checkins/:spotId  — check in here (logged in, building open). Moves you out of any other spot.
 // Answers { checkIn, counts: { spotId: count }, previous: { spotName } | null }
 exports.apiCheckIn = async (req, res) => {
   try {
@@ -72,12 +73,19 @@ exports.apiCheckIn = async (req, res) => {
       return res.json({ checkIn: await toPublic(mine), counts: await countsFor([spotId]), previous: null, alreadyHere: true });
     }
 
+    // only while the building is open (checked here, not just in the browser)
+    const hours = checkInWindow(spot.buildingName);
+    if (!hours.open) {
+      return res.status(409).json({ message: hours.message });
+    }
+
     const here = (await countCheckedIn([spotId]))[String(spotId)] || 0;
     if (here >= spot.seatCount) {
       return res.status(409).json({ message: `All ${spot.seatCount} seats here are taken by people who checked in.` });
     }
 
-    const { checkIn: created, previousSpotId } = await checkIn(userId, spotId);
+    // the check-in ends after 3 hours, or when the building closes if that's sooner
+    const { checkIn: created, previousSpotId } = await checkIn(userId, spotId, hours.closesAt);
     const previousSpot = previousSpotId ? await StudySpot.findById(previousSpotId) : null;
     res.status(201).json({
       checkIn: await toPublic(created),
