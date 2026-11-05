@@ -11,21 +11,19 @@ import { NEED_LEVELS, DISTANCE_LEVELS } from '../preferences'
 // /find - "Find the right study spot" (linked from the home page): pick needs, share your location,
 // get the top 10 spots ranked. The ranking itself lives in ranking.js; this file is the page around it.
 
-// ---------------------------------------------------------------------
 // Page state
-// ---------------------------------------------------------------------
 const needOptions = Object.entries(NEEDS).map(([id, n]) => ({ id, label: n.label }))
 const picked = reactive(Object.fromEntries(needOptions.map((n) => [n.id, { on: false, level: 'important' }])))
 const distanceImportance = ref('medium')
-const seatsNeeded = ref('') // '' = any
+const seatsNeeded = ref('')
 
-const spots = ref([]) // everything the server sent back (unranked, with distances)
+const spots = ref([])
 const loading = ref(false)
 const status = ref('')
 const error = ref('')
 const searched = ref(false)
 
-// The ranking is a computed value: it recalculates instantly whenever the user changes a choice.
+//ranking is computed value: it recalculates instantly whenever the user changes a choice.
 // No new request to the server is needed.
 const selectedNeeds = computed(() =>
   needOptions.filter((n) => picked[n.id].on).map((n) => ({ id: n.id, level: picked[n.id].level }))
@@ -45,9 +43,7 @@ const results = computed(() =>
 
 const buttonText = computed(() => status.value || (searched.value ? 'Search again' : 'Use my location'))
 
-// ---------------------------------------------------------------------
 // Saved preferences (profile page)
-// ---------------------------------------------------------------------
 // The page starts from them, and "Use my preferences" puts them back after changes. Changes here aren't saved back.
 const savedPrefs = ref(null) // { needs: { id: 'off' | 'nice' | 'must' }, distance, seats }, null until loaded
 const prefsError = ref(false)
@@ -98,9 +94,7 @@ onMounted(async () => {
   }
 })
 
-// ---------------------------------------------------------------------
 // Server request
-// ---------------------------------------------------------------------
 
 async function findNearby() {
   loading.value = true
@@ -238,7 +232,6 @@ async function findNearby() {
 </style>
 
 <style scoped>
-/* ---------- The sketchbook page ---------- */
 .nearby {
   --ink: #2a2a2a;
   --pencil: #6b6659;
@@ -260,8 +253,7 @@ async function findNearby() {
   font-family: 'Patrick Hand', 'Segoe Print', system-ui, sans-serif;
   font-size: 1.1rem;
   color: var(--ink);
-  text-align: left; /* the app centres text by default */
-}
+  text-align: left;
 
 /* spiral binding holes down the left edge */
 .nearby::before {
@@ -588,7 +580,7 @@ input:focus-visible {
   border-left: 3px solid var(--red);
 }
 
-/* ---------- Top 3: hand-drawn oval ---------- */
+
 /* Two slightly different red rings, revealed by a mask that sweeps clockwise from the top. */
 .oval {
   position: absolute;

@@ -13,6 +13,8 @@ import { mapStore } from '../stores/map'
 import FavouriteButton from '../components/FavouriteButton.vue'
 // The comparison shortlist.
 import { comparison } from '../stores/compare'
+import StudyFeatureChecklist from '../components/StudyFeatureChecklist.vue'
+import { spotMatchesFeatures } from '../featureChecklist'
 
 // The current route.
 const route = useRoute()
@@ -24,6 +26,12 @@ const spots = ref([])
 const error = ref('')
 // True while loading.
 const loading = ref(true)
+const selectedFeatures = ref([])
+const filterMatches = ref(false)
+const matchingCount = computed(() => spots.value.filter(spot => spotMatchesFeatures(spot, selectedFeatures.value)).length)
+const visibleSpots = computed(() => filterMatches.value
+  ? spots.value.filter(spot => spotMatchesFeatures(spot, selectedFeatures.value))
+  : spots.value)
 
 // Existing note: runs again when the name changes.
 // re-runs when the name changes too: clicking another building on the minimap reuses this page
@@ -58,9 +66,24 @@ watch(buildingName, async name => {
   <!-- Error message. -->
   <p v-else-if="spots.length === 0">No study spots found in this building.</p>
   <!-- A building with no spots. -->
-  <div v-else v-for="spot in spots" :key="spot._id">
-    <!-- One block per spot: this is the list the student compares. -->
-    <p><strong>{{ spot.name }}</strong></p>
+  <template v-else>
+    <StudyFeatureChecklist
+      v-model="selectedFeatures"
+      v-model:filter-matches="filterMatches"
+      :spots="spots"
+    />
+    <p v-if="selectedFeatures.length" class="feature-checklist-summary">
+      {{ matchingCount }} spot{{ matchingCount === 1 ? '' : 's' }} match{{ matchingCount === 1 ? 'es' : '' }} every selected feature.
+    </p>
+    <p v-if="filterMatches && !visibleSpots.length" class="feature-checklist-empty">
+      No spots match every selected feature. Try unticking a feature.
+    </p>
+    <div v-for="spot in visibleSpots" :key="spot._id" :class="['study-spot-row', { 'study-spot-row--match': selectedFeatures.length && spotMatchesFeatures(spot, selectedFeatures) }]">
+      <!-- One block per spot: this is the list the student compares. -->
+      <p class="study-spot-name"><strong>{{ spot.name }}</strong>
+        <span v-if="selectedFeatures.length && spotMatchesFeatures(spot, selectedFeatures)" class="feature-match" role="status">Matches your checklist</span>
+        <span v-else-if="selectedFeatures.length" class="feature-no-match">Missing a selected feature</span>
+      </p>
     <!-- The stored facts about the spot. -->
     Floor: {{ spot.floor }}<br>
     Seats: {{ spot.seatCount }}<br>
@@ -76,6 +99,7 @@ watch(buildingName, async name => {
       <!-- The label flips between Compare and Remove from comparison. -->
       {{ comparison.has(spot._id) ? 'Remove from comparison' : 'Compare' }}
     </button>
-    <hr>
-  </div>
+      <hr>
+    </div>
+  </template>
 </template>
