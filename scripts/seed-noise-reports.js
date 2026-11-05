@@ -2,6 +2,7 @@
 // Reports only count for an hour (services/noise-service.js), so re-run this to refresh them.
 // Every dummy report has the same made-up userId, so re-running replaces them and real reports are never touched.
 // Usage: npm run seed:noise             (add or refresh)
+//        npm run seed:noise -- --all    (every room on every heatmap floor gets reports, for demos)
 //        npm run seed:noise -- --remove (delete them all)
 const path = require('path');
 const dotenv = require('dotenv');
@@ -50,6 +51,16 @@ const PATTERN_BUILDINGS = [
   'School of Social Sciences / College of Integrative Studies',
 ];
 
+// --all: every building with a heatmap, and no room left striped.
+const ALL = process.argv.includes('--all');
+const ALL_BUILDINGS = [
+  ...PATTERN_BUILDINGS,
+  'Li Ka Shing Library',
+  'School of Computing and Information Systems 1',
+  'SCIS 2 / SOE',
+  'CONNEX',
+];
+
 const toDocs = (spot, spotReports) => spotReports.map(([status, minutesAgo]) => {
   const createdAt = new Date(Date.now() - minutesAgo * 60 * 1000);
   return { spot: spot._id, userId: DUMMY_USER_ID, status, createdAt, updatedAt: createdAt };
@@ -71,11 +82,14 @@ async function main() {
   }
   console.log(`CONNEX: ${docs.length} reports`);
 
-  for (const building of PATTERN_BUILDINGS) {
-    const spots = (await StudySpot.findByBuilding(building)).sort((a, b) => a.name.localeCompare(b.name));
+  const patterns = ALL ? PATTERNS.filter(Boolean) : PATTERNS;
+  for (const building of ALL ? ALL_BUILDINGS : PATTERN_BUILDINGS) {
+    let spots = (await StudySpot.findByBuilding(building)).sort((a, b) => a.name.localeCompare(b.name));
+    // CONNEX level 4 already has its hand-written reports above.
+    if (building === 'CONNEX') spots = spots.filter(spot => !(spot.name in connexReports));
     const before = docs.length;
     spots.forEach((spot, i) => {
-      const pattern = PATTERNS[i % PATTERNS.length];
+      const pattern = patterns[i % patterns.length];
       if (pattern) docs.push(...toDocs(spot, pattern));
     });
     console.log(`${building}: ${docs.length - before} reports across ${spots.length} spots`);

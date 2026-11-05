@@ -42,7 +42,8 @@ the admin moderation queue, and the automated test suites.
 Noise ratings only count for an hour, so the heatmap is mostly striped when no one has rated recently.
 To fill it with demo ratings (CONNEX level 4 and every floor of LKCSB, SOA, YPHSL and SOSS/CIS), run
 `npm run seed:noise` against the database; re-run it to refresh them, or `npm run seed:noise -- --remove`
-to delete them. The demo ratings never replace real students' ratings.
+to delete them. The demo ratings never replace real students' ratings. For a demo where every room on
+every heatmap floor (all eight buildings) shows a colour, run `npm run seed:noise -- --all` within the hour before.
 
 ## Features
 
