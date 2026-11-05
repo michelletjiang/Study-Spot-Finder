@@ -4,6 +4,7 @@
 const SCHOOL = { weekday: ['07:00', '23:00'], saturday: ['08:00', '18:00'], sunday: null }
 
 export const buildingHours = {
+  'CONNEX': { weekday: ['08:00', '22:30'], saturday: ['08:00', '17:00'], sunday: null },
   'Li Ka Shing Library': { weekday: ['08:00', '22:00'], saturday: ['09:00', '17:00'], sunday: null },
   'School of Computing and Information Systems 1': SCHOOL,
   'SCIS 2 / SOE': SCHOOL,

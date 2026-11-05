@@ -58,3 +58,37 @@ describe('TestSuite2: closed buildings refuse check-ins and say when they open',
     expect(w.message).toBe('Yong Pung How School of Law is closed right now. It opens Sat 8am.')
   })
 })
+
+describe('CONNEX weekly opening hours', () => {
+  it.each([
+    ['2026-11-06T07:59', false, 'closed'],
+    ['2026-11-06T08:00', true, 'open'],
+    ['2026-11-06T22:29', true, 'closing'],
+    ['2026-11-06T22:30', false, 'closed'],
+    ['2026-11-07T07:59', false, 'closed'],
+    ['2026-11-07T08:00', true, 'open'],
+    ['2026-11-07T16:59', true, 'closing'],
+    ['2026-11-07T17:00', false, 'closed'],
+    ['2026-11-08T12:00', false, 'closed'],
+  ])('%s: server and badge agree on availability', async (time, open, state) => {
+    const { openStatus } = await import('../../client/src/buildingHours.js')
+    expect(checkInWindow('CONNEX', sg(time)).open).toBe(open)
+    expect(openStatus('CONNEX', sg(time))?.state).toBe(state)
+  })
+
+  it.each([
+    ['2026-11-06T21:00', '2026-11-06T22:30'],
+    ['2026-11-07T16:00', '2026-11-07T17:00'],
+  ])('caps check-ins at the closing time for %s', (time, closing) => {
+    expect(checkInWindow('CONNEX', sg(time)).closesAt).toEqual(sg(closing))
+  })
+
+  it('skips Sunday when finding the next opening', async () => {
+    const { openStatus } = await import('../../client/src/buildingHours.js')
+    expect(checkInWindow('CONNEX', sg('2026-11-07T17:00')).message)
+      .toBe('CONNEX is closed right now. It opens Mon 8am.')
+    expect(openStatus('CONNEX', sg('2026-11-07T17:00')))
+      .toEqual({ state: 'closed', text: 'Closed · opens Mon 8am' })
+  })
+
+})
