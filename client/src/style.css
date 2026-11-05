@@ -64,6 +64,39 @@ body {
     font-family: Arial, sans-serif;
 }
 
+/* Client-side study feature checklist on building spot lists. */
+.feature-checklist {
+  margin: 1rem auto 1.25rem;
+  padding: 1rem;
+  max-width: 42rem;
+  text-align: left;
+  background: var(--nb-card);
+  border: 2px solid var(--nb-ink);
+  border-radius: 12px;
+  box-shadow: 3px 3px 0 var(--nb-shadow);
+}
+.feature-checklist__header { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+.feature-checklist h3 { margin: 0; color: var(--nb-ink); font-size: 1.2rem; }
+.feature-checklist__hint { margin: 0.2rem 0 0.75rem; color: var(--nb-muted); font-size: 0.9rem; }
+.feature-checklist__count { flex: 0 0 auto; color: var(--nb-ink); font-size: 0.9rem; font-weight: 700; }
+.feature-checklist__options { display: flex; flex-wrap: wrap; align-items: center; gap: 0.55rem 1rem; }
+.feature-checklist__option, .feature-checklist__filter { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--nb-ink); cursor: pointer; }
+.feature-checklist input { width: 1.1rem; height: 1.1rem; accent-color: var(--nb-focus); }
+.feature-checklist__filter { margin-left: auto; font-size: 0.9rem; }
+.feature-checklist-summary, .feature-checklist-empty { margin: 0.5rem auto; max-width: 42rem; text-align: left; color: var(--nb-muted); }
+.study-spot-row { padding: 0.35rem 0.7rem; text-align: left; border-radius: 9px; }
+.study-spot-row--match { background: color-mix(in srgb, var(--nb-highlight) 35%, transparent); outline: 2px solid var(--nb-highlight); }
+.study-spot-name { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.feature-match, .feature-no-match { padding: 0.1rem 0.45rem; border-radius: 999px; font-size: 0.8rem; font-weight: 700; }
+.feature-match { background: var(--nb-seats-plenty); color: #142d18; }
+.feature-no-match { background: var(--nb-rule-light); color: var(--nb-muted); }
+@media (max-width: 600px) {
+  .feature-checklist { margin-inline: 0.5rem; }
+  .feature-checklist__header { display: block; }
+  .feature-checklist__count { display: block; margin-bottom: 0.5rem; }
+  .feature-checklist__filter { margin-left: 0; flex-basis: 100%; }
+}
+
 /* Comparison feature styles. The tray styles itself in CompareTray.vue. */
 /* The Compare buttons on spot lists. */
 .compare-button {
