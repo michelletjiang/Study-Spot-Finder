@@ -23,6 +23,12 @@ const account = {
 const reviewTitle = `E2E review ${stamp}`
 const editedTitle = `E2E review ${stamp} (edited)`
 
+// If a step fails, still delete the test account (and with it its review and favourites), so failed runs leave
+// nothing behind. After a successful run the account is already gone and this does nothing.
+test.afterEach(async ({ page }) => {
+  await page.request.delete('/api/profile').catch(() => {})
+})
+
 // Steps share the browser page, so run them in order in one test.
 test('student journey: favourite, review, report, and clean deletes', async ({ page, playwright, baseURL }) => {
   // The app asks "Delete ...?" with confirm(); accept it like a user clicking OK.
@@ -62,6 +68,7 @@ test('student journey: favourite, review, report, and clean deletes', async ({ p
   })
 
   await test.step('add the spot to favourites', async () => {
+    await page.waitForLoadState('networkidle') // the page loads the student's favourites first
     await page.getByRole('button', { name: 'Save to favourites', exact: true }).click()
     await expect(page.getByRole('button', { name: 'Saved to favourites', exact: true })).toBeVisible()
 
@@ -84,11 +91,15 @@ test('student journey: favourite, review, report, and clean deletes', async ({ p
   })
 
   // The block on the spot page that holds our review (its own Edit / Delete / Report links).
-  const ourReview = (title) => page.locator('article').filter({ has: page.getByText(title, { exact: true }) })
+  // (matched by text, since the title shares its heading with the star rating; the edited title is checked after the
+  // original one is gone, so the two never match the same review)
+  const ourReview = (title) => page.locator('article').filter({ hasText: title })
 
   await test.step('edit the review', async () => {
     await ourReview(reviewTitle).getByRole('link', { name: 'Edit' }).click()
     await expect(page.getByRole('heading', { name: 'Edit your review' })).toBeVisible()
+    // wait for the form to load the review first, or the loaded title would overwrite what we type
+    await expect(page.getByLabel('Title')).toHaveValue(reviewTitle)
     await page.getByLabel('Title').fill(editedTitle)
     await page.getByLabel('Noise level').selectOption('Loud')
     await page.getByRole('button', { name: 'Save review' }).click()

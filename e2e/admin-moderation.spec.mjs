@@ -3,18 +3,13 @@
 // a student reports another student's review, an admin approves the report in the browser,
 // and the review is removed. A second report is declined and its review is kept.
 //
-// Needs an existing admin account in the database. Pass its login as environment variables:
+// Logs in as the admin test account from the README (admintest@gmail.com). To use a different admin, pass
 //   ADMIN_EMAIL=you@example.com ADMIN_PASSWORD=... npm run test:e2e
-// Without them this spec is skipped (the other specs still run).
 
 import { test, expect } from '@playwright/test'
-import { newAccount, apiUser, deleteApiUser, uiLogin, firstSpot } from './helpers.mjs'
-
-const { ADMIN_EMAIL, ADMIN_PASSWORD } = process.env
+import { newAccount, apiUser, deleteApiUser, uiLogin, firstSpot, ADMIN } from './helpers.mjs'
 
 test.describe('admin moderation', () => {
-  test.skip(!ADMIN_EMAIL || !ADMIN_PASSWORD, 'Set ADMIN_EMAIL and ADMIN_PASSWORD to run the admin tests')
-
   test('approving a report deletes the review; declining keeps it', async ({ page, playwright, baseURL }) => {
     const author = await apiUser(playwright, baseURL, newAccount('author'))
     const reporterAcc = newAccount('reporter')
@@ -35,7 +30,7 @@ test.describe('admin moderation', () => {
 
       // Act: the admin works through the queue in the browser.
       page.on('dialog', dialog => dialog.accept()) // the "Approve this report?" confirm
-      await uiLogin(page, ADMIN_EMAIL, ADMIN_PASSWORD)
+      await uiLogin(page, ADMIN.email, ADMIN.password)
       await page.goto('/admin/reports')
       await expect(page.getByRole('heading', { name: 'Reports', exact: true })).toBeVisible()
 
