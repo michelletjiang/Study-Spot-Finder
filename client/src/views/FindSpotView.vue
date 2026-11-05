@@ -7,6 +7,7 @@ import { alertLabel, alertIcon } from '../alerts'
 import { seatsLevel, seatsFreeText, peopleText } from '../seats'
 import { fetchNearby, walkText } from '../location'
 import { NEED_LEVELS, DISTANCE_LEVELS } from '../preferences'
+import { openStatus } from '../buildingHours'
 
 // /find - "Find the right study spot" (linked from the home page): pick needs, share your location,
 // get the top 10 spots ranked. The ranking itself lives in ranking.js; this file is the page around it.
@@ -131,8 +132,8 @@ async function findNearby() {
         </button>
         <p class="prefs-text">
           <span class="prefs-summary">{{ prefsSummary }}</span>
-          <RouterLink to="/profile" class="prefs-link">Edit in profile</RouterLink>
         </p>
+        <RouterLink to="/profile" class="prefs-link"><span aria-hidden="true">✎</span> Edit in profile</RouterLink>
       </template>
     </section>
 
@@ -199,11 +200,14 @@ async function findNearby() {
                 <!-- Top 3 only: a hand-drawn oval that sweeps around the name when the spot enters the top 3 -->
                 <span v-if="r.rank <= 3" class="oval" aria-hidden="true"></span>
               </RouterLink>
+              <!-- the building is closed right now (opening hours in buildingHours.js) -->
+              <span v-if="openStatus(r.buildingname)?.state === 'closed'" class="closed-tag">Closed</span>
             </h3>
             <p class="meta">
               {{ r.buildingname }}, {{ levelLabel(r.floor) }} · {{ r.seats }} seats ·
               {{ walkText(r.distanceMeters, r.walkingMinutes) }}
             </p>
+            <p v-if="openStatus(r.buildingname)?.state === 'closed'" class="line closed-line">{{ openStatus(r.buildingname).text }}</p>
             <p v-if="r.checkedIn" class="line seats">
               <span class="nb-dot" :class="`nb-dot--${seatsLevel(r.checkedIn, r.seats)}`" aria-hidden="true"></span>{{ seatsFreeText(r.checkedIn, r.seats) }}
               ({{ peopleText(r.checkedIn) }} checked in)
@@ -340,10 +344,28 @@ h1 {
 }
 
 .prefs-link {
-  margin-left: 0.5rem;
-  color: var(--blue);
+  flex: none;
+  padding: 0.2rem 0.9rem 0.3rem;
+  font-family: var(--hand);
+  font-size: 1.15rem;
   font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
   white-space: nowrap;
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: 5px 14px 5px 16px / 14px 5px 16px 5px;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.prefs-link:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.prefs-link:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 3px;
 }
 
 /* ---------- Form, drawn in pen ---------- */
@@ -570,6 +592,25 @@ input:focus-visible {
 
 .unknown {
   color: var(--pencil);
+}
+
+/* the building is closed right now: a stamped tag beside the name, and when it opens */
+.closed-tag {
+  display: inline-block;
+  margin-left: 0.6rem;
+  padding: 0.05rem 0.55rem;
+  border: 2px solid var(--red);
+  border-radius: 6px;
+  color: var(--red-text);
+  font-size: 1.05rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  transform: rotate(-3deg);
+}
+
+.closed-line {
+  color: var(--red-text);
 }
 
 /* an active alert pushes the room down the list; say why */

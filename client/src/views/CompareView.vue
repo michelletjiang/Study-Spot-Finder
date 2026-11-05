@@ -11,6 +11,7 @@ import { comparisonLocation, idsAfterRemoval } from './compare-navigation'
 import { averageRating } from '../reviews'
 import { MIN_FOR_SUMMARY, seatsLevel, hourLabel, percent, sgNow } from '../seats'
 import { levelLabel } from '../floors'
+import { openStatus } from '../buildingHours'
 
 const route = useRoute()
 const router = useRouter()
@@ -151,11 +152,13 @@ onMounted(refreshTooltips)
 watch([shownRows, spots], refreshTooltips)
 onBeforeUnmount(() => tooltips.forEach(tooltip => tooltip.dispose()))
 
-// The sticky note: the spot that wins the most live rows, with the reasons. Hidden on a tie.
+// The sticky note: the open spot that wins the most live rows, with the reasons. Hidden on a tie.
+// Spots in a closed building are never suggested (you couldn't go there now), so when they're all closed there's no note.
+const isOpenNow = spot => openStatus(spot.buildingName)?.state !== 'closed' // unknown hours count as open
 const suggestion = computed(() => {
   const wins = spots.value.map(() => [])
   for (const row of rows.value) if (row.best >= 0) wins[row.best].push(row)
-  const counts = wins.map(w => w.length)
+  const counts = wins.map((w, i) => (isOpenNow(spots.value[i]) ? w.length : 0))
   const top = Math.max(0, ...counts)
   if (!top || counts.filter(c => c === top).length > 1) return null
   const i = counts.indexOf(top)
