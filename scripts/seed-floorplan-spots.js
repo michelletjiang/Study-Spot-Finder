@@ -82,7 +82,6 @@ const buildings = {
     { floor: '2', name: 'GSR 2-5', seatCount: 6, hasPowerSocket: true },
     { floor: '2', name: 'GSR 2-6', seatCount: 6, hasPowerSocket: true },
     { floor: '2', name: 'GSR 2-7', seatCount: 6, hasPowerSocket: true },
-    { floor: '2', name: 'SIS Learning Way 2.1', seatCount: 30, hasPowerSocket: true },
     { floor: '2', name: 'Seminar Room 2-1', seatCount: 45, hasPowerSocket: true },
     { floor: '2', name: 'Seminar Room 2-2', seatCount: 45, hasPowerSocket: true },
     { floor: '2', name: 'Seminar Room 2-3', seatCount: 45, hasPowerSocket: true },
