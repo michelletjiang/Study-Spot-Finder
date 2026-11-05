@@ -305,11 +305,11 @@ The live layer that students generate uses three more schemas:
 
 ## AI/LLM Usage Disclosure
 
-AI/LLM tools were used for the following lower-order thinking tasks:
+The team designed the application, divided the work and built the core features together. AI/LLM tools were used as assistants for:
 
+- Checking that the code runs and that the end-to-end tests pass
 - Debugging and understanding error messages
 - CSS styling suggestions
-- Outlining the structure for the README file
-- Deployment configuration: setting up Express to serve the built Vue website
-- Writing the HTTP regression test for the served website (`test/frontend-serving.test.js`)
-- Drafting and updating the setup documentation in this README
+- Implementing the study-spot feature checklist and its tests (reviewed and merged by the team)
+- Deployment configuration (Express serving the built Vue website) and the HTTP regression test for it
+- Drafting the README and the presentation slides
