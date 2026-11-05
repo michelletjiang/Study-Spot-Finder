@@ -1,5 +1,5 @@
 // Helpers for check-ins and free seats, shared by the room panel, floor plan, /find, favourites and the
-// "Busiest times" chart. Seats free = the spot's seatCount - people checked in through the app,
+// comparison view. Seats free = the spot's seatCount - people checked in through the app,
 // so it's an estimate (people who didn't check in aren't counted) and is always shown with a "~".
 
 // How much room is left, for colours: 'plenty' (half or more free) | 'some' | 'few' | 'full'
@@ -27,11 +27,9 @@ export const peopleText = n => `${n} ${n === 1 ? 'person' : 'people'}`
 export const clockTime = date =>
   new Date(date).toLocaleTimeString('en-SG', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Singapore' })
 
-// ---------- busiest times ----------
+// ---------- usual crowd for comparison ----------
 // A pattern comes from GET /api/checkins/:spotId/pattern:
 // { total, seatCount, days[0 = Sunday .. 6][hour] = { people, taken (0..1) } | null }
-
-export const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 // 14 -> '2 pm', 0 -> '12 am'
 export const hourLabel = hour => `${hour % 12 || 12} ${hour < 12 ? 'am' : 'pm'}`
@@ -45,21 +43,5 @@ export function sgNow() {
   return { day: local.getUTCDay(), hour: local.getUTCHours() }
 }
 
-// a spot needs this many check-ins before we'll say when it's usually busiest
+// A spot needs this many check-ins before comparing its usual crowd.
 export const MIN_FOR_SUMMARY = 5
-
-// the hour with the most seats usually taken on that day (earlier wins a tie), or null
-export function busiestHour(pattern, day) {
-  if (!pattern || pattern.total < MIN_FOR_SUMMARY) return null
-  let best = null
-  pattern.days[day].forEach((cell, hour) => {
-    if (cell && (!best || cell.taken > best.taken)) best = { hour, ...cell }
-  })
-  return best
-}
-
-// "On Tuesdays it's usually busiest around 2 pm (~40% of seats taken)." or null when there isn't enough data
-export function busiestSummary(pattern, day) {
-  const best = busiestHour(pattern, day)
-  return best && `On ${DAY_NAMES[day]}s it's usually busiest around ${hourLabel(best.hour)} (~${percent(best.taken)} of seats taken).`
-}
