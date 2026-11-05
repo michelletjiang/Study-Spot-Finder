@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { api } from '../api'
 import { favourites } from '../stores/favourites'
 import { comparison } from '../stores/compare.js'
@@ -7,6 +7,7 @@ import { levelLabel } from '../floors'
 import { roomType } from '../roomTypes'
 import { timeAgo } from '../reviews'
 import { myCheckIn } from '../stores/checkin'
+import { openStatus } from '../buildingHours'
 import { seatsLevel, seatsFreeText, peopleText, clockTime } from '../seats'
 import SpotAlerts from './SpotAlerts.vue'
 import NoiseRating from './NoiseRating.vue'
@@ -39,6 +40,12 @@ myCheckIn.load().catch(() => {}) // logged out or offline: the buttons still wor
 const hereNow = computed(() => myCheckIn.isAt(props.spot._id))
 const elsewhere = computed(() => (myCheckIn.active && !hereNow.value ? myCheckIn.current : null))
 const isFull = computed(() => checkedIn.value !== null && checkedIn.value >= props.spot.seatCount && !hereNow.value)
+// check-ins only while the building is open (the server checks this too); re-checked every minute
+const now = ref(new Date())
+const clock = setInterval(() => (now.value = new Date()), 60 * 1000)
+onUnmounted(() => clearInterval(clock))
+const hours = computed(() => openStatus(props.spot.buildingName, now.value)) // null if we don't know the hours
+const isClosed = computed(() => hours.value?.state === 'closed')
 // "Seminar Room 2-1 (School of Computing & Information Systems 1)", or just the room if its building isn't known
 const placeName = place => (place.buildingName ? `${place.spotName} (${place.buildingName})` : place.spotName)
 
@@ -174,10 +181,12 @@ async function toggleFavourite() {
       </div>
       <NoiseRating v-if="hereNow" :spot-id="spot._id" @rated="emit('noise-rated')" />
       <template v-else>
-        <button type="button" class="nb-btn nb-btn--primary" :disabled="checkingIn || isFull" @click="checkIn">
-          {{ isFull ? 'No free seats' : 'Check in here' }}
+        <button type="button" class="nb-btn nb-btn--primary" :disabled="checkingIn || isFull || isClosed" @click="checkIn">
+          {{ isClosed ? 'Building closed' : isFull ? 'No free seats' : 'Check in here' }}
         </button>
-        <p v-if="elsewhere" class="note">You're checked in at {{ placeName(elsewhere) }}. Checking in here will move you.</p>
+        <p v-if="isClosed" class="note">{{ hours.text }}. You can check in once it opens.</p>
+        <p v-else-if="hours?.state === 'closing'" class="note">{{ hours.text }}. Your check-in will end at closing time.</p>
+        <p v-if="elsewhere && !isClosed" class="note">You're checked in at {{ placeName(elsewhere) }}. Checking in here will move you.</p>
       </template>
       <p v-if="checkInMessage" class="note">{{ checkInMessage }}</p>
     </section>

@@ -10,9 +10,14 @@
 // Run: start the app with `npm run dev`, then `npm run test:e2e`.
 
 import { test, expect } from '@playwright/test'
+import { createRequire } from 'node:module'
 import { newAccount, apiUser, uiLogin, findSpot, TEST_BUILDING, TEST_FLOOR, TEST_ROOMS } from './helpers.mjs'
 
+const { checkInWindow } = createRequire(import.meta.url)('../lib/building-hours.js')
 const ROOM = TEST_ROOMS[0]
+
+// check-ins are refused while the building is closed, so this journey can only run during opening hours
+test.skip(!checkInWindow(TEST_BUILDING).open, `${TEST_BUILDING} is closed now, so check-ins are refused`)
 
 test('check in, rate the noise and see it on the heatmap', async ({ page, playwright, baseURL }) => {
   const account = newAccount('noise')
