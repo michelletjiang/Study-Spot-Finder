@@ -1,7 +1,7 @@
 <script setup>
 // ACTIVE: one spot's details and reviews. It also has a Compare button, the second entry point to the comparison.
 // Drawn as a notebook page: the room's facts on sticky notes, then its reviews on sheets of paper.
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { api } from '../api'
 // auth tells whether a review belongs to the current user.
@@ -13,7 +13,6 @@ import { levelLabel, normalizeFloor } from '../floors'
 import { sectionOf } from '../floorplans'
 import FavouriteButton from '../components/FavouriteButton.vue'
 import StarRating from '../components/StarRating.vue'
-import BusyTimesChart from '../components/BusyTimesChart.vue'
 
 const route = useRoute()
 // The spot, empty until loaded.
@@ -29,11 +28,6 @@ onMounted(async () => {
     reviews.value = await api(`/api/reviews?spotId=${route.params.id}`)
     // Load the favourites so the heart knows whether this spot is saved.
     await favourites.load()
-    // the room panel's "Busiest times →" link opens /spots/:id#busiest-times: jump down to the chart
-    if (route.hash === '#busiest-times') {
-      await nextTick()
-      document.getElementById('busiest-times')?.scrollIntoView({ block: 'start' })
-    }
   } catch (e) {
     error.value = e.message
   }
@@ -113,12 +107,6 @@ async function deleteReview(review) {
         </li>
       </ul>
 
-      <!-- when it's usually busy, from check-ins -->
-      <div id="busiest-times" class="nb-sheet busy-sheet">
-        <div class="nb-tape" aria-hidden="true"></div>
-        <BusyTimesChart :spot-id="spot._id" />
-      </div>
-
       <section class="reviews" aria-labelledby="reviews-title">
         <div class="reviews-head">
           <h2 id="reviews-title">Reviews</h2>
@@ -182,9 +170,6 @@ async function deleteReview(review) {
 .facts .nb-note:nth-child(2) { transform: rotate(-0.6deg); }
 .facts .nb-note:nth-child(3) { transform: rotate(0.8deg); }
 .facts .white { background: #fffef9; transform: rotate(-0.4deg); }
-
-.busy-sheet { max-width: 1000px; margin-bottom: 40px; scroll-margin-top: 24px; padding: 24px 28px 18px; }
-@media (max-width: 600px) { .busy-sheet { padding: 20px 16px 14px; } }
 
 .reviews { max-width: 1000px; padding-top: 22px; border-top: 2px solid var(--nb-ink); }
 .reviews-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
