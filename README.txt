@@ -49,7 +49,7 @@ every heatmap floor (all eight buildings) shows a colour, run `npm run seed:nois
 
 - Browse buildings and interactive floorplans; inspect study-spot details.
 - Rank nearby spots by preferences and compare a shortlist.
-- View OneMap directions, active seat check-ins, reported issues and usual crowd comparisons.
+- View OneMap directions, active seat check-ins, reported issues, busy-times patterns and usual crowd comparisons.
 - Save favourites; write reviews with ratings and noise reports; vote on and report reviews.
 - Register, sign in and manage a profile.
 - Admins manage buildings and spots, moderate reported reviews and approve admin requests.
@@ -295,7 +295,7 @@ The live layer that students generate uses three more schemas:
 
 | Schema             | Key Fields                                       | Relationships                                      |
 |--------------------|--------------------------------------------------|----------------------------------------------------|
-| **CheckIn**        | spot, user, check-in and check-out times         | References StudySpot and User; powers seats free now and usual crowd comparisons |
+| **CheckIn**        | spot, user, check-in and check-out times         | References StudySpot and User; powers seats free now, busiest times and usual crowd comparisons |
 | **NoiseReport**    | spot, userId, status (Quiet / Moderate / Loud), createdAt | References StudySpot and User; powers the live noise heatmap (last hour only) |
 | **StudySpotAlert** | spot, issue message, confirms, disputes          | References StudySpot                               |
 
